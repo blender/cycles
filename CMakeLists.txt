@@ -1,5 +1,6 @@
 
 set(CYCLES_INSTALL_PATH "scripts/addons/cycles")
+SET(WITH_CYCLES_BLENDER ON)
 
 # External Libraries
 
@@ -59,8 +60,6 @@ include_directories(
 	${OPENIMAGEIO_INCLUDE_DIRS}/OpenImageIO)
 
 # Subdirectories
-
-SET(WITH_CYCLES_BLENDER ON)
 
 if(WITH_CYCLES_BLENDER)
 	add_subdirectory(blender)
