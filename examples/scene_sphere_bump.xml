@@ -1,0 +1,33 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 2 -5" scale="1 1 1" rotate="20 1 0 0">
+	<camera type="perspective" />
+</transform>
+
+<!-- Background Shader -->
+<background>
+	<background name="bg" strength="2.0" color="0.2, 0.2, 0.2" />
+	<connect from="bg background" to="output surface" />
+</background>
+
+<!-- Sphere Shader -->
+<shader name="sphere">
+	<wave_texture name="tex" scale="2.0" distortion="2.0" />
+
+	<diffuse_bsdf name="diffuse1" roughness="0.0" color="0.8, 0.0, 0.0" />
+	<diffuse_bsdf name="diffuse2" roughness="0.0" color="0.8, 0.8, 0.0" />
+	<mix_closure name="mix" />
+	
+	<connect from="tex fac" to="mix fac" />
+	<connect from="diffuse1 bsdf" to="mix closure1" />
+	<connect from="diffuse2 bsdf" to="mix closure2" />
+
+	<connect from="mix closure" to="output surface" />
+	<connect from="tex fac" to="output displacement" />
+</shader>
+
+<!-- Sphere Object -->
+<state interpolation="smooth" shader="sphere">
+	<include src="./objects/sphere.xml" />
+</state>

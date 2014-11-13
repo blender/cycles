@@ -1,197 +1,84 @@
-# Standalone or with Blender
-if(NOT WITH_BLENDER AND WITH_CYCLES_STANDALONE)
-	set(CYCLES_INSTALL_PATH "")
-else()
-	set(WITH_CYCLES_BLENDER ON)
-	set(CYCLES_INSTALL_PATH "scripts/addons/cycles")
+###########################################################################
+# Policies
+
+cmake_minimum_required(VERSION 2.8)
+
+# So library linking is more sane.
+cmake_policy(SET CMP0003 NEW)
+
+# So syntax problems are errors.
+cmake_policy(SET CMP0010 NEW)
+
+# So BUILDINFO and BLENDERPATH strings are automatically quoted.
+cmake_policy(SET CMP0005 NEW)
+
+# Input directories must have CMakeLists.txt
+cmake_policy(SET CMP0014 NEW)
+
+if(NOT (${CMAKE_VERSION} VERSION_LESS 3.0))
+	# Keep until CMake-3.0 is min requirement.
+	cmake_policy(SET CMP0043 OLD)
 endif()
 
-# External Libraries
+###########################################################################
+# Macros and utilities.
 
-include(cmake/external_libs.cmake)
-
-# Build Flags
-# todo: refactor this code to match scons
-# note: CXX_HAS_SSE is needed in case passing SSE flags fails altogether (gcc-arm)
-
-if(NOT WITH_CPU_SSE)
-	set(CXX_HAS_SSE FALSE)
-elseif(WIN32 AND MSVC)
-	set(CXX_HAS_SSE TRUE)
-
-	# /arch:AVX for VC2012 and above
-	if(NOT MSVC_VERSION LESS 1700)
-		set(CYCLES_AVX_ARCH_FLAGS "/arch:AVX")
-		set(CYCLES_AVX2_ARCH_FLAGS "/arch:AVX /arch:AVX2")
-	elseif(NOT CMAKE_CL_64)
-		set(CYCLES_AVX_ARCH_FLAGS "/arch:SSE2")
-		set(CYCLES_AVX2_ARCH_FLAGS "/arch:SSE2")
-	endif()
-
-	# there is no /arch:SSE3, but intrinsics are available anyway
-	if(CMAKE_CL_64)
-		set(CYCLES_SSE2_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_SSE3_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_SSE41_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_AVX_KERNEL_FLAGS "${CYCLES_AVX_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_AVX2_KERNEL_FLAGS "${CYCLES_AVX2_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-	else()
-		set(CYCLES_SSE2_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_SSE3_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_SSE41_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_AVX_KERNEL_FLAGS "${CYCLES_AVX_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-		set(CYCLES_AVX2_KERNEL_FLAGS "${CYCLES_AVX2_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-	endif()
-
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /GS-")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Ox")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /Ox")
-elseif(CMAKE_COMPILER_IS_GNUCC)
-	check_cxx_compiler_flag(-msse CXX_HAS_SSE)
-	if(CXX_HAS_SSE)
-		set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2 -mfpmath=sse")
-		set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -mfpmath=sse")
-		set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mfpmath=sse")
-		set(CYCLES_AVX_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx -mfpmath=sse")
-		set(CYCLES_AVX2_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx -mavx2 -mfma -mlzcnt -mbmi -mbmi2 -mfpmath=sse")
-	endif()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	check_cxx_compiler_flag(-msse CXX_HAS_SSE)
-	if(CXX_HAS_SSE)
-		set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2")
-		set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3")
-		set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1")
-		set(CYCLES_AVX_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx")
-		set(CYCLES_AVX2_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx -mavx2 -mfma -mlzcnt -mbmi -mbmi2")
-	endif()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
-endif()
-
-if(CXX_HAS_SSE)
-	add_definitions(
-		-DWITH_KERNEL_SSE2
-		-DWITH_KERNEL_SSE3
-		-DWITH_KERNEL_SSE41
-		-DWITH_KERNEL_AVX
-		-DWITH_KERNEL_AVX2
-	)
-endif()
-
-if(WITH_CYCLES_OSL)
-	if(WIN32 AND MSVC)
-		set(RTTI_DISABLE_FLAGS "/GR- -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
-	elseif(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang"))
-		set(RTTI_DISABLE_FLAGS "-fno-rtti -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
-	endif()
-endif()
-
-# Definitions and Includes
-
-add_definitions(
-	${BOOST_DEFINITIONS}
-	${OPENIMAGEIO_DEFINITIONS}
+list(APPEND CMAKE_MODULE_PATH
+	"${CMAKE_SOURCE_DIR}/src/cmake"
+	"${CMAKE_SOURCE_DIR}/src/cmake/Modules"
 )
+include("${CMAKE_SOURCE_DIR}/src/cmake/macros.cmake")
 
-add_definitions(
-	-DCCL_NAMESPACE_BEGIN=namespace\ ccl\ {
-	-DCCL_NAMESPACE_END=}
-)
+###########################################################################
+# Global settings.
 
-if(WITH_CYCLES_NETWORK)
-	add_definitions(-DWITH_NETWORK)
-endif()
+# Avoid having empty buildtype.
+set(CMAKE_BUILD_TYPE_INIT "Release")
 
-if(WITH_CYCLES_STANDALONE_GUI)
-	add_definitions(-DWITH_CYCLES_STANDALONE_GUI)
-endif()
 
-if(WITH_CYCLES_PTEX)
-	add_definitions(-DWITH_PTEX)
-endif()
+# Some stuff is different when building stabdalone Cycles from inside
+# Blender source code and when building it from it's own repository.
+set(CYCLES_STANDALONE_REPOSITORY TRUE)
 
-if(WITH_CYCLES_OPENSUBDIV)
-	add_definitions(-DWITH_OPENSUBDIV)
-endif()
+# Force standalone build.
+set(WITH_CYCLES_STANDALONE TRUE)
 
-if(WITH_CYCLES_OSL)
-	add_definitions(-DWITH_OSL)
-	add_definitions(-DOSL_STATIC_LIBRARY)
-	include_directories(
-		SYSTEM
-		${OSL_INCLUDES}
-	)
-endif()
+# Global compile definitions since add_definitions() adds for all.
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG           DEBUG _DEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE         NDEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_MINSIZEREL      NDEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO  NDEBUG)
 
-add_definitions(
-	-DWITH_OPENCL
-	-DWITH_CUDA
-	-DWITH_MULTI
-)
+###########################################################################
+# Initialize project.
 
-# Logging capabilities using GLog library.
-if(WITH_CYCLES_LOGGING)
-	add_definitions(-DWITH_CYCLES_LOGGING)
-	add_definitions(-DGOOGLE_GLOG_DLL_DECL=)
-	if(WIN32)
-		include_directories(
-			SYSTEM
-			../../extern/libmv/third_party/glog/src/windows
-			../../extern/libmv/third_party/gflags
-		)
-	else()
-		include_directories(
-			SYSTEM
-			../../extern/libmv/third_party/glog/src
-			../../extern/libmv/third_party/gflags
-		)
-	endif()
-endif()
+project(Cycles)
 
-# Debugging capabilities (debug passes etc).
-if(WITH_CYCLES_DEBUG)
-	add_definitions(-DWITH_CYCLES_DEBUG)
-endif()
+###########################################################################
+# Options.
+
+option(WITH_CPU_SSE                "Enable SIMD instruction if they're detected on the host machine" ON)
+option(WITH_CYCLES_STANDALONE_GUI  "Build Cycles standalone with GUI" ON)
+option(WITH_CYCLES_OSL             "Build Cycles with OSL support" OFF)
+option(WITH_CYCLES_LOGGING         "Build Cycles with logging support" OFF)
+option(WITH_CYCLES_DEBUG           "Build Cycles with with extra debug capabilties" OFF)
+
+###########################################################################
+# Configuration.
+
+include(CheckCXXCompilerFlag)
+include(configure_build)
+
+###########################################################################
+# Include directories.
 
 include_directories(
-	SYSTEM
-	${BOOST_INCLUDE_DIR}
-	${OPENIMAGEIO_INCLUDE_DIRS}
-	${OPENIMAGEIO_INCLUDE_DIRS}/OpenImageIO
-	${OPENEXR_INCLUDE_DIR}
-	${OPENEXR_INCLUDE_DIRS}
+	third_party/cuew/include
+	third_party/clew/include
 )
 
+###########################################################################
+# Sources.
 
-# Warnings
-if(CMAKE_COMPILER_IS_GNUCXX)
-	ADD_CHECK_CXX_COMPILER_FLAG(CMAKE_CXX_FLAGS _has_cxxflag_float_conversion "-Werror=float-conversion")
-	ADD_CHECK_CXX_COMPILER_FLAG(CMAKE_CXX_FLAGS _has_cxxflag_double_promotion "-Werror=double-promotion")
-	unset(_has_cxxflag_float_conversion)
-	unset(_has_cxxflag_double_promotion)
-endif()
-
-
-# Subdirectories
-
-if(WITH_CYCLES_BLENDER)
-	add_subdirectory(blender)
-endif()
-
-if(WITH_CYCLES_STANDALONE OR WITH_CYCLES_NETWORK)
-	add_subdirectory(app)
-endif()
-
-add_subdirectory(bvh)
-add_subdirectory(device)
-add_subdirectory(doc)
-add_subdirectory(kernel)
-add_subdirectory(render)
-add_subdirectory(subd)
-add_subdirectory(util)
-
-if(NOT WITH_BLENDER AND WITH_CYCLES_STANDALONE)
-	delayed_do_install(${CMAKE_BINARY_DIR}/bin)
-endif()
-
+add_subdirectory(src)
+add_subdirectory(third_party)

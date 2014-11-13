@@ -1,0 +1,25 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 0 -7" scale="1 1 1">
+	<camera type="perspective" />
+</transform>
+
+<!-- Background Shader -->
+<background>
+	<background name="bg" strength="1.0" color="0.2, 0.2, 0.2" />
+	<connect from="bg background" to="output surface" />
+</background>
+
+<!-- Floor Shader -->
+<shader name="floor">
+	<osl_shader name="stripes_diffuse" src="./osl/stripes.osl" >
+		<output name="BSDF" type="closure color" />
+	</osl_shader>
+	<connect from="stripes_diffuse BSDF" to="output surface" />
+</shader>
+
+<!-- Objects -->
+<state shader="floor">
+	<patch type="bilinear" P="-3 3 0  3 3 0  -3 -3 0  3 -3 0" />
+</state>

@@ -1,0 +1,46 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 0 -4" scale="1 1 1">
+	<camera type="perspective" />
+</transform>
+
+<!-- Background Shader -->
+<background>
+	<sky_texture name="tex" />
+	<background name="bg" strength="8.0" />
+	
+	<connect from="tex color" to="bg color" />
+	<connect from="bg background" to="output surface" />
+</background>
+
+<!-- Monkey Shader -->
+<shader name="monkey">
+	<noise_texture name="tex" scale="2.0"/>
+	<glass_bsdf name="monkey_closure" distribution="Beckmann" ior="1.4" roughness="0.2" />
+	<connect from="tex color" to="monkey_closure color" />
+	<connect from="monkey_closure bsdf" to="output surface" />
+</shader>
+
+<!-- Floor Shader -->
+<shader name="floor">
+	<checker_texture name="checker" color1="0.8, 0.8, 0.8" color2="1.0, 0.1, 0.1" />
+	<glossy_bsdf name="floor_closure" roughness="0.1"/>
+	<connect from="checker color" to="floor_closure color" />
+	<connect from="floor_closure bsdf" to="output surface" />
+</shader>
+
+<!-- Objects -->
+<transform rotate="180 0 1 1">
+	<state interpolation="smooth" shader="monkey">
+		<include src="./objects/suzanne.xml" />
+	</state>
+</transform>
+
+<transform rotate="90 1 0 0">
+	<transform translate="0 0 1">
+		<state shader="floor">
+			<patch type="bilinear" P="-3 3 0  3 3 0  -3 -3 0  3 -3 0" />
+		</state>
+	</transform>
+</transform>

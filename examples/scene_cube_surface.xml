@@ -1,0 +1,25 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 2 -6" scale="1 1 1" rotate="20 1 0 0">
+	<camera type="perspective" />
+</transform>
+
+<!-- Background Shader -->
+<background>
+	<background name="bg" strength="2.0" color="0.2, 0.2, 0.2" />
+	<connect from="bg background" to="output surface" />
+</background>
+
+<!-- Cube Shader -->
+<shader name="cube">
+	<checker_texture name="tex" scale="2.0" color1="0.8, 0.8, 0.8" color2="1.0, 0.2, 0.2" />
+	<diffuse_bsdf name="cube_closure" roughness="0.0" />
+	<connect from="tex color" to="cube_closure color" />
+	<connect from="cube_closure bsdf" to="output surface" />
+</shader>
+
+<!-- Cube Object -->
+<state interpolation="smooth" shader="cube">
+	<include src="./objects/cube.xml" />
+</state>

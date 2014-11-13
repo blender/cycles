@@ -1,0 +1,26 @@
+#include "stdosl.h"
+
+shader sine_pattern(
+	color Color = color(0.0, 0.2, 0.6),
+	float Time = 7.0,
+	float Scale = 0.5,
+	float Intensity = 10.0,
+	int Stripes = 10,
+	point Vector = P,
+	output closure color BSDF = 0)
+{
+	point Pos = Vector * Scale;
+	float pattern = 0.0;
+
+	for( float i = 0.0; i < Stripes; ++i )
+	{
+		float t = Time/10.0 * (i);
+
+		Pos[0] += sin( (Pos[1] + t) * 10.0  ) * 0.1;
+
+		float f = abs(Intensity / Pos[0] * 0.001);
+		pattern += f;
+	}
+
+	BSDF = (Color * pattern) * diffuse(N);
+}

@@ -1,0 +1,38 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 2 -6" scale="1 1 1" rotate="20 1 0 0">
+	<camera type="perspective" />
+</transform>
+
+<!-- Integrator Settings -->
+<integrator volume_step_size="0.01" />
+
+<!-- Background Shader -->
+<background>
+	<background name="bg" strength="2.0" color="0.2, 0.2, 0.2" />
+	<connect from="bg background" to="output surface" />
+</background>
+
+<!-- Cube Shader -->
+<shader name="cube">
+	<checker_texture name="tex" scale="2.0" color1="0.8, 0.8, 0.8" color2="0.2, 0.2, 0.2" />
+	<math name="math" type="Multiply" value2="20.0" />
+
+	<scatter_volume name="volume1" color="0.8, 0.8, 0.8" />
+	<absorption_volume name="volume2" color="0.8, 0.8, 0.8" />
+	<add_closure name="add" />
+	
+	<connect from="tex fac" to="math value1" />
+	<connect from="math value" to="volume1 density" />
+	<connect from="math value" to="volume2 density" />
+
+	<connect from="volume1 volume" to="add closure1" />
+	<connect from="volume2 volume" to="add closure2" />
+	<connect from="add closure" to="output volume" />
+</shader>
+
+<!-- Cube Object -->
+<state interpolation="smooth" shader="cube">
+	<include src="./objects/cube.xml" />
+</state>

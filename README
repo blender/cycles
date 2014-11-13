@@ -1,0 +1,110 @@
+Cycles Render Engine
+====================
+
+Cycles is a ray tracing renderer focused on interactivity and ease of use, while
+still supporting many production features.
+
+= Building =
+------------
+
+== Requirements ==
+-------------------
+
+Crucial dependencies:
+- OpenGL
+- GLEW
+- Boost (version at least 1.48).
+- OpenImageIO (plus all the libarries which OIIO depends on).
+
+Optional dependencies:
+- OpenShadingLanguage
+
+== Precompiled libraries ==
+---------------------------
+
+It is possible to use precompiled libraries for OSX and Windows (NOTE: Windows
+build system is not yet ready and needs much more work). This libraries could
+be checked out from Blender's library repository:
+
+  https://svn.blender.org/svnroot/bf-blender/trunk/lib/
+
+Currently the full checkout of platform libraries is required. This means, i.e.,
+to use OSX libraries this folder is to be checked out:
+
+  https://svn.blender.org/svnroot/bf-blender/trunk/lib/darwin-9.x.universal/
+
+Build system expects precompiled libraries to be stored in the lib/ folder next
+to folder with Cycles sources.
+
+== Compilation Options ==
+-------------------------
+
+- WITH_CPU_SSE                  // Enable SIMD instruction if they're detected on
+                                // the host machine.
+- WITH_CYCLES_STANDALONE_GUI    // Build standalone app with GUI.
+- option(WITH_CYCLES_OSL        // Build with OpenShadingLangiage support.
+- option(WITH_CYCLES_LOGGING    // Build with logging support.
+                                // NOTE: Doesn't work yet in standalone repo.
+- WITH_CYCLES_DEBUG             // Build with extra debug capabilities.
+
+== Compilation ==
+------------------
+
+Once all the requirements are met, either invoke `cmake` with all desired
+parameters from a build folder, or simply type `make` in the root directory of
+Cycles repository.
+
+== Extra Dependencies ==
+------------------------
+
+Depending on how the dependencies were compiles it is possible that manual tweaks
+to the linker are required.
+
+For example if OpenImageIO is compiled as a static library it'll be required to
+pass all the OIIO dependencies to the linker using  CMAKE_EXE_LINKER_FLAGS CMake
+variable.
+
+Dealing with such kind of dependencies is not really possible automatically, so
+we can't reduce entropy of a hassle here.
+
+It is possible to pass CMake configuration arguments to GNU Makefile, i.e.:
+
+  make BUILD_CMAKE_ARGS="-DBOOST_ROOT=/opt/lib/boost"
+
+= Examples =
+------------
+
+The repository contains example xml scenes which could be used to test Cycles
+render engine.
+
+Example usage:
+
+  ./cycles scene_monkey.xml
+
+You can also use optional parameters (see ./cycles --help), like:
+
+  ./cycles --samples 100 --output ./image.png scene_monkey.xml
+
+For the OSL scene you need to enable the OSL shading system:
+
+  ./cycles --shadingsys osl scene_osl_stripes.xml
+
+= Known TODOs =
+---------------
+
+- Windows build is not supported at this moment.
+- Logging option is exposed as an option but wouldn't work now.
+- Installation target is not tested and would need more work.
+- Compiled .oso files are not put to the final location, so manual copy is
+  required for now.
+
+= Problems =
+------------
+
+If you encounter problems, please mail the blender's mailing list bf-cycles:
+
+  http://lists.blender.org/mailman/listinfo/bf-cycles
+
+or ask for help on
+
+    irc://irc.freenode.net/blendercoders

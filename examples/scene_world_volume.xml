@@ -1,0 +1,52 @@
+<!-- Camera -->
+<camera width="800" height="500" />
+
+<transform translate="0 0 -4" scale="1 1 1">
+	<camera type="perspective" />
+</transform>
+
+<!-- Integrator -->
+<integrator max_volume_bounce="0" volume_homogeneous_sampling="1" />
+
+<!-- Spot Light -->
+<shader name="spot_shader">
+	<emission name="emission" color="0.8 0.8 0.8" strength="200" />
+	<connect from="emission emission" to="output surface" />
+</shader>
+
+<state shader="spot_shader">
+	<light type="5" P="2 1 0" dir="-0.3 -1 0" size="0.05" spot_angle="1.0" spot_blend="0.5" />
+</state>
+
+<!-- Point Light -->
+<shader name="point_shader">
+	<emission name="emission" color="0.8 0.8 0.1" strength="50" />
+	<connect from="emission emission" to="output surface" />
+</shader>
+
+<state shader="point_shader">
+	<light type="0" P="-2.0 1 0.0" size="0.01" />
+</state>
+
+<!-- Background Shader -->
+<background heterogeneous_volume="false" >
+	<scatter_volume name="scatter" color="0.8, 0.8, 0.8" density="0.3" />
+	<connect from="scatter volume" to="output volume" />
+</background>
+
+<!-- Floor Shader -->
+<shader name="floor">
+	<checker_texture name="checker" scale="2.0" color1="0.8, 0.8, 0.8" color2="0.2, 0.2, 0.2" />
+	<diffuse_bsdf name="floor_closure" color="0.8, 0.8, 0.8" />
+	<connect from="checker color" to="floor_closure color" />
+	<connect from="floor_closure bsdf" to="output surface" />
+</shader>
+
+<!-- Objects -->
+<transform rotate="90 1 0 0">
+	<transform translate="0 0 1">
+		<state shader="floor">
+			<patch type="bilinear" P="-5 5 0  5 5 0  -5 -5 0  5 -5 0" />
+		</state>
+	</transform>
+</transform>

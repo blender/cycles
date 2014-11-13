@@ -1,0 +1,29 @@
+# Generic files to ignore
+.*
+.*.swp
+
+# Editors
+*~
+*.swp
+*.swo
+*#
+
+# QtCreator
+CMakeLists.txt.user
+
+# ms-windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Local patches
+/*.patch
+/*.diff
+
+# Build folders
+bin-dbg
+bin-opt
+build*/
+
+# OSL compiled examples
+examples/osl/*.oso

@@ -1,0 +1,6 @@
+{
+	"project_id" : "Cycles",
+	"conduit_uri" : "https://developer.blender.org/",
+	"git.default-relative-commit" : "origin/master",
+	"arc.land.update.default" : "rebase"
+}
