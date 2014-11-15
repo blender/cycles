@@ -15,51 +15,19 @@
  */
 
 #include "CCL_api.h"
-
-#include <stdio.h>
-
 #include "util_logging.h"
-
-#ifdef _MSC_VER
-#  define snprintf _snprintf
-#endif
 
 void CCL_init_logging(const char *argv0)
 {
-#ifdef WITH_CYCLES_LOGGING
-	/* Make it so FATAL messages are always print into console. */
-	char severity_fatal[32];
-	snprintf(severity_fatal, sizeof(severity_fatal), "%d",
-	         google::GLOG_FATAL);
-
-	google::InitGoogleLogging(argv0);
-	google::SetCommandLineOption("logtostderr", "1");
-	google::SetCommandLineOption("v", "0");
-	google::SetCommandLineOption("stderrthreshold", severity_fatal);
-	google::SetCommandLineOption("minloglevel", severity_fatal);
-#else
-	(void) argv0;
-#endif
+	util_logging_init(argv);
 }
 
 void CCL_start_debug_logging(void)
 {
-#ifdef WITH_CYCLES_LOGGING
-	google::SetCommandLineOption("logtostderr", "1");
-	google::SetCommandLineOption("v", "2");
-	google::SetCommandLineOption("stderrthreshold", "1");
-	google::SetCommandLineOption("minloglevel", "0");
-#endif
+	util_logging_start();
 }
 
 void CCL_logging_verbosity_set(int verbosity)
 {
-#ifdef WITH_CYCLES_LOGGING
-	char val[10];
-	snprintf(val, sizeof(val), "%d", verbosity);
-
-	google::SetCommandLineOption("v", val);
-#else
-	(void) verbosity;
-#endif
+	util_logging_verbosity_set(verbosity);
 }

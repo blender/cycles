@@ -104,5 +104,12 @@ if(CYCLES_STANDALONE_REPOSITORY)
 		find_package(LLVM REQUIRED)
 	endif()
 
+	####
+	# Logging
+	if(WITH_CYCLES_LOGGING)
+		find_package(Glog REQUIRED)
+		find_package(Gflags REQUIRED)
+	endif()
+
 	unset(_lib_DIR)
 endif()
