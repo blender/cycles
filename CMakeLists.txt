@@ -1,4 +1,20 @@
 ###########################################################################
+# Disable insource build
+
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+	message(FATAL_ERROR
+		"CMake generation for Cycles is not allowed within the source directory!"
+		"\n Remove the CMakeCache.txt file and try again from another folder, e.g.:"
+		"\n "
+		"\n rm CMakeCache.txt"
+		"\n cd .."
+		"\n mkdir cmake-make"
+		"\n cd cmake-make"
+		"\n cmake ../cyclesr"
+	)
+endif()
+
+###########################################################################
 # Policies
 
 cmake_minimum_required(VERSION 2.8)
