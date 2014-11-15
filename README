@@ -15,6 +15,7 @@ Crucial dependencies:
 - GLEW
 - Boost (version at least 1.48).
 - OpenImageIO (plus all the libarries which OIIO depends on).
+- PugiXML unless OpenImageIO is compiled with embedded version of this library.
 
 Optional dependencies:
 - OpenShadingLanguage
