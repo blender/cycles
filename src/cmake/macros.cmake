@@ -51,3 +51,54 @@ function(delayed_do_install
 		endforeach()
 	endif()
 endfunction()
+
+macro(target_link_libraries_optimized TARGET LIBS)
+	foreach(_LIB ${LIBS})
+		target_link_libraries(${TARGET} optimized "${_LIB}")
+	endforeach()
+	unset(_LIB)
+endmacro()
+
+macro(target_link_libraries_debug TARGET LIBS)
+	foreach(_LIB ${LIBS})
+		target_link_libraries(${TARGET} debug "${_LIB}")
+	endforeach()
+	unset(_LIB)
+endmacro()
+
+# foo_bar.spam --> foo_barMySuffix.spam
+macro(file_suffix
+	file_name_new file_name file_suffix
+	)
+
+	get_filename_component(_file_name_PATH ${file_name} PATH)
+	get_filename_component(_file_name_NAME_WE ${file_name} NAME_WE)
+	get_filename_component(_file_name_EXT ${file_name} EXT)
+	set(${file_name_new} "${_file_name_PATH}/${_file_name_NAME_WE}${file_suffix}${_file_name_EXT}")
+
+	unset(_file_name_PATH)
+	unset(_file_name_NAME_WE)
+	unset(_file_name_EXT)
+endmacro()
+
+# useful for adding debug suffix to library lists:
+# /somepath/foo.lib --> /somepath/foo_d.lib
+macro(file_list_suffix
+	fp_list_new fp_list fn_suffix
+	)
+
+	# incase of empty list
+	set(_fp)
+	set(_fp_suffixed)
+
+	set(fp_list_new)
+
+	foreach(_fp ${fp_list})
+		file_suffix(_fp_suffixed "${_fp}" "${fn_suffix}")
+		list(APPEND "${fp_list_new}" "${_fp_suffixed}")
+	endforeach()
+
+	unset(_fp)
+	unset(_fp_suffixed)
+
+endmacro()
