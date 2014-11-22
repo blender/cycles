@@ -9,7 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Per-compiler configuration.
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "-Wall")
+	set(CMAKE_CXX_FLAGS "-Wall -Wno-sign-compare")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 if(APPLE)
