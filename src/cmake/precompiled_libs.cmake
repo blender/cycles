@@ -17,7 +17,7 @@ if(APPLE)
 elseif(WIN32)
 	if(NOT MSVC12 OR NOT CMAKE_CL_64)
 		# TODO(sergey): Would be cool to support GCC/CLang as well.
-		message(FATAL_ERROR "Currently only MSVC 2012 64bit is supported")
+		message(FATAL_ERROR "Currently only Visual Studio 2013 64bit is supported")
 	endif()
 	set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/win64_vc12")
 endif()
@@ -42,6 +42,9 @@ if(APPLE)
 	# Precompiled PNG library depends on ZLib.
 	find_package(ZLIB REQUIRED)
 	list(APPEND PLATFORM_LINKLIBS ${ZLIB_LIBRARIES})
+
+	# Glew
+	_set_default(GLEW_ROOT_DIR "${_lib_DIR}/glew")
 elseif(MSVC)
 	# TODO(sergey): On Windows llvm-config doesn't give proper results for the
 	# library names, use hardcoded libraries for now.
