@@ -6,7 +6,7 @@
 </transform>
 
 <!-- Integrator -->
-<integrator max_volume_bounce="0" volume_homogeneous_sampling="1" />
+<integrator max_volume_bounce="0" />
 
 <!-- Spot Light -->
 <shader name="spot_shader">
@@ -15,7 +15,7 @@
 </shader>
 
 <state shader="spot_shader">
-	<light type="5" P="2 1 0" dir="-0.3 -1 0" size="0.05" spot_angle="1.0" spot_blend="0.5" />
+	<light type="4" P="2 1 0" dir="-0.3 -1 0" size="0.05" spot_angle="1.0" spot_blend="0.5" />
 </state>
 
 <!-- Point Light -->
@@ -29,7 +29,7 @@
 </state>
 
 <!-- Background Shader -->
-<background heterogeneous_volume="false" >
+<background heterogeneous_volume="false" volume_sampling_method="equiangular" >
 	<scatter_volume name="scatter" color="0.8, 0.8, 0.8" density="0.3" />
 	<connect from="scatter volume" to="output volume" />
 </background>
