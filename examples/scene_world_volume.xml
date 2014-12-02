@@ -6,11 +6,11 @@
 </transform>
 
 <!-- Integrator -->
-<integrator max_volume_bounce="0" />
+<integrator max_volume_bounce="0" branched="true" sample_all_lights_direct="true" sample_all_lights_indirect="true"/>
 
 <!-- Spot Light -->
 <shader name="spot_shader">
-	<emission name="emission" color="0.8 0.8 0.8" strength="200" />
+	<emission name="emission" color="0.1 0.1 0.8" strength="300" />
 	<connect from="emission emission" to="output surface" />
 </shader>
 
@@ -20,12 +20,22 @@
 
 <!-- Point Light -->
 <shader name="point_shader">
-	<emission name="emission" color="0.8 0.8 0.1" strength="50" />
+	<emission name="emission" color="0.8 0.1 0.1" strength="100" />
 	<connect from="emission emission" to="output surface" />
 </shader>
 
 <state shader="point_shader">
 	<light type="0" P="-2.0 1 0.0" size="0.01" />
+</state>
+
+<!-- Area Light -->
+<shader name="area_shader">
+	<emission name="emission" color="0.8 0.8 0.8" strength="100" />
+	<connect from="emission emission" to="output surface" />
+</shader>
+
+<state shader="area_shader">
+	<light type="3" P="0.0 0.0 0.0" size="0.5" dir="0.0, 1.0, 0.0" axisu="1.0, 0.0, 0.0" axisv="0.0, 1.0, 0.0" />
 </state>
 
 <!-- Background Shader -->
