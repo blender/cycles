@@ -179,6 +179,11 @@ include_directories(
 	${PUGIXML_INCLUDE}
 )
 
+if(CYCLES_STANDALONE_REPOSITORY)
+	include_directories(../third_party/atomic)
+else()
+	include_directories(../atomic)
+endif()
 
 # Warnings
 if(CMAKE_COMPILER_IS_GNUCXX)
