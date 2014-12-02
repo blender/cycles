@@ -203,26 +203,7 @@ public:
 		/* compute cubin name */
 		int major, minor;
 		cuDeviceComputeCapability(&major, &minor, cuDevId);
-		
 		string cubin;
-
-		/* ToDo: We don't bundle sm_52 kernel yet */
-		if(major == 5 && minor == 2) {
-			VLOG(1) << "Using workaround for sm_52 kernel";
-			if(experimental)
-				cubin = path_get(string_printf("lib/kernel_experimental_sm_%d%d.cubin", major, minor));
-			else
-				cubin = path_get(string_printf("lib/kernel_sm_%d%d.cubin", major, minor));
-
-			if(path_exists(cubin)) {
-				VLOG(1) << "Using self-built sm_52 kernel " << cubin;
-				return cubin;
-			}
-			else {
-				VLOG(1) << "Compiling sm_50 instead of sm_52 as workaround";
-				minor = 0;
-			}
-		}
 
 		/* attempt to use kernel provided with blender */
 		if(experimental)
