@@ -102,3 +102,16 @@ macro(file_list_suffix
 	unset(_fp_suffixed)
 
 endmacro()
+
+macro(target_link_libraries_decoupled target libraries_var)
+	if(NOT MSVC)
+		target_link_libraries(${target} ${${libraries_var}})
+	else()
+		# For MSVC we link to different libraries depending whether
+		# release or debug target is being built.
+		file_list_suffix(_libraries_debug "${${libraries_var}}" "_d")
+		target_link_libraries_debug(${target} "${_libraries_debug}")
+		target_link_libraries_optimized(${target} "${${libraries_var}}")
+		unset(_libraries_debug)
+	endif()
+endmacro()

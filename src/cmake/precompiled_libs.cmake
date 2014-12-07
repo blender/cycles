@@ -49,6 +49,7 @@ elseif(MSVC)
 	# TODO(sergey): On Windows llvm-config doesn't give proper results for the
 	# library names, use hardcoded libraries for now.
 	file(GLOB LLVM_LIBRARIES ${LLVM_ROOT_DIR}/lib/*.lib)
+	file(GLOB LLVM_LIBRARIES_DEBUG ${LLVM_ROOT_DIR}/debug/lib/*.lib)
 
 	# On Windows we use precompiled GLEW and GLUT.
 	_set_default(GLEW_ROOT_DIR "${_lib_DIR}/opengl")
