@@ -28,16 +28,18 @@ CCL_NAMESPACE_BEGIN
 void util_logging_init(const char *argv0)
 {
 #ifdef WITH_CYCLES_LOGGING
+	using CYCLES_GFLAGS_NAMESPACE::SetCommandLineOption;
+
 	/* Make it so FATAL messages are always print into console. */
 	char severity_fatal[32];
 	snprintf(severity_fatal, sizeof(severity_fatal), "%d",
 	         google::GLOG_FATAL);
 
 	google::InitGoogleLogging(argv0);
-	google::SetCommandLineOption("logtostderr", "1");
-	google::SetCommandLineOption("v", "0");
-	google::SetCommandLineOption("stderrthreshold", severity_fatal);
-	google::SetCommandLineOption("minloglevel", severity_fatal);
+	SetCommandLineOption("logtostderr", "1");
+	SetCommandLineOption("v", "0");
+	SetCommandLineOption("stderrthreshold", severity_fatal);
+	SetCommandLineOption("minloglevel", severity_fatal);
 #else
 	(void) argv0;
 #endif
@@ -46,19 +48,21 @@ void util_logging_init(const char *argv0)
 void util_logging_start(void)
 {
 #ifdef WITH_CYCLES_LOGGING
-	google::SetCommandLineOption("logtostderr", "1");
-	google::SetCommandLineOption("v", "2");
-	google::SetCommandLineOption("stderrthreshold", "1");
-	google::SetCommandLineOption("minloglevel", "0");
+	using CYCLES_GFLAGS_NAMESPACE::SetCommandLineOption;
+	SetCommandLineOption("logtostderr", "1");
+	SetCommandLineOption("v", "2");
+	SetCommandLineOption("stderrthreshold", "1");
+	SetCommandLineOption("minloglevel", "0");
 #endif
 }
 
 void util_logging_verbosity_set(int verbosity)
 {
 #ifdef WITH_CYCLES_LOGGING
+	using CYCLES_GFLAGS_NAMESPACE::SetCommandLineOption;
 	char val[10];
 	snprintf(val, sizeof(val), "%d", verbosity);
-	google::SetCommandLineOption("v", val);
+	SetCommandLineOption("v", val);
 #else
 	(void) verbosity;
 #endif
