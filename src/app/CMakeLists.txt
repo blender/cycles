@@ -45,6 +45,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
 	endif()
 else()
 	list(APPEND LIBRARIES bf_intern_glew_mx)
+	list(APPEND LIBRARIES extern_glog)
 endif()
 
 if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
@@ -88,7 +89,7 @@ macro(cycles_target_link_libraries target)
 	target_link_libraries_decoupled(${target} OPENEXR_LIBRARIES)
 	target_link_libraries(
 		${target}
-		${PUGIXML_LIBRARY}
+		${PUGIXML_LIBRARIES}
 		${BOOST_LIBRARIES}
 		${CMAKE_DL_LIBS}
 		${PLATFORM_LINKLIBS}
