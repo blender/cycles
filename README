@@ -14,7 +14,7 @@ Crucial dependencies:
 - OpenGL
 - GLEW
 - Boost (version at least 1.48).
-- OpenImageIO (plus all the libarries which OIIO depends on).
+- OpenImageIO (plus all the libraries which OIIO depends on).
 - PugiXML unless OpenImageIO is compiled with embedded version of this library.
 
 Optional dependencies:
@@ -23,8 +23,7 @@ Optional dependencies:
 == Precompiled libraries ==
 ---------------------------
 
-It is possible to use precompiled libraries for OSX and Windows (NOTE: Windows
-build system is not yet ready and needs much more work). This libraries could
+It is possible to use precompiled libraries for OSX and Windows The libraries could
 be checked out from Blender's library repository:
 
   https://svn.blender.org/svnroot/bf-blender/trunk/lib/
@@ -43,9 +42,8 @@ to folder with Cycles sources.
 - WITH_CPU_SSE                  // Enable SIMD instruction if they're detected on
                                 // the host machine.
 - WITH_CYCLES_STANDALONE_GUI    // Build standalone app with GUI.
-- option(WITH_CYCLES_OSL        // Build with OpenShadingLangiage support.
-- option(WITH_CYCLES_LOGGING    // Build with logging support.
-                                // NOTE: Doesn't work yet in standalone repo.
+- WITH_CYCLES_OSL               // Build with OpenShadingLanguage support.
+- WITH_CYCLES_LOGGING           // Build with logging support.
 - WITH_CYCLES_DEBUG             // Build with extra debug capabilities.
 
 == Compilation ==
@@ -93,8 +91,6 @@ For the OSL scene you need to enable the OSL shading system:
 = Known TODOs =
 ---------------
 
-- Windows build is not supported at this moment.
-- Logging option is exposed as an option but wouldn't work now.
 - Installation target is not tested and would need more work.
 - Compiled .oso files are not put to the final location, so manual copy is
   required for now.
@@ -108,4 +104,4 @@ If you encounter problems, please mail the blender's mailing list bf-cycles:
 
 or ask for help on
 
-    irc://irc.freenode.net/blendercoders
+  irc://irc.freenode.net/blendercoders
