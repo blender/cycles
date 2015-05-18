@@ -1,3 +1,4 @@
+<cycles>
 <!-- Camera -->
 <camera width="800" height="500" />
 
@@ -31,3 +32,4 @@
 <state interpolation="smooth" shader="sphere">
 	<include src="./objects/sphere.xml" />
 </state>
+</cycles>

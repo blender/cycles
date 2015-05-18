@@ -1,3 +1,4 @@
+<cycles>
 <!-- Camera -->
 <camera width="800" height="500" />
 
@@ -23,3 +24,4 @@
 <state shader="floor">
 	<patch type="bilinear" P="-3 3 0  3 3 0  -3 -3 0  3 -3 0" />
 </state>
+</cycles>
