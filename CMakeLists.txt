@@ -10,7 +10,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 		"\n cd .."
 		"\n mkdir cmake-make"
 		"\n cd cmake-make"
-		"\n cmake ../cyclesr"
+		"\n cmake ../cycles"
 	)
 endif()
 
