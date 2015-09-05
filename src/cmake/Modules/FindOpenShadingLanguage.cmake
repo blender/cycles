@@ -5,9 +5,11 @@
 #                    OSL_INCLUDE_DIR is found.
 #  OSL_LIBRARIES, libraries to link against to use OSL.
 #  OSL_ROOT_DIR, the base directory to search for OSL.
-#                        This can also be an environment variable.
+#                This can also be an environment variable.
 #  OSL_COMPILER, full path to OSL script compiler.
 #  OSL_FOUND, if false, do not try to use OSL.
+#  OSL_LIBRARY_VERSION_MAJOR, OSL_LIBRARY_VERSION_MINOR,  the major
+#                and minor versions of OSL library if found.
 #
 #=============================================================================
 # Copyright 2014 Blender Foundation.
@@ -76,6 +78,15 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(OSL DEFAULT_MSG _osl_LIBRARIES OSL_INCLUDE_DIR
 IF(OSL_FOUND)
   SET(OSL_LIBRARIES ${_osl_LIBRARIES})
   SET(OSL_INCLUDE_DIRS ${OSL_INCLUDE_DIR})
+
+  FILE(STRINGS "${OSL_INCLUDE_DIR}/OSL/oslversion.h" OSL_LIBRARY_VERSION_MAJOR
+       REGEX "^[ \t]*#define[ \t]+OSL_LIBRARY_VERSION_MAJOR[ \t]+[0-9]+.*$")
+  FILE(STRINGS "${OSL_INCLUDE_DIR}/OSL/oslversion.h" OSL_LIBRARY_VERSION_MINOR
+       REGEX "^[ \t]*#define[ \t]+OSL_LIBRARY_VERSION_MINOR[ \t]+[0-9]+.*$")
+  STRING(REGEX REPLACE ".*#define[ \t]+OSL_LIBRARY_VERSION_MAJOR[ \t]+([.0-9]+).*"
+         "\\1" OSL_LIBRARY_VERSION_MAJOR ${OSL_LIBRARY_VERSION_MAJOR})
+  STRING(REGEX REPLACE ".*#define[ \t]+OSL_LIBRARY_VERSION_MINOR[ \t]+([.0-9]+).*"
+         "\\1" OSL_LIBRARY_VERSION_MINOR ${OSL_LIBRARY_VERSION_MINOR})
 ENDIF(OSL_FOUND)
 
 MARK_AS_ADVANCED(
