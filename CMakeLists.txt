@@ -82,6 +82,9 @@ option(WITH_CYCLES_CUDA_BINARIES   "Build Cycles CUDA binaries" OFF)
 set(CYCLES_CUDA_BINARIES_ARCH sm_20 sm_21 sm_30 sm_35 sm_50 sm_52 CACHE STRING "CUDA architectures to build binaries for")
 mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
 
+option(WITH_CUDA_DYNLOAD           "Dynamically load CUDA libraries at runtime" ON)
+mark_as_advanced(WITH_CUDA_DYNLOAD)
+
 ###########################################################################
 # Configuration.
 
