@@ -77,6 +77,7 @@ set(SRC_HEADERS
 	util_transform.h
 	util_types.h
 	util_vector.h
+	util_version.h
 	util_view.h
 	util_windows.h
 	util_xml.h
