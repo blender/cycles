@@ -7,7 +7,7 @@
 </transform>
 
 <!-- Integrator -->
-<integrator max_volume_bounce="0" branched="true" sample_all_lights_direct="true" sample_all_lights_indirect="true"/>
+<integrator max_volume_bounce="0" method="branched_path" sample_all_lights_direct="true" sample_all_lights_indirect="true"/>
 
 <!-- Spot Light -->
 <shader name="spot_shader">
@@ -16,7 +16,7 @@
 </shader>
 
 <state shader="spot_shader">
-	<light type="4" P="2 1 0" dir="-0.3 -1 0" size="0.05" spot_angle="1.0" spot_blend="0.5" />
+	<light type="spot" co="2 1 0" dir="-0.3 -1 0" size="0.05" spot_angle="1.0" spot_smooth="0.5" />
 </state>
 
 <!-- Point Light -->
@@ -26,7 +26,7 @@
 </shader>
 
 <state shader="point_shader">
-	<light type="0" P="-2.0 1 0.0" size="0.01" />
+	<light type="point" co="-2.0 1 0.0" size="0.01" />
 </state>
 
 <!-- Area Light -->
@@ -36,7 +36,7 @@
 </shader>
 
 <state shader="area_shader">
-	<light type="3" P="0.0 0.0 0.0" size="0.5" dir="0.0, 1.0, 0.0" axisu="1.0, 0.0, 0.0" axisv="0.0, 1.0, 0.0" />
+	<light type="area" co="0.0 0.0 0.0" size="0.5" dir="0.0, 1.0, 0.0" axisu="1.0, 0.0, 0.0" axisv="0.0, 1.0, 0.0" />
 </state>
 
 <!-- Background Shader -->
