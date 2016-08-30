@@ -41,7 +41,7 @@
 <transform rotate="90 1 0 0">
 	<transform translate="0 0 1">
 		<state shader="floor">
-			<patch type="bilinear" P="-3 3 0  3 3 0  -3 -3 0  3 -3 0" />
+			<mesh P="-3 3 0  3 3 0  3 -3 0  -3 -3 0" nverts="4" verts="0 1 2 3" />
 		</state>
 	</transform>
 </transform>

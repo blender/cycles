@@ -22,6 +22,6 @@
 
 <!-- Objects -->
 <state shader="floor">
-	<patch type="bilinear" P="-3 3 0  3 3 0  -3 -3 0  3 -3 0" />
+	<mesh P="-3 3 0  3 3 0  3 -3 0  -3 -3 0" nverts="4" verts="0 1 2 3" />
 </state>
 </cycles>
