@@ -18,7 +18,7 @@
 <!-- Cube Shader -->
 <shader name="cube">
 	<checker_texture name="tex" scale="2.0" color1="0.8, 0.8, 0.8" color2="0.2, 0.2, 0.2" />
-	<math name="math" type="Multiply" value2="20.0" />
+	<math name="math" type="multiply" value2="20.0" />
 
 	<scatter_volume name="volume1" color="0.8, 0.8, 0.8" />
 	<absorption_volume name="volume2" color="0.8, 0.8, 0.8" />
