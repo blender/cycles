@@ -46,6 +46,14 @@ if(APPLE)
 	# Glew
 	_set_default(GLEW_ROOT_DIR "${_lib_DIR}/glew")
 elseif(MSVC)
+	set(ZLIB_INCLUDE_DIRS ${_lib_DIR}/zlib/include)
+	set(ZLIB_LIBRARIES ${_lib_DIR}/zlib/lib/libz_st.lib)
+	set(ZLIB_INCLUDE_DIR ${_lib_DIR}/zlib/include)
+	set(ZLIB_LIBRARY ${_lib_DIR}/zlib/lib/libz_st.lib)
+	set(ZLIB_DIR ${_lib_DIR}/zlib)
+	find_package(ZLIB REQUIRED)
+	list(APPEND PLATFORM_LINKLIBS ${ZLIB_LIBRARIES})
+
 	# TODO(sergey): On Windows llvm-config doesn't give proper results for the
 	# library names, use hardcoded libraries for now.
 	file(GLOB LLVM_LIBRARIES ${LLVM_ROOT_DIR}/lib/*.lib)
