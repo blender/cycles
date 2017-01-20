@@ -524,7 +524,7 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
             name="Bake Type",
             default='COMBINED',
             description="Type of pass to bake",
-            items = (
+            items=(
                 ('COMBINED', "Combined", ""),
                 ('AO', "Ambient Occlusion", ""),
                 ('SHADOW', "Shadow", ""),
