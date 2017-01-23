@@ -25,6 +25,11 @@ endif()
 ###########################################################################
 # GLEW
 
+# Workaround for unconventional variable name use in Blender.
+if(NOT CYCLES_STANDALONE_REPOSITORY)
+	set(GLEW_INCLUDE_DIR "${GLEW_INCLUDE_PATH}")
+endif()
+
 if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
 	set(CYCLES_APP_GLEW_LIBRARY ${BLENDER_GLEW_LIBRARIES})
 endif()
@@ -129,4 +134,14 @@ if(CYCLES_STANDALONE_REPOSITORY)
 	endif()
 
 	unset(_lib_DIR)
+else()
+	if(WIN32)
+		set(GLOG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/glog/src/windows)
+		set(GFLAGS_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/gflags/src)
+	else()
+		set(GLOG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/glog/src)
+		set(GFLAGS_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/gflags/src)
+	endif()
+	set(GFLAGS_NAMESPACE "gflags")
+	set(LLVM_LIBRARIES ${LLVM_LIBRARY})
 endif()
