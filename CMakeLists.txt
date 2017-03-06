@@ -37,13 +37,18 @@ if(NOT (${CMAKE_VERSION} VERSION_LESS 3.0))
 endif()
 
 ###########################################################################
+# Initialize project.
+
+project(Cycles)
+
+###########################################################################
 # Macros and utilities.
 
 list(APPEND CMAKE_MODULE_PATH
-	"${CMAKE_SOURCE_DIR}/src/cmake"
-	"${CMAKE_SOURCE_DIR}/src/cmake/Modules"
+	"${PROJECT_SOURCE_DIR}/src/cmake"
+	"${PROJECT_SOURCE_DIR}/src/cmake/Modules"
 )
-include("${CMAKE_SOURCE_DIR}/src/cmake/macros.cmake")
+include("${PROJECT_SOURCE_DIR}/src/cmake/macros.cmake")
 
 ###########################################################################
 # Global settings.
@@ -64,11 +69,6 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG           DEBUG
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE         NDEBUG)
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_MINSIZEREL      NDEBUG)
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO  NDEBUG)
-
-###########################################################################
-# Initialize project.
-
-project(Cycles)
 
 ###########################################################################
 # Options.
