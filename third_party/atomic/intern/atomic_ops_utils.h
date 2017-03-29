@@ -53,7 +53,9 @@
 #define __ATOMIC_OPS_UTILS_H__
 
 /* needed for int types */
+#include <stdint.h>
 #include <stddef.h>
+
 #include <stdlib.h>
 #include <limits.h>
 
