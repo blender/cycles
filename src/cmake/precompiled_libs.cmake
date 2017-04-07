@@ -56,8 +56,15 @@ elseif(MSVC)
 
 	# TODO(sergey): On Windows llvm-config doesn't give proper results for the
 	# library names, use hardcoded libraries for now.
-	file(GLOB LLVM_LIBRARIES ${LLVM_ROOT_DIR}/lib/*.lib)
+	file(GLOB LLVM_LIBRARIES_RELEASE ${LLVM_ROOT_DIR}/lib/*.lib)
 	file(GLOB LLVM_LIBRARIES_DEBUG ${LLVM_ROOT_DIR}/debug/lib/*.lib)
+	set(LLVM_LIBRARIES)
+	foreach(_llvm_library ${LLVM_LIBRARIES_RELEASE})
+		set(LLVM_LIBRARIES ${LLVM_LIBRARIES} optimized ${_llvm_library})
+	endforeach()
+	foreach(_llvm_library ${LLVM_LIBRARIES_DEBUG})
+		set(LLVM_LIBRARIES ${LLVM_LIBRARIES} debug ${_llvm_library})
+	endforeach()
 
 	# On Windows we use precompiled GLEW and GLUT.
 	_set_default(GLEW_ROOT_DIR "${_lib_DIR}/opengl")
@@ -80,6 +87,48 @@ elseif(MSVC)
 		-DGLEW_STATIC
 		-DFREEGLUT_STATIC
 		-DFREEGLUT_LIB_PRAGMAS=0
+	)
+
+	# Special exceptions for libraries which needs explicit debug version
+	set(OPENIMAGEIO_LIBRARY
+		optimized ${OPENIMAGEIO_ROOT_DIR}/lib/OpenImageIO.lib
+		optimized ${OPENIMAGEIO_ROOT_DIR}/lib/OpenImageIO_Util.lib
+		debug ${OPENIMAGEIO_ROOT_DIR}/lib/OpenImageIO_d.lib
+		debug ${OPENIMAGEIO_ROOT_DIR}/lib/OpenImageIO_Util_d.lib
+	)
+
+	set(OSL_OSLCOMP_LIBRARY
+		optimized ${OSL_ROOT_DIR}/lib/oslcomp.lib
+		debug ${OSL_ROOT_DIR}/lib/oslcomp_d.lib
+	)
+	set(OSL_OSLEXEC_LIBRARY
+		optimized ${OSL_ROOT_DIR}/lib/oslexec.lib
+		debug ${OSL_ROOT_DIR}/lib/oslexec_d.lib
+	)
+	set(OSL_OSLQUERY_LIBRARY
+		optimized ${OSL_ROOT_DIR}/lib/oslquery.lib
+		debug ${OSL_ROOT_DIR}/lib/oslquery_d.lib
+	)
+
+	set(OPENEXR_IEX_LIBRARY
+		optimized ${OPENEXR_ROOT_DIR}/lib/Iex-2_2.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Iex-2_2_d.lib
+	)
+	set(OPENEXR_HALF_LIBRARY
+		optimized ${OPENEXR_ROOT_DIR}/lib/Half.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Half_d.lib
+	)
+	set(OPENEXR_ILMIMF_LIBRARY
+		optimized ${OPENEXR_ROOT_DIR}/lib/IlmImf-2_2.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/IlmImf-2_2_d.lib
+	)
+	set(OPENEXR_IMATH_LIBRARY
+		optimized ${OPENEXR_ROOT_DIR}/lib/Imath-2_2.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Imath-2_2_d.lib
+	)
+	set(OPENEXR_ILMTHREAD_LIBRARY
+		optimized ${OPENEXR_ROOT_DIR}/lib/IlmThread-2_2.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/IlmThread-2_2_d.lib
 	)
 endif()
 
