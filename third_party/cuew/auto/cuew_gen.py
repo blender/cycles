@@ -71,7 +71,10 @@ class FuncDefVisitor(c_ast.NodeVisitor):
 
     def _get_ident_type(self, node):
         if isinstance(node, c_ast.PtrDecl):
-            return self._get_ident_type(node.type.type) + '*'
+            result = self._get_ident_type(node.type)
+            if not isinstance(node.type, c_ast.FuncDecl):
+                result += "*"
+            return result
         if isinstance(node, c_ast.ArrayDecl):
             return self._get_ident_type(node.type)
         elif isinstance(node, c_ast.Struct):
@@ -87,7 +90,11 @@ class FuncDefVisitor(c_ast.NodeVisitor):
             self.indent += 1
             union = self._stringify_struct(node)
             self.indent -= 1
-            return "union {\n" + union + ("  " * self.indent) + "}"
+            result = "union "
+            if node.name:
+                result += node.name + " "
+            result += "{\n" + union + ("  " * self.indent) + "}"
+            return result
         elif isinstance(node, c_ast.Enum):
             if node.name is not None:
                 return 'enum ' + node.name
@@ -95,6 +102,11 @@ class FuncDefVisitor(c_ast.NodeVisitor):
                 return 'enum '
         elif isinstance(node, c_ast.TypeDecl):
             return self._get_ident_type(node.type)
+        elif isinstance(node, c_ast.FuncDecl):
+            return "{} (CUDA_CB *{})({})" .format(
+                    self._get_ident_type(node.type),
+                    node.type.declname,
+                    self._stringify_params(node.args.params))
         else:
             return ' '.join(node.names)
 
@@ -102,8 +114,19 @@ class FuncDefVisitor(c_ast.NodeVisitor):
         param_type = param.type
         result = self._get_quals_string(param)
         result += self._get_ident_type(param_type)
+
+        if isinstance(param_type, c_ast.TypeDecl):
+            param_type_type = param_type.type
+            if isinstance(param_type_type, c_ast.Struct):
+                if param_type_type.name:
+                    self.indent += 1
+                    result += " {\n" + self._stringify_struct(param_type_type) +\
+                               ("  " * (self.indent - 1) + "}")
+                    self.indent -= 1
+
         if param.name:
             result += ' ' + param.name
+
         if isinstance(param_type, c_ast.ArrayDecl):
             # TODO(sergey): Workaround to deal with the
             # preprocessed file where array size got
@@ -136,8 +159,14 @@ class FuncDefVisitor(c_ast.NodeVisitor):
                 enumerators = child[1].enumerators
                 for enumerator in enumerators:
                     result += ("  " * self.indent) + enumerator.name
-                    if enumerator.value:
-                        result += " = " + enumerator.value.value
+                    value = enumerator.value
+                    value_type = value.__class__.__name__
+                    if value_type == "Constant":
+                        result += " = " + value.value
+                    elif value_type == "BinaryOp":
+                        result += " = ({} {} {})".format(value.left.value,
+                                                         value.op,
+                                                         value.right.value)
                     result += ",\n"
                     if enumerator.name.startswith("CUDA_ERROR_"):
                         ERRORS.append(enumerator.name)
@@ -193,6 +222,8 @@ class FuncDefVisitor(c_ast.NodeVisitor):
             self.indent -= 1
             typedef = quals + type + " {\n" + enum + "} " + node.name
             complex = True
+        elif isinstance(node.type.type, c_ast.FuncDecl):
+            typedef = type
         else:
             typedef = quals + type + " " + node.name
         if complex or self.prev_complex:
@@ -207,10 +238,14 @@ class FuncDefVisitor(c_ast.NodeVisitor):
 
 def get_latest_cpp():
     path_prefix = "/usr/bin"
-    for cpp_version in ["9", "8", "7", "6", "5", "4"]:
-        test_cpp = os.path.join(path_prefix, "cpp-4." + cpp_version)
-        if os.path.exists(test_cpp):
-            return test_cpp
+    for major in ("9", "8", "7", "6", "5", "4"):
+        for minor in (".9", ".8", ".7", ".6", ".5", ".4", ".3", ".2", ".1", ""):
+            test_cpp = os.path.join(path_prefix, "cpp-{}".format(major, minor))
+            if os.path.exists(test_cpp):
+                return test_cpp
+    default_cpp = os.path.join(path_prefix, "cpp")
+    if os.path.exists(default_cpp):
+        return default_cpp
     return None
 
 
@@ -356,9 +391,6 @@ typedef unsigned int CUdeviceptr;
 #endif
 """)
 
-    for typedef in TYPEDEFS:
-        print('%s' % (typedef))
-
     # TDO(sergey): This is only specific to CUDA wrapper.
     print("""
 #ifdef _WIN32
@@ -369,6 +401,9 @@ typedef unsigned int CUdeviceptr;
 #  define CUDA_CB
 #endif
 """)
+
+    for typedef in TYPEDEFS:
+        print('%s' % (typedef))
 
     print("/* Function types. */")
     for func_typedef in FUNC_TYPEDEFS:
