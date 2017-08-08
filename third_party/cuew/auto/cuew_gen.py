@@ -62,7 +62,38 @@ ERRORS = []
 class FuncDefVisitor(c_ast.NodeVisitor):
     indent = 0
     prev_complex = False
-    dummy_typedefs = ['size_t', 'CUdeviceptr']
+    dummy_typedefs = ['size_t',
+                      'CUdeviceptr',
+                      'int8_t',
+                      'int16_t',
+                      'int32_t',
+                      'int64_t',
+                      'uint8_t',
+                      'uint16_t',
+                      'uint32_t',
+                      'uint64_t',
+                      'int_least8_t',
+                      'int_least16_t',
+                      'int_least32_t',
+                      'int_least64_t',
+                      'uint_least8_t',
+                      'uint_least16_t',
+                      'uint_least32_t',
+                      'uint_least64_t',
+                      'int_fast8_t',
+                      'int_fast16_t',
+                      'int_fast32_t',
+                      'int_fast64_t',
+                      'uint_fast8_t',
+                      'uint_fast16_t',
+                      'uint_fast32_t',
+                      'uint_fast64_t',
+                      'intptr_t',
+                      'uintptr_t',
+                      'intmax_t',
+                      'uintmax_t',
+                      'cuuint32_t',
+                      'cuuint64_t']
 
     def _get_quals_string(self, node):
         if node.quals:
@@ -381,6 +412,16 @@ def print_header():
     print("")
 
     print("/* Types. */")
+
+    print("""#ifdef _MSC_VER
+typedef unsigned __int32 cuuint32_t;
+typedef unsigned __int64 cuuint64_t;
+#else
+#include <stdint.h>
+typedef uint32_t cuuint32_t;
+typedef uint64_t cuuint64_t;
+#endif
+""")
 
     # We handle this specially because of the file is
     # getting preprocessed.
