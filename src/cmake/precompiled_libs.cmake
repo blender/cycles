@@ -47,6 +47,9 @@ _set_default(OPENEXR_ROOT_DIR "${_lib_DIR}/openexr")
 # Dependencies for OpenImageIO.
 set(PNG_LIBRARIES "${_lib_DIR}/png/lib/libpng${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(JPEG_LIBRARIES "${_lib_DIR}/jpeg/lib/libjpeg${CMAKE_STATIC_LIBRARY_SUFFIX}")
+if (MSVC)
+	set(JPEG_LIBRARIES ${JPEG_LIBRARIES};${_lib_DIR}/openjpeg/lib/openjpeg.lib)
+endif()
 # TODO(sergey): Move naming to a consistent state.
 set(TIFF_LIBRARY "${_lib_DIR}/tiff/lib/libtiff${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
