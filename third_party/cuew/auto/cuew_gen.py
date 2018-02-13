@@ -30,25 +30,6 @@ from pycparser import c_parser, c_ast, parse_file
 from subprocess import Popen, PIPE
 
 INCLUDE_DIR = "/usr/include"
-LIB = "CUEW"
-REAL_LIB = "CUDA"
-VERSION_MAJOR = "1"
-VERSION_MINOR = "2"
-COPYRIGHT = """/*
- * Copyright 2011-2014 Blender Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License
- */"""
 FILES = ["cuda.h", "cudaGL.h", 'nvrtc.h']
 
 TYPEDEFS = []
@@ -62,38 +43,8 @@ ERRORS = []
 class FuncDefVisitor(c_ast.NodeVisitor):
     indent = 0
     prev_complex = False
-    dummy_typedefs = ['size_t',
-                      'CUdeviceptr',
-                      'int8_t',
-                      'int16_t',
-                      'int32_t',
-                      'int64_t',
-                      'uint8_t',
-                      'uint16_t',
-                      'uint32_t',
-                      'uint64_t',
-                      'int_least8_t',
-                      'int_least16_t',
-                      'int_least32_t',
-                      'int_least64_t',
-                      'uint_least8_t',
-                      'uint_least16_t',
-                      'uint_least32_t',
-                      'uint_least64_t',
-                      'int_fast8_t',
-                      'int_fast16_t',
-                      'int_fast32_t',
-                      'int_fast64_t',
-                      'uint_fast8_t',
-                      'uint_fast16_t',
-                      'uint_fast32_t',
-                      'uint_fast64_t',
-                      'intptr_t',
-                      'uintptr_t',
-                      'intmax_t',
-                      'uintmax_t',
-                      'cuuint32_t',
-                      'cuuint64_t']
+    dummy_typedefs = ['size_t', 'CUdeviceptr', 'uint32_t', 'uint64_t',
+                      'cuuint32_t', 'cuuint64_t'];
 
     def _get_quals_string(self, node):
         if node.quals:
@@ -363,339 +314,80 @@ def parse_files():
         SYMBOLS.append('')
 
 
-def print_copyright():
-    print(COPYRIGHT)
-    print("")
-
-
-def open_header_guard():
-    print("#ifndef __%s_H__" % (LIB))
-    print("#define __%s_H__" % (LIB))
-    print("")
-    print("#ifdef __cplusplus")
-    print("extern \"C\" {")
-    print("#endif")
-    print("")
-
-
-def close_header_guard():
-    print("")
-    print("#ifdef __cplusplus")
-    print("}")
-    print("#endif")
-    print("")
-    print("#endif  /* __%s_H__ */" % (LIB))
-
-
 def print_header():
-    print_copyright()
-    open_header_guard()
+    source = open("cuew.template.h", "r").read()
 
-    # Fot size_t.
-    print("#include <stdlib.h>")
-    print("")
-
-    print("/* Defines. */")
-    print("#define %s_VERSION_MAJOR %s" % (LIB, VERSION_MAJOR))
-    print("#define %s_VERSION_MINOR %s" % (LIB, VERSION_MINOR))
-    print("")
+    defines = ''
     for define in DEFINES:
-        print('#define %s' % (' '.join(define)))
-    print("")
+        defines += '#define %s\n' % (' '.join(define))
 
-    print("""/* Functions which changed 3.1 -> 3.2 for 64 bit stuff,
- * the cuda library has both the old ones for compatibility and new
- * ones with _v2 postfix,
- */""")
+    defines_v2 = ''
     for define in DEFINES_V2:
-        print('#define %s' % (' '.join(define)))
-    print("")
+        defines_v2 += '#define %s\n' % (' '.join(define))
 
-    print("/* Types. */")
-
-    print("""#ifdef _MSC_VER
-typedef unsigned __int32 cuuint32_t;
-typedef unsigned __int64 cuuint64_t;
-#else
-#include <stdint.h>
-typedef uint32_t cuuint32_t;
-typedef uint64_t cuuint64_t;
-#endif
-""")
-
-    # We handle this specially because of the file is
-    # getting preprocessed.
-    print("""#if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64) || defined (__aarch64__)
-typedef unsigned long long CUdeviceptr;
-#else
-typedef unsigned int CUdeviceptr;
-#endif
-""")
-
-    # TDO(sergey): This is only specific to CUDA wrapper.
-    print("""
-#ifdef _WIN32
-#  define CUDAAPI __stdcall
-#  define CUDA_CB __stdcall
-#else
-#  define CUDAAPI
-#  define CUDA_CB
-#endif
-""")
-
+    typedefs = ''
     for typedef in TYPEDEFS:
-        print('%s' % (typedef))
+        typedefs += '%s\n' % (typedef)
 
-    print("/* Function types. */")
+    func_typedefs = ''
     for func_typedef in FUNC_TYPEDEFS:
-        print('%s' % (func_typedef))
-    print("")
+        func_typedefs += '%s\n' % (func_typedef)
 
-    print("/* Function declarations. */")
+    func_declarations = ''
     for symbol in SYMBOLS:
         if symbol:
-            print('extern t%s *%s;' % (symbol, symbol))
+            func_declarations += 'extern t%s *%s;\n' % (symbol, symbol)
         else:
-            print("")
+            func_declarations += '\n'
 
-    print("")
-    print("enum {")
-    print("  CUEW_SUCCESS = 0,")
-    print("  CUEW_ERROR_OPEN_FAILED = -1,")
-    print("  CUEW_ERROR_ATEXIT_FAILED = -2,")
-    print("};")
-    print("")
-    print("int %sInit(void);" % (LIB.lower()))
-    # TODO(sergey): Get rid of hardcoded CUresult.
-    print("const char *%sErrorString(CUresult result);" % (LIB.lower()))
-    print("const char *cuewCompilerPath(void);")
-    print("int cuewCompilerVersion(void);")
+    source = source.replace('%DEFINES%', defines.rstrip())
+    source = source.replace('%DEFINES_V2%', defines_v2.rstrip())
+    source = source.replace('%TYPEDEFS%', typedefs.rstrip())
+    source = source.replace('%FUNC_TYPEDEFS%', func_typedefs.rstrip())
+    source = source.replace('%FUNC_DECLARATIONS%', func_declarations.rstrip())
 
-    close_header_guard()
-
-
-def print_dl_wrapper():
-    print("""#ifdef _WIN32
-#  define WIN32_LEAN_AND_MEAN
-#  define VC_EXTRALEAN
-#  include <windows.h>
-
-/* Utility macros. */
-
-typedef HMODULE DynamicLibrary;
-
-#  define dynamic_library_open(path)         LoadLibraryA(path)
-#  define dynamic_library_close(lib)         FreeLibrary(lib)
-#  define dynamic_library_find(lib, symbol)  GetProcAddress(lib, symbol)
-#else
-#  include <dlfcn.h>
-
-typedef void* DynamicLibrary;
-
-#  define dynamic_library_open(path)         dlopen(path, RTLD_NOW)
-#  define dynamic_library_close(lib)         dlclose(lib)
-#  define dynamic_library_find(lib, symbol)  dlsym(lib, symbol)
-#endif
-""")
-
-
-def print_dl_helper_macro():
-    print("""#define _LIBRARY_FIND_CHECKED(lib, name) \\
-        name = (t##name *)dynamic_library_find(lib, #name); \\
-        assert(name);
-
-#define _LIBRARY_FIND(lib, name) \\
-        name = (t##name *)dynamic_library_find(lib, #name);
-
-#define %s_LIBRARY_FIND_CHECKED(name) \\
-        _LIBRARY_FIND_CHECKED(cuda_lib, name)
-#define %s_LIBRARY_FIND(name) _LIBRARY_FIND(cuda_lib, name)
-
-#define NVRTC_LIBRARY_FIND_CHECKED(name) \\
-        _LIBRARY_FIND_CHECKED(nvrtc_lib, name)
-#define NVRTC_LIBRARY_FIND(name) _LIBRARY_FIND(nvrtc_lib, name)
-
-static DynamicLibrary cuda_lib;
-static DynamicLibrary nvrtc_lib;""" % (REAL_LIB, REAL_LIB))
-    print("")
-
-
-def print_dl_helpers():
-    print("""static DynamicLibrary dynamic_library_open_find(const char **paths) {
-  int i = 0;
-  while (paths[i] != NULL) {
-      DynamicLibrary lib = dynamic_library_open(paths[i]);
-      if (lib != NULL) {
-        return lib;
-      }
-      ++i;
-  }
-  return NULL;
-}
-
-static void %sExit(void) {
-  if(cuda_lib != NULL) {
-    /*  Ignore errors. */
-    dynamic_library_close(cuda_lib);
-    cuda_lib = NULL;
-  }
-}""" % (LIB.lower()))
-    print("")
-
-
-def print_lib_path():
-    # TODO(sergey): get rid of hardcoded libraries.
-    print("""#ifdef _WIN32
-  /* Expected in c:/windows/system or similar, no path needed. */
-  const char *cuda_paths[] = {"nvcuda.dll", NULL};
-  const char *nvrtc_paths[] = {"nvrtc.dll", NULL};
-#elif defined(__APPLE__)
-  /* Default installation path. */
-  const char *cuda_paths[] = {"/usr/local/cuda/lib/libcuda.dylib", NULL};
-  const char *nvrtc_paths[] = {"/usr/local/cuda/lib/libnvrtc.dylib", NULL};
-#else
-  const char *cuda_paths[] = {"libcuda.so", NULL};
-  const char *nvrtc_paths[] = {"libnvrtc.so",
-#  if defined(__x86_64__) || defined(_M_X64)
-                               "/usr/local/cuda/lib64/libnvrtc.so",
-#else
-                               "/usr/local/cuda/lib/libnvrtc.so",
-#endif
-                               NULL};
-#endif""")
-
-
-def print_init_guard():
-    print("""  static int initialized = 0;
-  static int result = 0;
-  int error, driver_version;
-
-  if (initialized) {
-    return result;
-  }
-
-  initialized = 1;
-
-  error = atexit(cuewExit);
-  if (error) {
-    result = CUEW_ERROR_ATEXIT_FAILED;
-    return result;
-  }
-
-  /* Load library. */
-  cuda_lib = dynamic_library_open_find(cuda_paths);
-  nvrtc_lib = dynamic_library_open_find(nvrtc_paths);
-
-  /* CUDA library is mandatory to have, while nvrtc might be missing. */
-  if (cuda_lib == NULL) {
-    result = CUEW_ERROR_OPEN_FAILED;
-    return result;
-  }""")
-    print("")
-
-
-def print_driver_version_guard():
-    # TODO(sergey): Currently it's hardcoded for CUDA only.
-    print("""  /* Detect driver version. */
-  driver_version = 1000;
-
-  %s_LIBRARY_FIND_CHECKED(cuDriverGetVersion);
-  if (cuDriverGetVersion) {
-    cuDriverGetVersion(&driver_version);
-  }
-
-  /* We require version 4.0. */
-  if (driver_version < 4000) {
-    result = CUEW_ERROR_OPEN_FAILED;
-    return result;
-  }""" % (REAL_LIB))
-
-
-def print_dl_init():
-    print("int %sInit(void) {" % (LIB.lower()))
-
-    print("  /* Library paths. */")
-    print_lib_path()
-    print_init_guard()
-    print_driver_version_guard()
-
-    print("  /* Fetch all function pointers. */")
-    for symbol in SYMBOLS:
-        if symbol:
-          if not symbol.startswith('nvrtc'):
-            print("  %s_LIBRARY_FIND(%s);" % (REAL_LIB, symbol))
-        else:
-            print("")
-
-    print("  if (nvrtc_lib != NULL) {")
-    for symbol in SYMBOLS:
-        if symbol and symbol.startswith('nvrtc'):
-            print("    NVRTC_LIBRARY_FIND(%s);" % (symbol))
-    print("  }")
-
-    print("")
-    print("  result = CUEW_SUCCESS;")
-    print("  return result;")
-
-    print("}")
+    sys.stdout.write(source)
 
 
 def print_implementation():
-    print_copyright()
+    source = open("cuew.template.c", "r").read()
 
-    # TODO(sergey): Get rid of hardcoded header.
-    print("""#ifdef _MSC_VER
-#  if _MSC_VER < 1900
-#    define snprintf _snprintf
-#  endif
-#  define popen _popen
-#  define pclose _pclose
-#  define _CRT_SECURE_NO_WARNINGS
-#endif
-""")
-    print("#include <cuew.h>")
-    print("#include <assert.h>")
-    print("#include <stdio.h>")
-    print("#include <string.h>")
-    print("#include <sys/stat.h>")
-    print("")
-
-    print_dl_wrapper()
-    print_dl_helper_macro()
-
-    print("/* Function definitions. */")
+    function_definitions = ''
     for symbol in SYMBOLS:
         if symbol:
-            print('t%s *%s;' % (symbol, symbol))
+            function_definitions += 't%s *%s;\n' % (symbol, symbol)
         else:
-            print("")
-    print("")
+            function_definitions += '\n'
 
-    print_dl_helpers()
-
-    print("/* Implementation function. */")
-    print_dl_init()
-
-    print("")
-    # TODO(sergey): Get rid of hardcoded CUresult.
-    print("const char *%sErrorString(CUresult result) {" % (LIB.lower()))
-    print("  switch(result) {")
-    print("    case CUDA_SUCCESS: return \"No errors\";")
-
+    cuda_errors = ''
     for error in ERRORS:
         if error in CUDA_ERRORS:
             str = CUDA_ERRORS[error]
         else:
             temp = error[11:].replace('_', ' ')
             str = temp[0] + temp[1:].lower()
-        print("    case %s: return \"%s\";" % (error, str))
+        cuda_errors += "    case %s: return \"%s\";\n" % (error, str)
 
-    print("    default: return \"Unknown CUDA error value\";")
-    print("  }")
-    print("}")
+    lib_find_cuda = ''
+    for symbol in SYMBOLS:
+        if symbol:
+          if not symbol.startswith('nvrtc'):
+            lib_find_cuda += "  CUDA_LIBRARY_FIND(%s);\n" % (symbol)
+        else:
+            lib_find_cuda += "\n"
 
-    from cuda_extra import extra_code
-    print(extra_code)
+    lib_find_nvrtc = ''
+    for symbol in SYMBOLS:
+        if symbol and symbol.startswith('nvrtc'):
+            lib_find_nvrtc += "  NVRTC_LIBRARY_FIND(%s);\n" % (symbol)
+
+    source = source.replace('%FUNCTION_DEFINITIONS%', function_definitions.rstrip())
+    source = source.replace('%CUDA_ERRORS%', cuda_errors.rstrip())
+    source = source.replace('%LIB_FIND_CUDA%', lib_find_cuda.rstrip())
+    source = source.replace('%LIB_FIND_NVRTC%', lib_find_nvrtc.rstrip())
+
+    sys.stdout.write(source)
+
 
 if __name__ == "__main__":
 
