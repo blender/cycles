@@ -18,8 +18,8 @@ endif()
 
 if(APPLE)
 	if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-		# 10.6 is our min. target, if you use higher sdk, weak linking happens.
-		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.6" CACHE STRING "" FORCE)
+		# 10.9 is our min. target, if you use higher sdk, weak linking happens.
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
 	endif()
 
 	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode")
