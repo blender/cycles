@@ -16,17 +16,13 @@ if(APPLE)
 	set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/darwin-9.x.universal")
 elseif(WIN32)
 	if(CMAKE_CL_64)
-		if(MSVC12)
-			set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/win64_vc12")
-		elseif(MSVC14)
+		if(MSVC14)
 			set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/win64_vc14")
 		else()
 			message(FATAL_ERROR "Unsupported Visual Studio Version")
 		endif()
 	else()
-		if(MSVC12)
-			set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/windows_vc12")
-		elseif(MSVC14)
+		if(MSVC14)
 			set(_lib_DIR "${CMAKE_SOURCE_DIR}/../lib/windows_vc14")
 		else()
 			message(FATAL_ERROR "Unsupported Visual Studio Version")
@@ -48,7 +44,7 @@ _set_default(OPENEXR_ROOT_DIR "${_lib_DIR}/openexr")
 set(PNG_LIBRARIES "${_lib_DIR}/png/lib/libpng${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(JPEG_LIBRARIES "${_lib_DIR}/jpeg/lib/libjpeg${CMAKE_STATIC_LIBRARY_SUFFIX}")
 if (MSVC)
-	set(JPEG_LIBRARIES ${JPEG_LIBRARIES};${_lib_DIR}/openjpeg/lib/openjpeg.lib)
+	set(JPEG_LIBRARIES ${JPEG_LIBRARIES};${_lib_DIR}/openjpeg/lib/openjp2.lib)
 endif()
 # TODO(sergey): Move naming to a consistent state.
 set(TIFF_LIBRARY "${_lib_DIR}/tiff/lib/libtiff${CMAKE_STATIC_LIBRARY_SUFFIX}")
@@ -126,24 +122,24 @@ elseif(MSVC)
 	)
 
 	set(OPENEXR_IEX_LIBRARY
-		optimized ${OPENEXR_ROOT_DIR}/lib/Iex-2_2.lib
-		debug ${OPENEXR_ROOT_DIR}/lib/Iex-2_2_d.lib
+		optimized ${OPENEXR_ROOT_DIR}/lib/Iex_s.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Iex_s_d.lib
 	)
 	set(OPENEXR_HALF_LIBRARY
-		optimized ${OPENEXR_ROOT_DIR}/lib/Half.lib
-		debug ${OPENEXR_ROOT_DIR}/lib/Half_d.lib
+		optimized ${OPENEXR_ROOT_DIR}/lib/Half_s.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Half_s_d.lib
 	)
 	set(OPENEXR_ILMIMF_LIBRARY
-		optimized ${OPENEXR_ROOT_DIR}/lib/IlmImf-2_2.lib
-		debug ${OPENEXR_ROOT_DIR}/lib/IlmImf-2_2_d.lib
+		optimized ${OPENEXR_ROOT_DIR}/lib/IlmImf_s.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/IlmImf_s_d.lib
 	)
 	set(OPENEXR_IMATH_LIBRARY
-		optimized ${OPENEXR_ROOT_DIR}/lib/Imath-2_2.lib
-		debug ${OPENEXR_ROOT_DIR}/lib/Imath-2_2_d.lib
+		optimized ${OPENEXR_ROOT_DIR}/lib/Imath_s.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/Imath_s_d.lib
 	)
 	set(OPENEXR_ILMTHREAD_LIBRARY
-		optimized ${OPENEXR_ROOT_DIR}/lib/IlmThread-2_2.lib
-		debug ${OPENEXR_ROOT_DIR}/lib/IlmThread-2_2_d.lib
+		optimized ${OPENEXR_ROOT_DIR}/lib/IlmThread_s.lib
+		debug ${OPENEXR_ROOT_DIR}/lib/IlmThread_s_d.lib
 	)
 endif()
 
