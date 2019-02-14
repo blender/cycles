@@ -149,6 +149,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
 	# OpenSubdiv
 	if(WITH_CYCLES_OPENSUBDIV)
 		find_package(OpenSubdiv REQUIRED)
+		set(WITH_OPENSUBDIV ON)
 	endif()
 
 	unset(_lib_DIR)
