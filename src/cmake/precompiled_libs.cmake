@@ -80,14 +80,14 @@ elseif(MSVC)
 	# On Windows we use precompiled GLEW and GLUT.
 	_set_default(GLEW_ROOT_DIR "${_lib_DIR}/opengl")
 	_set_default(CYCLES_GLUT "${_lib_DIR}/opengl")
-	set(GLUT_glut_LIBRARY "${_lib_DIR}/opengl/lib/freeglut_static.lib")
+	set(GLUT_LIBRARIES "${_lib_DIR}/opengl/lib/freeglut_static.lib")
 
 	set(Boost_USE_STATIC_RUNTIME ON)
 	set(Boost_USE_MULTITHREADED ON)
 	set(Boost_USE_STATIC_LIBS ON)
 
 	# Special tricks for precompiled PThreads.
-	set(PTHREADS_LIBRARIES "${_lib_DIR}/pthreads/lib/pthreadVC2.lib")
+	set(PTHREADS_LIBRARIES "${_lib_DIR}/pthreads/lib/pthreadVC3.lib")
 	include_directories("${_lib_DIR}/pthreads/include")
 
 	# We need to tell compiler we're gonna to use static versions
