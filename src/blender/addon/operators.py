@@ -22,22 +22,22 @@ from bpy.props import StringProperty
 
 
 class CYCLES_OT_use_shading_nodes(Operator):
-    """Enable nodes on a material, world or lamp"""
+    """Enable nodes on a material, world or light"""
     bl_idname = "cycles.use_shading_nodes"
     bl_label = "Use Nodes"
 
     @classmethod
     def poll(cls, context):
         return (getattr(context, "material", False) or getattr(context, "world", False) or
-                getattr(context, "lamp", False))
+                getattr(context, "light", False))
 
     def execute(self, context):
         if context.material:
             context.material.use_nodes = True
         elif context.world:
             context.world.use_nodes = True
-        elif context.lamp:
-            context.lamp.use_nodes = True
+        elif context.light:
+            context.light.use_nodes = True
 
         return {'FINISHED'}
 
@@ -49,13 +49,13 @@ class CYCLES_OT_denoise_animation(Operator):
     bl_idname = "cycles.denoise_animation"
     bl_label = "Denoise Animation"
 
-    input_filepath = StringProperty(
+    input_filepath: StringProperty(
         name='Input Filepath',
         description='File path for image to denoise. If not specified, uses the render file path and frame range from the scene',
         default='',
         subtype='FILE_PATH')
 
-    output_filepath = StringProperty(
+    output_filepath: StringProperty(
         name='Output Filepath',
         description='If not specified, renders will be denoised in-place',
         default='',
@@ -64,9 +64,9 @@ class CYCLES_OT_denoise_animation(Operator):
     def execute(self, context):
         import os
 
-        preferences = context.user_preferences
+        preferences = context.preferences
         scene = context.scene
-        render_layer = scene.render.layers.active
+        view_layer = context.view_layer
 
         in_filepath = self.input_filepath
         out_filepath = self.output_filepath
@@ -113,7 +113,7 @@ class CYCLES_OT_denoise_animation(Operator):
         try:
             _cycles.denoise(preferences.as_pointer(),
                             scene.as_pointer(),
-                            render_layer.as_pointer(),
+                            view_layer.as_pointer(),
                             input=in_filepaths,
                             output=out_filepaths)
         except Exception as e:

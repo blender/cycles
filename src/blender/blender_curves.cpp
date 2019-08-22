@@ -136,9 +136,9 @@ static bool ObtainCacheParticleData(Mesh *mesh,
 
 			if((b_part.render_type() == BL::ParticleSettings::render_type_PATH) && (b_part.type() == BL::ParticleSettings::type_HAIR)) {
 				int shader = clamp(b_part.material()-1, 0, mesh->used_shaders.size()-1);
-				int draw_step = background ? b_part.render_step() : b_part.draw_step();
+				int display_step = background ? b_part.render_step() : b_part.display_step();
 				int totparts = b_psys.particles.length();
-				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.draw_percentage() / 100.0f);
+				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.display_percentage() / 100.0f);
 				int totcurves = totchild;
 
 				if(b_part.child_type() == 0 || totchild == 0)
@@ -147,22 +147,20 @@ static bool ObtainCacheParticleData(Mesh *mesh,
 				if(totcurves == 0)
 					continue;
 
-				int ren_step = (1 << draw_step) + 1;
+				int ren_step = (1 << display_step) + 1;
 				if(b_part.kink() == BL::ParticleSettings::kink_SPIRAL)
 					ren_step += b_part.kink_extra_steps();
-
-				PointerRNA cpsys = RNA_pointer_get(&b_part.ptr, "cycles");
 
 				CData->psys_firstcurve.push_back_slow(curvenum);
 				CData->psys_curvenum.push_back_slow(totcurves);
 				CData->psys_shader.push_back_slow(shader);
 
-				float radius = get_float(cpsys, "radius_scale") * 0.5f;
+				float radius = b_part.radius_scale() * 0.5f;
 
-				CData->psys_rootradius.push_back_slow(radius * get_float(cpsys, "root_width"));
-				CData->psys_tipradius.push_back_slow(radius * get_float(cpsys, "tip_width"));
-				CData->psys_shape.push_back_slow(get_float(cpsys, "shape"));
-				CData->psys_closetip.push_back_slow(get_boolean(cpsys, "use_closetip"));
+				CData->psys_rootradius.push_back_slow(radius * b_part.root_radius());
+				CData->psys_tipradius.push_back_slow(radius * b_part.tip_radius());
+				CData->psys_shape.push_back_slow(b_part.shape());
+				CData->psys_closetip.push_back_slow(b_part.use_close_tip());
 
 				int pa_no = 0;
 				if(!(b_part.child_type() == 0) && totchild != 0)
@@ -187,9 +185,7 @@ static bool ObtainCacheParticleData(Mesh *mesh,
 						float3 cKey = make_float3(nco[0], nco[1], nco[2]);
 						cKey = transform_point(&itfm, cKey);
 						if(step_no > 0) {
-							float step_length = len(cKey - pcKey);
-							if(step_length == 0.0f)
-								continue;
+							const float step_length = len(cKey - pcKey);
 							curve_length += step_length;
 						}
 						CData->curvekey_co.push_back_slow(cKey);
@@ -231,7 +227,7 @@ static bool ObtainCacheParticleUV(Mesh *mesh,
 
 			if((b_part.render_type() == BL::ParticleSettings::render_type_PATH) && (b_part.type() == BL::ParticleSettings::type_HAIR)) {
 				int totparts = b_psys.particles.length();
-				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.draw_percentage() / 100.0f);
+				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.display_percentage() / 100.0f);
 				int totcurves = totchild;
 
 				if(b_part.child_type() == 0 || totchild == 0)
@@ -251,11 +247,11 @@ static bool ObtainCacheParticleUV(Mesh *mesh,
 				b_psys.particles.begin(b_pa);
 				for(; pa_no < totparts+totchild; pa_no++) {
 					/* Add UVs */
-					BL::Mesh::tessface_uv_textures_iterator l;
-					b_mesh->tessface_uv_textures.begin(l);
+					BL::Mesh::uv_layers_iterator l;
+					b_mesh->uv_layers.begin(l);
 
 					float2 uv = make_float2(0.0f, 0.0f);
-					if(b_mesh->tessface_uv_textures.length())
+					if(b_mesh->uv_layers.length())
 						b_psys.uv_on_emitter(psmd, *b_pa, pa_no, uv_num, &uv.x);
 					CData->curve_uv.push_back_slow(uv);
 
@@ -290,7 +286,7 @@ static bool ObtainCacheParticleVcol(Mesh *mesh,
 
 			if((b_part.render_type() == BL::ParticleSettings::render_type_PATH) && (b_part.type() == BL::ParticleSettings::type_HAIR)) {
 				int totparts = b_psys.particles.length();
-				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.draw_percentage() / 100.0f);
+				int totchild = background ? b_psys.child_particles.length() : (int)((float)b_psys.child_particles.length() * (float)b_part.display_percentage() / 100.0f);
 				int totcurves = totchild;
 
 				if(b_part.child_type() == 0 || totchild == 0)
@@ -310,11 +306,11 @@ static bool ObtainCacheParticleVcol(Mesh *mesh,
 				b_psys.particles.begin(b_pa);
 				for(; pa_no < totparts+totchild; pa_no++) {
 					/* Add vertex colors */
-					BL::Mesh::tessface_vertex_colors_iterator l;
-					b_mesh->tessface_vertex_colors.begin(l);
+					BL::Mesh::vertex_colors_iterator l;
+					b_mesh->vertex_colors.begin(l);
 
 					float3 vcol = make_float3(0.0f, 0.0f, 0.0f);
-					if(b_mesh->tessface_vertex_colors.length())
+					if(b_mesh->vertex_colors.length())
 						b_psys.mcol_on_emitter(psmd, *b_pa, pa_no, vcol_num, &vcol.x);
 					CData->curve_vcol.push_back_slow(vcol);
 
@@ -328,18 +324,6 @@ static bool ObtainCacheParticleVcol(Mesh *mesh,
 	return true;
 }
 
-static void set_resolution(BL::BlendData *b_data, BL::Object *b_ob, BL::Scene *scene, bool render)
-{
-	BL::Object::modifiers_iterator b_mod;
-	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && ((b_mod->show_viewport()) || (b_mod->show_render()))) {
-			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
-			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
-			b_psys.set_resolution(*b_data, *scene, *b_ob, (render)? 2: 1);
-		}
-	}
-}
-
 static void ExportCurveTrianglePlanes(Mesh *mesh, ParticleCurveData *CData,
                                       float3 RotCam, bool is_ortho)
 {
@@ -350,9 +334,6 @@ static void ExportCurveTrianglePlanes(Mesh *mesh, ParticleCurveData *CData,
 	/* compute and reserve size of arrays */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			numverts += 2 + (CData->curve_keynum[curve] - 1)*2;
 			numtris += (CData->curve_keynum[curve] - 1)*2;
 		}
@@ -363,9 +344,6 @@ static void ExportCurveTrianglePlanes(Mesh *mesh, ParticleCurveData *CData,
 	/* actually export */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			float3 xbasis;
 			float3 v1;
 			float time = 0.0f;
@@ -435,9 +413,6 @@ static void ExportCurveTriangleGeometry(Mesh *mesh,
 	/* compute and reserve size of arrays */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			numverts += (CData->curve_keynum[curve] - 1)*resolution + resolution;
 			numtris += (CData->curve_keynum[curve] - 1)*2*resolution;
 		}
@@ -448,9 +423,6 @@ static void ExportCurveTriangleGeometry(Mesh *mesh,
 	/* actually export */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			float3 firstxbasis = cross(make_float3(1.0f,0.0f,0.0f),CData->curvekey_co[CData->curve_firstkey[curve]+1] - CData->curvekey_co[CData->curve_firstkey[curve]]);
 			if(!is_zero(firstxbasis))
 				firstxbasis = normalize(firstxbasis);
@@ -578,9 +550,6 @@ static void ExportCurveSegments(Scene *scene, Mesh *mesh, ParticleCurveData *CDa
 	/* compute and reserve size of arrays */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			num_keys += CData->curve_keynum[curve];
 			num_curves++;
 		}
@@ -598,19 +567,27 @@ static void ExportCurveSegments(Scene *scene, Mesh *mesh, ParticleCurveData *CDa
 	/* actually export */
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			size_t num_curve_keys = 0;
 
-			for(int curvekey = CData->curve_firstkey[curve]; curvekey < CData->curve_firstkey[curve] + CData->curve_keynum[curve]; curvekey++) {
-				float3 ickey_loc = CData->curvekey_co[curvekey];
-				float time = CData->curvekey_time[curvekey]/CData->curve_length[curve];
-				float radius = shaperadius(CData->psys_shape[sys], CData->psys_rootradius[sys], CData->psys_tipradius[sys], time);
-
-				if(CData->psys_closetip[sys] && (curvekey == CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 1))
+			for(int curvekey = CData->curve_firstkey[curve];
+			    curvekey < CData->curve_firstkey[curve] + CData->curve_keynum[curve];
+			    curvekey++)
+			{
+				const float3 ickey_loc = CData->curvekey_co[curvekey];
+				const float curve_time = CData->curvekey_time[curvekey];
+				const float curve_length = CData->curve_length[curve];
+				const float time = (curve_length > 0.0f)
+				                           ? curve_time / curve_length
+				                           : 0.0f;
+				float radius = shaperadius(CData->psys_shape[sys],
+				                           CData->psys_rootradius[sys],
+				                           CData->psys_tipradius[sys],
+				                           time);
+				if(CData->psys_closetip[sys] &&
+				   (curvekey == CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 1))
+				{
 					radius = 0.0f;
-
+				}
 				mesh->add_curve_key(ickey_loc, radius);
 				if(attr_intercept)
 					attr_intercept->add(time);
@@ -637,8 +614,10 @@ static void ExportCurveSegments(Scene *scene, Mesh *mesh, ParticleCurveData *CDa
 
 static float4 CurveSegmentMotionCV(ParticleCurveData *CData, int sys, int curve, int curvekey)
 {
-	float3 ickey_loc = CData->curvekey_co[curvekey];
-	float time = CData->curvekey_time[curvekey]/CData->curve_length[curve];
+	const float3 ickey_loc = CData->curvekey_co[curvekey];
+	const float curve_time = CData->curvekey_time[curvekey];
+	const float curve_length = CData->curve_length[curve];
+	float time = (curve_length > 0.0f) ? curve_time / curve_length : 0.0f;
 	float radius = shaperadius(CData->psys_shape[sys], CData->psys_rootradius[sys], CData->psys_tipradius[sys], time);
 
 	if(CData->psys_closetip[sys] && (curvekey == CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 1))
@@ -697,13 +676,7 @@ static void ExportCurveSegmentsMotion(Mesh *mesh, ParticleCurveData *CData, int 
 	int num_curves = 0;
 
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
-		if(CData->psys_curvenum[sys] == 0)
-			continue;
-
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			/* Curve lengths may not match! Curves can be clipped. */
 			int curve_key_end = (num_curves+1 < (int)mesh->curve_first_key.size() ? mesh->curve_first_key[num_curves+1] : (int)mesh->curve_keys.size());
 			const int num_center_curve_keys = curve_key_end - mesh->curve_first_key[num_curves];
@@ -729,7 +702,10 @@ static void ExportCurveSegmentsMotion(Mesh *mesh, ParticleCurveData *CData, int 
 			else {
 				/* Number of keys has changed. Genereate an interpolated version
 				 * to preserve motion blur. */
-				float step_size = 1.0f / (num_center_curve_keys-1);
+				const float step_size =
+				        num_center_curve_keys > 1
+				                ? 1.0f / (num_center_curve_keys - 1)
+				                : 0.0f;
 				for(int step_index = 0;
 				    step_index < num_center_curve_keys;
 				    ++step_index)
@@ -784,9 +760,6 @@ static void ExportCurveTriangleUV(ParticleCurveData *CData,
 
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			for(int curvekey = CData->curve_firstkey[curve]; curvekey < CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 1; curvekey++) {
 				for(int section = 0; section < resol; section++) {
 					uvdata[vertexindex] = CData->curve_uv[curve];
@@ -819,9 +792,6 @@ static void ExportCurveTriangleVcol(ParticleCurveData *CData,
 
 	for(int sys = 0; sys < CData->psys_firstcurve.size(); sys++) {
 		for(int curve = CData->psys_firstcurve[sys]; curve < CData->psys_firstcurve[sys] + CData->psys_curvenum[sys]; curve++) {
-			if(CData->curve_keynum[curve] <= 1 || CData->curve_length[curve] == 0.0f)
-				continue;
-
 			for(int curvekey = CData->curve_firstkey[curve]; curvekey < CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 1; curvekey++) {
 				for(int section = 0; section < resol; section++) {
 					/* Encode vertex color using the sRGB curve. */
@@ -960,9 +930,6 @@ void BlenderSync::sync_curves(Mesh *mesh,
 
 	ParticleCurveData CData;
 
-	if(!preview)
-		set_resolution(&b_data, &b_ob, &b_scene, true);
-
 	ObtainCacheParticleData(mesh, &b_mesh, &b_ob, &CData, !preview);
 
 	/* add hair geometry to mesh */
@@ -1025,10 +992,10 @@ void BlenderSync::sync_curves(Mesh *mesh,
 
 	/* create vertex color attributes */
 	if(!motion) {
-		BL::Mesh::tessface_vertex_colors_iterator l;
+		BL::Mesh::vertex_colors_iterator l;
 		int vcol_num = 0;
 
-		for(b_mesh.tessface_vertex_colors.begin(l); l != b_mesh.tessface_vertex_colors.end(); ++l, vcol_num++) {
+		for(b_mesh.vertex_colors.begin(l); l != b_mesh.vertex_colors.end(); ++l, vcol_num++) {
 			if(!mesh->need_attribute(scene, ustring(l->name().c_str())))
 				continue;
 
@@ -1052,9 +1019,9 @@ void BlenderSync::sync_curves(Mesh *mesh,
 					size_t i = 0;
 
 					/* Encode vertex color using the sRGB curve. */
-					for(size_t curve = 0; curve < CData.curve_vcol.size(); curve++)
-						if(!(CData.curve_keynum[curve] <= 1 || CData.curve_length[curve] == 0.0f))
-							fdata[i++] = color_srgb_to_linear_v3(CData.curve_vcol[curve]);
+					for(size_t curve = 0; curve < CData.curve_vcol.size(); curve++) {
+						fdata[i++] = color_srgb_to_linear_v3(CData.curve_vcol[curve]);
+					}
 				}
 			}
 		}
@@ -1062,10 +1029,10 @@ void BlenderSync::sync_curves(Mesh *mesh,
 
 	/* create UV attributes */
 	if(!motion) {
-		BL::Mesh::tessface_uv_textures_iterator l;
+		BL::Mesh::uv_layers_iterator l;
 		int uv_num = 0;
 
-		for(b_mesh.tessface_uv_textures.begin(l); l != b_mesh.tessface_uv_textures.end(); ++l, uv_num++) {
+		for(b_mesh.uv_layers.begin(l); l != b_mesh.uv_layers.end(); ++l, uv_num++) {
 			bool active_render = l->active_render();
 			AttributeStandard std = (active_render)? ATTR_STD_UV: ATTR_STD_NONE;
 			ustring name = ustring(l->name().c_str());
@@ -1097,17 +1064,14 @@ void BlenderSync::sync_curves(Mesh *mesh,
 					if(uv) {
 						size_t i = 0;
 
-						for(size_t curve = 0; curve < CData.curve_uv.size(); curve++)
-							if(!(CData.curve_keynum[curve] <= 1 || CData.curve_length[curve] == 0.0f))
-								uv[i++] = CData.curve_uv[curve];
+						for(size_t curve = 0; curve < CData.curve_uv.size(); curve++) {
+							uv[i++] = CData.curve_uv[curve];
+						}
 					}
 				}
 			}
 		}
 	}
-
-	if(!preview)
-		set_resolution(&b_data, &b_ob, &b_scene, false);
 
 	mesh->compute_bounds();
 }

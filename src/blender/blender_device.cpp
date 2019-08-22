@@ -29,7 +29,7 @@ int blender_device_threads(BL::Scene& b_scene)
 		return 0;
 }
 
-DeviceInfo blender_device_info(BL::UserPreferences& b_userpref, BL::Scene& b_scene, bool background)
+DeviceInfo blender_device_info(BL::Preferences& b_preferences, BL::Scene& b_scene, bool background)
 {
 	PointerRNA cscene = RNA_pointer_get(&b_scene.ptr, "cycles");
 
@@ -47,8 +47,8 @@ DeviceInfo blender_device_info(BL::UserPreferences& b_userpref, BL::Scene& b_sce
 		/* Find cycles preferences. */
 		PointerRNA cpreferences;
 
-		BL::UserPreferences::addons_iterator b_addon_iter;
-		for(b_userpref.addons.begin(b_addon_iter); b_addon_iter != b_userpref.addons.end(); ++b_addon_iter) {
+		BL::Preferences::addons_iterator b_addon_iter;
+		for(b_preferences.addons.begin(b_addon_iter); b_addon_iter != b_preferences.addons.end(); ++b_addon_iter) {
 			if(b_addon_iter->module() == "cycles") {
 				cpreferences = b_addon_iter->preferences().ptr;
 				break;

@@ -30,6 +30,7 @@
 #include "render/shader.h"
 #include "render/stats.h"
 
+#include "util/util_algorithm.h"
 #include "util/util_color.h"
 #include "util/util_foreach.h"
 #include "util/util_function.h"
@@ -53,23 +54,25 @@ int BlenderSession::end_resumable_chunk = 0;
 bool BlenderSession::print_render_stats = false;
 
 BlenderSession::BlenderSession(BL::RenderEngine& b_engine,
-                               BL::UserPreferences& b_userpref,
+                               BL::Preferences& b_userpref,
                                BL::BlendData& b_data,
-                               BL::Scene& b_scene)
-: b_engine(b_engine),
+                               bool preview_osl)
+: session(NULL),
+  sync(NULL),
+  b_engine(b_engine),
   b_userpref(b_userpref),
   b_data(b_data),
   b_render(b_engine.render()),
-  b_scene(b_scene),
+  b_depsgraph(PointerRNA_NULL),
+  b_scene(PointerRNA_NULL),
   b_v3d(PointerRNA_NULL),
   b_rv3d(PointerRNA_NULL),
+  width(0),
+  height(0),
+  preview_osl(preview_osl),
   python_thread_state(NULL)
 {
 	/* offline render */
-
-	width = render_resolution_x(b_render);
-	height = render_resolution_y(b_render);
-
 	background = true;
 	last_redraw_time = 0.0;
 	start_resize_time = 0.0;
@@ -77,25 +80,27 @@ BlenderSession::BlenderSession(BL::RenderEngine& b_engine,
 }
 
 BlenderSession::BlenderSession(BL::RenderEngine& b_engine,
-                               BL::UserPreferences& b_userpref,
+                               BL::Preferences& b_userpref,
                                BL::BlendData& b_data,
-                               BL::Scene& b_scene,
                                BL::SpaceView3D& b_v3d,
                                BL::RegionView3D& b_rv3d,
                                int width, int height)
-: b_engine(b_engine),
+: session(NULL),
+  sync(NULL),
+  b_engine(b_engine),
   b_userpref(b_userpref),
   b_data(b_data),
-  b_render(b_scene.render()),
-  b_scene(b_scene),
+  b_render(b_engine.render()),
+  b_depsgraph(PointerRNA_NULL),
+  b_scene(PointerRNA_NULL),
   b_v3d(b_v3d),
   b_rv3d(b_rv3d),
   width(width),
   height(height),
+  preview_osl(false),
   python_thread_state(NULL)
 {
 	/* 3d view render */
-
 	background = false;
 	last_redraw_time = 0.0;
 	start_resize_time = 0.0;
@@ -133,6 +138,7 @@ void BlenderSession::create_session()
 
 	/* create scene */
 	scene = new Scene(scene_params, session->device);
+	scene->name = b_scene.name();
 
 	/* setup callbacks for builtin image support */
 	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3);
@@ -141,26 +147,19 @@ void BlenderSession::create_session()
 
 	session->scene = scene;
 
+	/* There is no single depsgraph to use for the entire render.
+	 * So we need to handle this differently.
+	 *
+	 * We could loop over the final render result render layers in pipeline and keep Cycles unaware of multiple layers,
+	 * or perhaps move syncing further down in the pipeline.
+	 */
 	/* create sync */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress);
 	BL::Object b_camera_override(b_engine.camera_override());
 	if(b_v3d) {
-		if(session_pause == false) {
-			/* full data sync */
-			sync->sync_view(b_v3d, b_rv3d, width, height);
-			sync->sync_data(b_render,
-			                b_v3d,
-			                b_camera_override,
-			                width, height,
-			                &python_thread_state,
-			                b_rlay_name.c_str());
-		}
+		sync->sync_view(b_v3d, b_rv3d, width, height);
 	}
 	else {
-		/* for final render we will do full data sync per render layer, only
-		 * do some basic syncing here, no objects or materials for speed */
-		sync->sync_render_layers(b_v3d, NULL);
-		sync->sync_integrator();
 		sync->sync_camera(b_render, b_camera_override, width, height, "");
 	}
 
@@ -173,17 +172,39 @@ void BlenderSession::create_session()
 	update_resumable_tile_manager(session_params.samples);
 }
 
-void BlenderSession::reset_session(BL::BlendData& b_data_, BL::Scene& b_scene_)
+void BlenderSession::reset_session(BL::BlendData& b_data, BL::Depsgraph& b_depsgraph)
 {
-	b_data = b_data_;
-	b_render = b_engine.render();
-	b_scene = b_scene_;
+	this->b_data = b_data;
+	this->b_depsgraph = b_depsgraph;
+	this->b_scene = b_depsgraph.scene_eval();
+
+	if(preview_osl) {
+		PointerRNA cscene = RNA_pointer_get(&b_scene.ptr, "cycles");
+		RNA_boolean_set(&cscene, "shading_system", preview_osl);
+	}
+
+	if(b_v3d) {
+		this->b_render = b_scene.render();
+	}
+	else {
+		this->b_render = b_engine.render();
+		width = render_resolution_x(b_render);
+		height = render_resolution_y(b_render);
+	}
+
+	if(session == NULL) {
+		create();
+	}
+
+	if(b_v3d) {
+		/* NOTE: We need to create session, but all the code from below
+		 * will make viewport render to stuck on initialization.
+		 */
+		return;
+	}
 
 	SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);
 	SceneParams scene_params = BlenderSync::get_scene_params(b_scene, background);
-
-	width = render_resolution_x(b_render);
-	height = render_resolution_y(b_render);
 
 	if(scene->params.modified(scene_params) ||
 	   session->params.modified(session_params) ||
@@ -192,11 +213,8 @@ void BlenderSession::reset_session(BL::BlendData& b_data_, BL::Scene& b_scene_)
 		/* if scene or session parameters changed, it's easier to simply re-create
 		 * them rather than trying to distinguish which settings need to be updated
 		 */
-
-		delete session;
-
+		free_session();
 		create_session();
-
 		return;
 	}
 
@@ -210,15 +228,11 @@ void BlenderSession::reset_session(BL::BlendData& b_data_, BL::Scene& b_scene_)
 	 */
 	session->stats.mem_peak = session->stats.mem_used;
 
+	/* There is no single depsgraph to use for the entire render.
+	 * See note on create_session().
+	 */
 	/* sync object should be re-created */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress);
-
-	/* for final render we will do full data sync per render layer, only
-	 * do some basic syncing here, no objects or materials for speed */
-	BL::Object b_camera_override(b_engine.camera_override());
-	sync->sync_render_layers(b_v3d, NULL);
-	sync->sync_integrator();
-	sync->sync_camera(b_render, b_camera_override, width, height, "");
 
 	BL::SpaceView3D b_null_space_view3d(PointerRNA_NULL);
 	BL::RegionView3D b_null_region_view3d(PointerRNA_NULL);
@@ -379,12 +393,16 @@ static void add_cryptomatte_layer(BL::RenderResult& b_rr, string name, string ma
 	render_add_metadata(b_rr, prefix+"manifest", manifest);
 }
 
-void BlenderSession::stamp_view_layer_metadata_do(const string& prefix)
+void BlenderSession::stamp_view_layer_metadata(Scene *scene, const string& view_layer_name)
 {
 	BL::RenderResult b_rr = b_engine.get_result();
+	string prefix = "cycles." + view_layer_name + ".";
+
 	/* Configured number of samples for the view layer. */
-	b_rr.stamp_data_add_field((prefix + "samples").c_str(),
-	                          to_string(session->params.samples).c_str());
+	b_rr.stamp_data_add_field(
+		(prefix + "samples").c_str(),
+		to_string(session->params.samples).c_str());
+
 	/* Store ranged samples information. */
 	if(session->tile_manager.range_num_samples != -1) {
 		b_rr.stamp_data_add_field(
@@ -394,15 +412,36 @@ void BlenderSession::stamp_view_layer_metadata_do(const string& prefix)
 		        (prefix + "range_num_samples").c_str(),
 		        to_string(session->tile_manager.range_num_samples).c_str());
 	}
+
+	/* Write cryptomatte metadata. */
+	if(scene->film->cryptomatte_passes & CRYPT_OBJECT) {
+		add_cryptomatte_layer(b_rr, view_layer_name + ".CryptoObject",
+		                      scene->object_manager->get_cryptomatte_objects(scene));
+	}
+	if(scene->film->cryptomatte_passes & CRYPT_MATERIAL) {
+		add_cryptomatte_layer(b_rr, view_layer_name + ".CryptoMaterial",
+		                      scene->shader_manager->get_cryptomatte_materials(scene));
+	}
+	if(scene->film->cryptomatte_passes & CRYPT_ASSET) {
+		add_cryptomatte_layer(b_rr, view_layer_name + ".CryptoAsset",
+		                      scene->object_manager->get_cryptomatte_assets(scene));
+	}
+
+	/* Store synchronization and bare-render times. */
+	double total_time, render_time;
+	session->progress.get_time(total_time, render_time);
+	b_rr.stamp_data_add_field((prefix + "total_time").c_str(),
+	                          time_human_readable_from_seconds(total_time).c_str());
+	b_rr.stamp_data_add_field((prefix + "render_time").c_str(),
+	                          time_human_readable_from_seconds(render_time).c_str());
+	b_rr.stamp_data_add_field((prefix + "synchronization_time").c_str(),
+	                          time_human_readable_from_seconds(total_time - render_time).c_str());
 }
 
-void BlenderSession::stamp_view_layer_metadata(const string& view_layer_name)
+void BlenderSession::render(BL::Depsgraph& b_depsgraph_)
 {
-	stamp_view_layer_metadata_do("cycles." + view_layer_name + ".");
-}
+	b_depsgraph = b_depsgraph_;
 
-void BlenderSession::render()
-{
 	/* set callback to write out render results */
 	session->write_render_tile_cb = function_bind(&BlenderSession::write_render_tile, this, _1);
 	session->update_render_tile_cb = function_bind(&BlenderSession::update_render_tile, this, _1, _2);
@@ -412,122 +451,107 @@ void BlenderSession::render()
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_v3d, b_rv3d, scene->camera, width, height);
 
 	/* render each layer */
-	BL::RenderSettings r = b_scene.render();
-	BL::RenderSettings::layers_iterator b_layer_iter;
+	BL::ViewLayer b_view_layer = b_depsgraph.view_layer_eval();
+
+	/* temporary render result to find needed passes and views */
+	BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_view_layer.name().c_str(), NULL);
+	BL::RenderResult::layers_iterator b_single_rlay;
+	b_rr.layers.begin(b_single_rlay);
+	BL::RenderLayer b_rlay = *b_single_rlay;
+	b_rlay_name = b_view_layer.name();
+
+	/* add passes */
+	vector<Pass> passes = sync->sync_render_passes(b_rlay, b_view_layer);
+	buffer_params.passes = passes;
+
+	PointerRNA crl = RNA_pointer_get(&b_view_layer.ptr, "cycles");
+	bool full_denoising = get_boolean(crl, "use_denoising");
+	bool write_denoising_passes = get_boolean(crl, "denoising_store_passes");
+
+	bool run_denoising = full_denoising || write_denoising_passes;
+
+	session->tile_manager.schedule_denoising = run_denoising;
+	buffer_params.denoising_data_pass = run_denoising;
+	buffer_params.denoising_clean_pass = (scene->film->denoising_flags & DENOISING_CLEAN_ALL_PASSES);
+	buffer_params.denoising_prefiltered_pass = write_denoising_passes;
+
+	session->params.run_denoising = run_denoising;
+	session->params.full_denoising = full_denoising;
+	session->params.write_denoising_passes = write_denoising_passes;
+	session->params.denoising.radius = get_int(crl, "denoising_radius");
+	session->params.denoising.strength = get_float(crl, "denoising_strength");
+	session->params.denoising.feature_strength = get_float(crl, "denoising_feature_strength");
+	session->params.denoising.relative_pca = get_boolean(crl, "denoising_relative_pca");
+
+	scene->film->denoising_data_pass = buffer_params.denoising_data_pass;
+	scene->film->denoising_clean_pass = buffer_params.denoising_clean_pass;
+	scene->film->denoising_prefiltered_pass = buffer_params.denoising_prefiltered_pass;
+
+	scene->film->pass_alpha_threshold = b_view_layer.pass_alpha_threshold();
+	scene->film->tag_passes_update(scene, passes);
+	scene->film->tag_update(scene);
+	scene->integrator->tag_update(scene);
+
 	BL::RenderResult::views_iterator b_view_iter;
 
-	for(r.layers.begin(b_layer_iter); b_layer_iter != r.layers.end(); ++b_layer_iter) {
-		b_rlay_name = b_layer_iter->name();
+	int num_views = 0;
+	for(b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter) {
+		num_views++;
+	}
 
-		/* temporary render result to find needed passes and views */
-		BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), NULL);
-		BL::RenderResult::layers_iterator b_single_rlay;
-		b_rr.layers.begin(b_single_rlay);
+	int view_index = 0;
+	for(b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter, ++view_index) {
+		b_rview_name = b_view_iter->name();
 
-		/* layer will be missing if it was disabled in the UI */
-		if(b_single_rlay == b_rr.layers.end()) {
-			end_render_result(b_engine, b_rr, true, true, false);
-			continue;
+		/* set the current view */
+		b_engine.active_view_set(b_rview_name.c_str());
+
+		/* update scene */
+		BL::Object b_camera_override(b_engine.camera_override());
+		sync->sync_camera(b_render, b_camera_override, width, height, b_rview_name.c_str());
+		sync->sync_data(b_render,
+		                b_depsgraph,
+		                b_v3d,
+		                b_camera_override,
+		                width, height,
+		                &python_thread_state);
+		builtin_images_load();
+
+		/* Attempt to free all data which is held by Blender side, since at this
+		 * point we knwo that we've got everything to render current view layer.
+		 */
+		/* At the moment we only free if we are not doing multi-view (or if we are rendering the last view).
+		 * See T58142/D4239 for discussion.
+		 */
+		if(view_index == num_views - 1) {
+			free_blender_memory_if_possible();
 		}
 
-		BL::RenderLayer b_rlay = *b_single_rlay;
-
-		/* add passes */
-		vector<Pass> passes = sync->sync_render_passes(b_rlay, *b_layer_iter);
-		buffer_params.passes = passes;
-
-		PointerRNA crl = RNA_pointer_get(&b_layer_iter->ptr, "cycles");
-		bool full_denoising = get_boolean(crl, "use_denoising");
-		bool write_denoising_passes = get_boolean(crl, "denoising_store_passes");
-
-		bool run_denoising = full_denoising || write_denoising_passes;
-
-		session->tile_manager.schedule_denoising = run_denoising;
-		buffer_params.denoising_data_pass = run_denoising;
-		buffer_params.denoising_clean_pass = (scene->film->denoising_flags & DENOISING_CLEAN_ALL_PASSES);
-		buffer_params.denoising_prefiltered_pass = write_denoising_passes;
-
-		session->params.run_denoising = run_denoising;
-		session->params.full_denoising = full_denoising;
-		session->params.write_denoising_passes = write_denoising_passes;
-		session->params.denoising.radius = get_int(crl, "denoising_radius");
-		session->params.denoising.strength = get_float(crl, "denoising_strength");
-		session->params.denoising.feature_strength = get_float(crl, "denoising_feature_strength");
-		session->params.denoising.relative_pca = get_boolean(crl, "denoising_relative_pca");
-
-		scene->film->denoising_data_pass = buffer_params.denoising_data_pass;
-		scene->film->denoising_clean_pass = buffer_params.denoising_clean_pass;
-		scene->film->denoising_prefiltered_pass = buffer_params.denoising_prefiltered_pass;
-		scene->film->pass_alpha_threshold = b_layer_iter->pass_alpha_threshold();
-		scene->film->tag_passes_update(scene, passes);
-		scene->film->tag_update(scene);
-		scene->integrator->tag_update(scene);
-
-		int view_index = 0;
-		for(b_rr.views.begin(b_view_iter); b_view_iter != b_rr.views.end(); ++b_view_iter, ++view_index) {
-			b_rview_name = b_view_iter->name();
-
-			/* set the current view */
-			b_engine.active_view_set(b_rview_name.c_str());
-
-			/* update scene */
-			BL::Object b_camera_override(b_engine.camera_override());
-			sync->sync_camera(b_render, b_camera_override, width, height, b_rview_name.c_str());
-			sync->sync_data(b_render,
-			                b_v3d,
-			                b_camera_override,
-			                width, height,
-			                &python_thread_state,
-			                b_rlay_name.c_str());
-
-			/* Make sure all views have different noise patterns. - hardcoded value just to make it random */
-			if(view_index != 0) {
-				scene->integrator->seed += hash_int_2d(scene->integrator->seed, hash_int(view_index * 0xdeadbeef));
-				scene->integrator->tag_update(scene);
-			}
-
-			/* Update number of samples per layer. */
-			int samples = sync->get_layer_samples();
-			bool bound_samples = sync->get_layer_bound_samples();
-			int effective_layer_samples;
-
-			if(samples != 0 && (!bound_samples || (samples < session_params.samples)))
-				effective_layer_samples = samples;
-			else
-				effective_layer_samples = session_params.samples;
-
-			/* Update tile manager if we're doing resumable render. */
-			update_resumable_tile_manager(effective_layer_samples);
-
-			/* Update session itself. */
-			session->reset(buffer_params, effective_layer_samples);
-
-			/* render */
-			session->start();
-			session->wait();
-
-			if(session->progress.get_cancel())
-				break;
+		/* Make sure all views have different noise patterns. - hardcoded value just to make it random */
+		if(view_index != 0) {
+			scene->integrator->seed += hash_int_2d(scene->integrator->seed, hash_int(view_index * 0xdeadbeef));
+			scene->integrator->tag_update(scene);
 		}
 
-		stamp_view_layer_metadata(b_rlay_name);
+		/* Update number of samples per layer. */
+		int samples = sync->get_layer_samples();
+		bool bound_samples = sync->get_layer_bound_samples();
+		int effective_layer_samples;
 
-		BL::RenderResult b_full_rr = b_engine.get_result();
-		if(scene->film->cryptomatte_passes & CRYPT_OBJECT) {
-			add_cryptomatte_layer(b_full_rr, b_rlay_name+".CryptoObject",
-			                      scene->object_manager->get_cryptomatte_objects(scene));
-		}
-		if(scene->film->cryptomatte_passes & CRYPT_MATERIAL) {
-			add_cryptomatte_layer(b_full_rr, b_rlay_name+".CryptoMaterial",
-			                      scene->shader_manager->get_cryptomatte_materials(scene));
-		}
-		if(scene->film->cryptomatte_passes & CRYPT_ASSET) {
-			add_cryptomatte_layer(b_full_rr, b_rlay_name+".CryptoAsset",
-			                      scene->object_manager->get_cryptomatte_assets(scene));
-		}
+		if(samples != 0 && (!bound_samples || (samples < session_params.samples)))
+			effective_layer_samples = samples;
+		else
+			effective_layer_samples = session_params.samples;
 
-		/* free result without merging */
-		end_render_result(b_engine, b_rr, true, true, false);
+		/* Update tile manager if we're doing resumable render. */
+		update_resumable_tile_manager(effective_layer_samples);
+
+		/* Update session itself. */
+		session->reset(buffer_params, effective_layer_samples);
+
+		/* render */
+		session->start();
+		session->wait();
 
 		if(!b_engine.is_preview() && background && print_render_stats) {
 			RenderStats stats;
@@ -539,6 +563,12 @@ void BlenderSession::render()
 			break;
 	}
 
+	/* add metadata */
+	stamp_view_layer_metadata(scene, b_rlay_name);
+
+	/* free result without merging */
+	end_render_result(b_engine, b_rr, true, true, false);
+
 	double total_time, render_time;
 	session->progress.get_time(total_time, render_time);
 	VLOG(1) << "Total render time: " << total_time;
@@ -548,6 +578,8 @@ void BlenderSession::render()
 	session->write_render_tile_cb = function_null;
 	session->update_render_tile_cb = function_null;
 
+	/* TODO: find a way to clear this data for persistent data render */
+#if 0
 	/* free all memory used (host and device), so we wouldn't leave render
 	 * engine with extra memory allocated
 	 */
@@ -556,6 +588,7 @@ void BlenderSession::render()
 
 	delete sync;
 	sync = NULL;
+#endif
 }
 
 static void populate_bake_data(BakeData *data, const
@@ -604,7 +637,8 @@ static int bake_pass_filter_get(const int pass_filter)
 	return flag;
 }
 
-void BlenderSession::bake(BL::Object& b_object,
+void BlenderSession::bake(BL::Depsgraph& b_depsgraph_,
+                          BL::Object& b_object,
                           const string& pass_type,
                           const int pass_filter,
                           const int object_id,
@@ -613,6 +647,8 @@ void BlenderSession::bake(BL::Object& b_object,
                           const int /*depth*/,
                           float result[])
 {
+	b_depsgraph = b_depsgraph_;
+
 	ShaderEvalType shader_type = get_shader_type(pass_type);
 
 	/* Set baking flag in advance, so kernel loading can check if we need
@@ -645,11 +681,12 @@ void BlenderSession::bake(BL::Object& b_object,
 		BL::Object b_camera_override(b_engine.camera_override());
 		sync->sync_camera(b_render, b_camera_override, width, height, "");
 		sync->sync_data(b_render,
-						b_v3d,
-						b_camera_override,
-						width, height,
-						&python_thread_state,
-						b_rlay_name.c_str());
+		                b_depsgraph,
+		                b_v3d,
+		                b_camera_override,
+		                width, height,
+		                &python_thread_state);
+		builtin_images_load();
 	}
 
 	BakeData *bake_data = NULL;
@@ -678,10 +715,14 @@ void BlenderSession::bake(BL::Object& b_object,
 			}
 		}
 
-		int object = object_index;
+		/* Object might have been disabled for rendering or excluded in some
+		 * other way, in that case Blender will report a warning afterwards. */
+		if (object_index != OBJECT_NONE) {
+			int object = object_index;
 
-		bake_data = scene->bake_manager->init(object, tri_offset, num_pixels);
-		populate_bake_data(bake_data, object_id, pixel_array, num_pixels);
+			bake_data = scene->bake_manager->init(object, tri_offset, num_pixels);
+			populate_bake_data(bake_data, object_id, pixel_array, num_pixels);
+		}
 
 		/* set number of samples */
 		session->tile_manager.set_samples(session_params.samples);
@@ -692,7 +733,7 @@ void BlenderSession::bake(BL::Object& b_object,
 	}
 
 	/* Perform bake. Check cancel to avoid crash with incomplete scene data. */
-	if(!session->progress.get_cancel()) {
+	if(!session->progress.get_cancel() && bake_data) {
 		scene->bake_manager->bake(scene->device, &scene->dscene, scene, session->progress, shader_type, bake_pass_filter, bake_data, result);
 	}
 
@@ -783,7 +824,7 @@ void BlenderSession::update_render_result(BL::RenderResult& b_rr,
 	do_write_update_render_result(b_rr, b_rlay, rtile, true);
 }
 
-void BlenderSession::synchronize()
+void BlenderSession::synchronize(BL::Depsgraph& b_depsgraph_)
 {
 	/* only used for viewport render */
 	if(!b_v3d)
@@ -808,7 +849,7 @@ void BlenderSession::synchronize()
 
 	/* copy recalc flags, outside of mutex so we can decide to do the real
 	 * synchronization at a later time to not block on running updates */
-	sync->sync_recalc();
+	sync->sync_recalc(b_depsgraph_);
 
 	/* don't do synchronization if on pause */
 	if(session_pause) {
@@ -823,18 +864,22 @@ void BlenderSession::synchronize()
 	}
 
 	/* data and camera synchronize */
+	b_depsgraph = b_depsgraph_;
+
 	BL::Object b_camera_override(b_engine.camera_override());
 	sync->sync_data(b_render,
+	                b_depsgraph,
 	                b_v3d,
 	                b_camera_override,
 	                width, height,
-	                &python_thread_state,
-	                b_rlay_name.c_str());
+	                &python_thread_state);
 
 	if(b_rv3d)
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	else
 		sync->sync_camera(b_render, b_camera_override, width, height, "");
+
+	builtin_images_load();
 
 	/* unlock */
 	session->scene->mutex.unlock();
@@ -957,7 +1002,7 @@ void BlenderSession::update_bake_progress()
 void BlenderSession::update_status_progress()
 {
 	string timestatus, status, substatus, kernel_status;
-	string scene = "";
+	string scene_status = "";
 	float progress;
 	double total_time, remaining_time = 0, render_time;
 	float mem_used = (float)session->stats.mem_used / 1024.0f / 1024.0f;
@@ -971,35 +1016,32 @@ void BlenderSession::update_status_progress()
 		remaining_time = (1.0 - (double)progress) * (render_time / (double)progress);
 
 	if(background) {
-		scene += " | " + b_scene.name();
+		scene_status += " | " + scene->name;
 		if(b_rlay_name != "")
-			scene += ", "  + b_rlay_name;
+			scene_status += ", "  + b_rlay_name;
 
 		if(b_rview_name != "")
-			scene += ", " + b_rview_name;
-	}
-	else {
-		timestatus = "Time:" + time_human_readable_from_seconds(total_time) + " | ";
-	}
+			scene_status += ", " + b_rview_name;
 
-	if(remaining_time > 0) {
-		timestatus += "Remaining:" + time_human_readable_from_seconds(remaining_time) + " | ";
+		if(remaining_time > 0) {
+			timestatus += "Remaining:" + time_human_readable_from_seconds(remaining_time) + " | ";
+		}
+
+		timestatus += string_printf("Mem:%.2fM, Peak:%.2fM", (double)mem_used, (double)mem_peak);
+
+		if(status.size() > 0)
+			status = " | " + status;
+		if(substatus.size() > 0)
+			status += " | " + substatus;
+		if(kernel_status.size() > 0)
+			status += " | " + kernel_status;
 	}
-
-	timestatus += string_printf("Mem:%.2fM, Peak:%.2fM", (double)mem_used, (double)mem_peak);
-
-	if(status.size() > 0)
-		status = " | " + status;
-	if(substatus.size() > 0)
-		status += " | " + substatus;
-	if(kernel_status.size() > 0)
-		status += " | " + kernel_status;
 
 	double current_time = time_dt();
 	/* When rendering in a window, redraw the status at least once per second to keep the elapsed and remaining time up-to-date.
 	 * For headless rendering, only report when something significant changes to keep the console output readable. */
 	if(status != last_status || (!headless && (current_time - last_status_time) > 1.0)) {
-		b_engine.update_stats("", (timestatus + scene + status).c_str());
+		b_engine.update_stats("", (timestatus + scene_status + status).c_str());
 		b_engine.update_memory_stats(mem_used, mem_peak);
 		last_status = status;
 		last_status_time = current_time;
@@ -1352,6 +1394,9 @@ bool BlenderSession::builtin_image_float_pixels(const string &builtin_name,
 		fprintf(stderr, "Cycles error: unexpected smoke volume resolution, skipping\n");
 	}
 	else {
+		/* We originally were passing view_layer here but in reality we need a
+		 * a depsgraph to pass to the RE_point_density_minmax() function.
+		 */
 		/* TODO(sergey): Check we're indeed in shader node tree. */
 		PointerRNA ptr;
 		RNA_pointer_create(NULL, &RNA_Node, builtin_data, &ptr);
@@ -1359,12 +1404,21 @@ bool BlenderSession::builtin_image_float_pixels(const string &builtin_name,
 		if(b_node.is_a(&RNA_ShaderNodeTexPointDensity)) {
 			BL::ShaderNodeTexPointDensity b_point_density_node(b_node);
 			int length;
-			int settings = background ? 1 : 0;  /* 1 - render settings, 0 - vewport settings. */
-			b_point_density_node.calc_point_density(b_scene, settings, &length, &pixels);
+			b_point_density_node.calc_point_density(b_depsgraph, &length, &pixels);
 		}
 	}
 
 	return false;
+}
+
+void BlenderSession::builtin_images_load()
+{
+	/* Force builtin images to be loaded along with Blender data sync. This
+	 * is needed because we may be reading from depsgraph evaluated data which
+	 * can be freed by Blender before Cycles reads it. */
+	ImageManager *manager = session->scene->image_manager;
+	Device *device = session->device;
+	manager->device_load_builtin(device, session->scene, session->progress);
 }
 
 void BlenderSession::update_resumable_tile_manager(int num_samples)
@@ -1375,9 +1429,15 @@ void BlenderSession::update_resumable_tile_manager(int num_samples)
 		return;
 	}
 
-	const int num_samples_per_chunk = (int)ceilf((float)num_samples / num_resumable_chunks);
+	if (num_resumable_chunks > num_samples) {
+		fprintf(stderr, "Cycles warning: more sample chunks (%d) than samples (%d), "
+		        "this will cause some samples to be included in multiple chunks.\n",
+		        num_resumable_chunks, num_samples);
+	}
 
-	int range_start_sample, range_num_samples;
+	const float num_samples_per_chunk = (float)num_samples / num_resumable_chunks;
+
+	float range_start_sample, range_num_samples;
 	if(current_resumable_chunk != 0) {
 		/* Single chunk rendering. */
 		range_start_sample = num_samples_per_chunk * (current_resumable_chunk - 1);
@@ -1389,19 +1449,37 @@ void BlenderSession::update_resumable_tile_manager(int num_samples)
 		range_start_sample = num_samples_per_chunk * (start_resumable_chunk - 1);
 		range_num_samples = num_chunks * num_samples_per_chunk;
 	}
+
+	/* Round after doing the multiplications with num_chunks and num_samples_per_chunk
+	 * to allow for many small chunks. */
+	int rounded_range_start_sample = (int)floor(range_start_sample + 0.5f);
+	int rounded_range_num_samples = max((int)floor(range_num_samples + 0.5f), 1);
+
 	/* Make sure we don't overshoot. */
-	if(range_start_sample + range_num_samples > num_samples) {
-		range_num_samples = num_samples - range_num_samples;
+	if(rounded_range_start_sample + rounded_range_num_samples > num_samples) {
+		rounded_range_num_samples = num_samples - rounded_range_num_samples;
 	}
 
 	VLOG(1) << "Samples range start is " << range_start_sample << ", "
 	        << "number of samples to render is " << range_num_samples;
 
-	scene->integrator->start_sample = range_start_sample;
+	scene->integrator->start_sample = rounded_range_start_sample;
 	scene->integrator->tag_update(scene);
 
-	session->tile_manager.range_start_sample = range_start_sample;
-	session->tile_manager.range_num_samples = range_num_samples;
+	session->tile_manager.range_start_sample = rounded_range_start_sample;
+	session->tile_manager.range_num_samples = rounded_range_num_samples;
+}
+
+void BlenderSession::free_blender_memory_if_possible()
+{
+	if(!background) {
+		/* During interactive render we can not free anything: attempts to save
+		 * memory would cause things to be allocated and evaluated for every
+		 * updated sample.
+		 */
+		return;
+	}
+	b_engine.free_blender_memory();
 }
 
 CCL_NAMESPACE_END

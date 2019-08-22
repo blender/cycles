@@ -32,7 +32,7 @@
  * todo: clean this up ... */
 
 extern "C" {
-void BKE_image_user_frame_calc(void *iuser, int cfra, int fieldnr);
+void BKE_image_user_frame_calc(void *iuser, int cfra);
 void BKE_image_user_file_path(void *iuser, void *ima, char *path);
 unsigned char *BKE_image_get_pixels_for_frame(void *image, int frame);
 float *BKE_image_get_float_pixels_for_frame(void *image, int frame);
@@ -45,12 +45,12 @@ void python_thread_state_restore(void **python_thread_state);
 
 static inline BL::Mesh object_to_mesh(BL::BlendData& data,
                                       BL::Object& object,
-                                      BL::Scene& scene,
-                                      bool apply_modifiers,
-                                      bool render,
+                                      BL::Depsgraph& depsgraph,
                                       bool calc_undeformed,
                                       Mesh::SubdivisionType subdivision_type)
 {
+	/* TODO: make this work with copy-on-write, modifiers are already evaluated. */
+#if 0
 	bool subsurf_mod_show_render = false;
 	bool subsurf_mod_show_viewport = false;
 
@@ -63,30 +63,54 @@ static inline BL::Mesh object_to_mesh(BL::BlendData& data,
 		subsurf_mod.show_render(false);
 		subsurf_mod.show_viewport(false);
 	}
+#endif
 
-	BL::Mesh me = data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, false, calc_undeformed);
+	BL::Mesh mesh(PointerRNA_NULL);
+	if(object.type() == BL::Object::type_MESH) {
+		/* TODO: calc_undeformed is not used. */
+		mesh = BL::Mesh(object.data());
 
+		/* Make a copy to split faces if we use autosmooth, otherwise not needed.
+		 * Also in edit mode do we need to make a copy, to ensure data layers like
+		 * UV are not empty. */
+		if (mesh.is_editmode() ||
+		    (mesh.use_auto_smooth() && subdivision_type == Mesh::SUBDIVISION_NONE))
+		{
+			mesh = data.meshes.new_from_object(depsgraph, object, false, false);
+		}
+	}
+	else {
+		mesh = data.meshes.new_from_object(depsgraph, object, true, calc_undeformed);
+	}
+
+#if 0
 	if(subdivision_type != Mesh::SUBDIVISION_NONE) {
 		BL::Modifier subsurf_mod = object.modifiers[object.modifiers.length()-1];
 
 		subsurf_mod.show_render(subsurf_mod_show_render);
 		subsurf_mod.show_viewport(subsurf_mod_show_viewport);
 	}
+#endif
 
-	if((bool)me) {
-		if(me.use_auto_smooth()) {
-			if(subdivision_type == Mesh::SUBDIVISION_CATMULL_CLARK) {
-				me.calc_normals_split();
-			}
-			else {
-				me.split_faces(false);
-			}
+	if((bool)mesh && subdivision_type == Mesh::SUBDIVISION_NONE) {
+		if(mesh.use_auto_smooth()) {
+			mesh.split_faces(false);
 		}
-		if(subdivision_type == Mesh::SUBDIVISION_NONE) {
-			me.calc_tessface(true);
-		}
+
+		mesh.calc_loop_triangles();
 	}
-	return me;
+
+	return mesh;
+}
+
+static inline void free_object_to_mesh(BL::BlendData& data,
+                                       BL::Object& object,
+                                       BL::Mesh& mesh)
+{
+	/* Free mesh if we didn't just use the existing one. */
+	if(object.data().ptr.data != mesh.ptr.data) {
+		data.meshes.remove(mesh, false, true, false);
+	}
 }
 
 static inline void colorramp_to_array(BL::ColorRamp& ramp,
@@ -220,14 +244,14 @@ static inline string image_user_file_path(BL::ImageUser& iuser,
                                           int cfra)
 {
 	char filepath[1024];
-	BKE_image_user_frame_calc(iuser.ptr.data, cfra, 0);
+	BKE_image_user_frame_calc(iuser.ptr.data, cfra);
 	BKE_image_user_file_path(iuser.ptr.data, ima.ptr.data, filepath);
 	return string(filepath);
 }
 
 static inline int image_user_frame_number(BL::ImageUser& iuser, int cfra)
 {
-	BKE_image_user_frame_calc(iuser.ptr.data, cfra, 0);
+	BKE_image_user_frame_calc(iuser.ptr.data, cfra);
 	return iuser.frame_current();
 }
 
@@ -297,46 +321,6 @@ static inline int3 get_int3(const BL::Array<int, 3>& array)
 static inline int4 get_int4(const BL::Array<int, 4>& array)
 {
 	return make_int4(array[0], array[1], array[2], array[3]);
-}
-
-static inline uint get_layer(const BL::Array<bool, 20>& array)
-{
-	uint layer = 0;
-
-	for(uint i = 0; i < 20; i++)
-		if(array[i])
-			layer |= (1 << i);
-
-	return layer;
-}
-
-static inline uint get_layer(const BL::Array<bool, 20>& array,
-                             const BL::Array<bool, 8>& local_array,
-                             bool is_light = false,
-                             uint scene_layers = (1 << 20) - 1)
-{
-	uint layer = 0;
-
-	for(uint i = 0; i < 20; i++)
-		if(array[i])
-			layer |= (1 << i);
-
-	if(is_light) {
-		/* Consider light is visible if it was visible without layer
-		 * override, which matches behavior of Blender Internal.
-		 */
-		if(layer & scene_layers) {
-			for(uint i = 0; i < 8; i++)
-				layer |= (1 << (20+i));
-		}
-	}
-	else {
-		for(uint i = 0; i < 8; i++)
-			if(local_array[i])
-				layer |= (1 << (20+i));
-	}
-
-	return layer;
 }
 
 static inline float3 get_float3(PointerRNA& ptr, const char *name)

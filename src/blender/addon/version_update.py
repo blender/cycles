@@ -47,10 +47,10 @@ def foreach_cycles_nodetree():
             yield nodetree, world.library
             foreach_cycles_nodetree_group(nodetree, traversed)
 
-    for lamp in bpy.data.lamps:
-        nodetree = lamp.node_tree
+    for light in bpy.data.lights:
+        nodetree = light.node_tree
         if nodetree:
-            yield nodetree, lamp.library
+            yield nodetree, light.library
             foreach_cycles_nodetree_group(nodetree, traversed)
 
 
@@ -59,10 +59,10 @@ def displacement_node_insert(nodetree):
     displacement_links = []
     for link in nodetree.links:
         if (
-           link.to_node.bl_idname == 'ShaderNodeOutputMaterial' and
-           link.from_node.bl_idname != 'ShaderNodeDisplacement' and
-           link.to_socket.identifier == 'Displacement'
-           ):
+                link.to_node.bl_idname == 'ShaderNodeOutputMaterial' and
+                link.from_node.bl_idname != 'ShaderNodeDisplacement' and
+                link.to_socket.identifier == 'Displacement'
+        ):
             displacement_links.append(link)
 
     # Replace links with displacement node
@@ -82,7 +82,6 @@ def displacement_node_insert(nodetree):
 
         nodetree.links.new(from_socket, node.inputs['Height'])
         nodetree.links.new(node.outputs['Displacement'], to_socket)
-
 
 
 def displacement_principled_nodes(node):
@@ -238,9 +237,9 @@ def ambient_occlusion_node_relink(nodetree):
 
 @persistent
 def do_versions(self):
-    if bpy.context.user_preferences.version <= (2, 78, 1):
-        prop = bpy.context.user_preferences.addons[__package__].preferences
-        system = bpy.context.user_preferences.system
+    if bpy.context.preferences.version <= (2, 78, 1):
+        prop = bpy.context.preferences.addons[__package__].preferences
+        system = bpy.context.preferences.system
         if not prop.is_property_set("compute_device_type"):
             # Device might not currently be available so this can fail
             try:
@@ -268,7 +267,7 @@ def do_versions(self):
         library_versions.setdefault(library.version, []).append(library)
 
     # Do versioning per library, since they might have different versions.
-    max_need_versioning = (2, 79, 6)
+    max_need_versioning = (2, 80, 41)
     for version, libraries in library_versions.items():
         if version > max_need_versioning:
             continue
@@ -282,12 +281,9 @@ def do_versions(self):
             if version <= (2, 70, 0):
                 cscene = scene.cycles
                 sample_clamp = cscene.get("sample_clamp", False)
-                if (
-                    sample_clamp and
+                if (sample_clamp and
                     not cscene.is_property_set("sample_clamp_direct") and
-                        not cscene.is_property_set("sample_clamp_indirect")
-                ):
-
+                        not cscene.is_property_set("sample_clamp_indirect")):
                     cscene.sample_clamp_direct = sample_clamp
                     cscene.sample_clamp_indirect = sample_clamp
 
@@ -300,11 +296,9 @@ def do_versions(self):
             # Caustics Reflective/Refractive separation in 272
             if version <= (2, 72, 0):
                 cscene = scene.cycles
-                if (
-                    cscene.get("no_caustics", False) and
+                if (cscene.get("no_caustics", False) and
                     not cscene.is_property_set("caustics_reflective") and
-                    not cscene.is_property_set("caustics_refractive")
-                ):
+                    not cscene.is_property_set("caustics_refractive")):
                     cscene.caustics_reflective = False
                     cscene.caustics_refractive = False
 
@@ -358,16 +352,16 @@ def do_versions(self):
                     cscene.sample_clamp_indirect = 0.0
 
         # Lamps
-        for lamp in bpy.data.lamps:
-            if lamp.library not in libraries:
+        for light in bpy.data.lights:
+            if light.library not in libraries:
                 continue
 
             if version <= (2, 76, 5):
-                clamp = lamp.cycles
+                clight = light.cycles
 
                 # MIS
-                if not clamp.is_property_set("use_multiple_importance_sampling"):
-                    clamp.use_multiple_importance_sampling = False
+                if not clight.is_property_set("use_multiple_importance_sampling"):
+                    clight.use_multiple_importance_sampling = False
 
         # Worlds
         for world in bpy.data.worlds:
@@ -385,7 +379,8 @@ def do_versions(self):
                 if not cworld.is_property_set("sample_map_resolution"):
                     cworld.sample_map_resolution = 256
 
-            if version <= (2, 79, 4):
+            if version <= (2, 79, 4) or \
+               (version >= (2, 80, 0) and version <= (2, 80, 18)):
                 cworld = world.cycles
                 # World MIS
                 if not cworld.is_property_set("sampling_method"):
@@ -411,7 +406,8 @@ def do_versions(self):
                     cmat.displacement_method = 'BUMP'
 
             # Change default to bump again.
-            if version <= (2, 79, 6):
+            if version <= (2, 79, 6) or \
+               (version >= (2, 80, 0) and version <= (2, 80, 41)):
                 cmat = mat.cycles
                 if not cmat.is_property_set("displacement_method"):
                     cmat.displacement_method = 'DISPLACEMENT'
@@ -430,17 +426,33 @@ def do_versions(self):
                 for node in nodetree.nodes:
                     vector_curve_node_remap(node)
 
-            if version <= (2, 79, 1):
+            if version <= (2, 79, 1) or \
+               (version >= (2, 80, 0) and version <= (2, 80, 3)):
                 displacement_node_insert(nodetree)
 
             if version <= (2, 79, 2):
                 for node in nodetree.nodes:
                     displacement_principled_nodes(node)
 
-            if version <= (2, 79, 3):
+            if version <= (2, 79, 3) or \
+               (version >= (2, 80, 0) and version <= (2, 80, 4)):
                 # Switch to squared roughness convention
                 square_roughness_node_insert(nodetree)
 
             if version <= (2, 79, 4):
                 ambient_occlusion_node_relink(nodetree)
 
+        # Particles
+        for part in bpy.data.particles:
+            if part.library not in libraries:
+                continue
+
+            # Copy cycles hair settings to internal settings
+            if version <= (2, 80, 15):
+                cpart = part.get("cycles", None)
+                if cpart:
+                    part.shape = cpart.get("shape", 0.0)
+                    part.root_radius = cpart.get("root_width", 1.0)
+                    part.tip_radius = cpart.get("tip_width", 0.0)
+                    part.radius_scale = cpart.get("radius_scale", 0.01)
+                    part.use_close_tip = cpart.get("use_closetip", True)

@@ -30,7 +30,7 @@ CCL_NAMESPACE_BEGIN
 int blender_device_threads(BL::Scene& b_scene);
 
 /* Convert Blender settings to device specification. */
-DeviceInfo blender_device_info(BL::UserPreferences& b_userpref, BL::Scene& b_scene, bool background);
+DeviceInfo blender_device_info(BL::Preferences& b_preferences, BL::Scene& b_scene, bool background);
 
 CCL_NAMESPACE_END
 
