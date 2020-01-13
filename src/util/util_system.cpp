@@ -31,6 +31,7 @@ OIIO_NAMESPACE_USING
 #  endif
 #  include "util_windows.h"
 #elif defined(__APPLE__)
+#  include <unistd.h>
 #  include <sys/ioctl.h>
 #  include <sys/sysctl.h>
 #  include <sys/types.h>
