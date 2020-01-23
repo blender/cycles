@@ -82,7 +82,7 @@ elseif(MSVC)
 	_set_default(CYCLES_GLUT "${_lib_DIR}/opengl")
 	set(GLUT_LIBRARIES "${_lib_DIR}/opengl/lib/freeglut_static.lib")
 
-	set(Boost_USE_STATIC_RUNTIME ON)
+	set(Boost_USE_STATIC_RUNTIME OFF)
 	set(Boost_USE_MULTITHREADED ON)
 	set(Boost_USE_STATIC_LIBS ON)
 
