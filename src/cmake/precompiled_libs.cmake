@@ -141,6 +141,8 @@ elseif(MSVC)
 		optimized ${OPENEXR_ROOT_DIR}/lib/IlmThread_s.lib
 		debug ${OPENEXR_ROOT_DIR}/lib/IlmThread_s_d.lib
 	)
+	set(EMBREE_ROOT_DIR ${_lib_DIR}/embree)
+
 endif()
 
 unset(_lib_DIR)
