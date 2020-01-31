@@ -90,7 +90,7 @@ static void session_print_status()
 
 static bool write_render(const uchar *pixels, int w, int h, int channels)
 {
-  string msg = string_printf("Writing image %s\n", options.output_path.c_str());
+  string msg = string_printf("Writing image %s", options.output_path.c_str());
   session_print(msg);
 
   unique_ptr<ImageOutput> out = unique_ptr<ImageOutput>(ImageOutput::create(options.output_path));
@@ -112,21 +112,13 @@ static bool write_render(const uchar *pixels, int w, int h, int channels)
   return true;
 }
 
-vector<Pass>& get_passes() {
-  static vector<Pass> _passes;
-  Pass::add(PASS_COMBINED, _passes);
-  return _passes;
-}
-
 static BufferParams &session_buffer_params()
 {
   static BufferParams buffer_params;
-  vector<Pass>& passes = get_passes();
   buffer_params.width = options.width;
   buffer_params.height = options.height;
   buffer_params.full_width = options.width;
   buffer_params.full_height = options.height;
-  buffer_params.passes = passes;
 
   return buffer_params;
 }
@@ -157,8 +149,6 @@ static void session_init()
   options.session_params.write_render_cb = write_render;
   options.session = new Session(options.session_params);
 
-  vector<Pass>& passes = get_passes();
-
   if (options.session_params.background && !options.quiet)
     options.session->progress.set_update_callback(function_bind(&session_print_status));
 #ifdef WITH_CYCLES_STANDALONE_GUI
@@ -169,10 +159,6 @@ static void session_init()
   /* load scene */
   scene_init();
   options.session->scene = options.scene;
-
-  options.session->scene->film->tag_passes_update(options.session->scene, passes);
-  options.session->scene->film->display_pass = PASS_COMBINED;
-  options.session->scene->film->tag_update(options.session->scene);
 
   options.session->reset(session_buffer_params(), options.session_params.samples);
   options.session->start();
