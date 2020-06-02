@@ -66,6 +66,10 @@ if(CYCLES_STANDALONE_REPOSITORY)
   ####
   # OpenGL
 
+  if(NOT DEFINED OpenGL_GL_PREFERENCE)
+    set(OpenGL_GL_PREFERENCE "LEGACY")
+  endif()
+
   # TODO(sergey): We currently re-use the same variable name as we use
   # in Blender. Ideally we need to make it CYCLES_GL_LIBRARIES.
   find_package(OpenGL REQUIRED)
