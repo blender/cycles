@@ -94,7 +94,11 @@ elseif(MSVC)
 	# of OpenImageIO and GL*, otherwise linker will try to use
 	# dynamic one which we don't have and don't want even.
 	add_definitions(
+		# OIIO changed the name of this define in newer versions
+		# we define both, so it would work with both old and new
+		# versions.
 		-DOIIO_STATIC_BUILD
+		-DOIIO_STATIC_DEFINE
 		-DGLEW_STATIC
 		-DFREEGLUT_STATIC
 		-DFREEGLUT_LIB_PRAGMAS=0
