@@ -2,6 +2,7 @@
 set(INC
   ..
   ../../glew-mx
+  ../../third_party/sky/include
 )
 
 set(INC_SYS
@@ -93,6 +94,12 @@ set(LIB
   cycles_subd
   cycles_util
 )
+
+if(CYCLES_STANDALONE_REPOSITORY)
+  list(APPEND LIB extern_sky)
+else()
+  list(APPEND LIB bf_intern_sky)
+endif()
 
 if(WITH_CYCLES_OSL)
   list(APPEND LIB
