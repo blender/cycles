@@ -163,6 +163,10 @@ if(CYCLES_STANDALONE_REPOSITORY)
     set(WITH_OPENVDB ON)
   endif()
 
+  ####
+  # TB
+  find_package(TBB REQUIRED)
+
   unset(_lib_DIR)
 else()
   set(LLVM_LIBRARIES ${LLVM_LIBRARY})
