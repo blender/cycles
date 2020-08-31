@@ -39,6 +39,7 @@ _set_default(BOOST_ROOT "${_lib_DIR}/boost")
 _set_default(LLVM_ROOT_DIR "${_lib_DIR}/llvm")
 _set_default(OSL_ROOT_DIR "${_lib_DIR}/osl")
 _set_default(OPENEXR_ROOT_DIR "${_lib_DIR}/openexr")
+_set_default(TBB_ROOT_DIR "${_lib_DIR}/tbb")
 
 # Dependencies for OpenImageIO.
 set(PNG_LIBRARIES "${_lib_DIR}/png/lib/libpng${CMAKE_STATIC_LIBRARY_SUFFIX}")
