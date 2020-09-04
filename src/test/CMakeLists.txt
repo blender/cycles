@@ -45,6 +45,7 @@ set(ALL_CYCLES_LIBRARIES
   cycles_util
   extern_clew
   ${CYCLES_GL_LIBRARIES}
+  ${CYCLES_GLEW_LIBRARIES}
 )
 include_directories(${INC})
 

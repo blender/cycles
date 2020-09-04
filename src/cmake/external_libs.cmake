@@ -103,17 +103,9 @@ if(CYCLES_STANDALONE_REPOSITORY)
   endif()
 
   find_package(OpenGL REQUIRED)
-
-  set(CYCLES_GL_LIBRARIES
-    ${OPENGL_gl_LIBRARY}
-    ${OPENGL_glu_LIBRARY}
-    ${GLEW_LIBRARY}
-  )
+  set(CYCLES_GL_LIBRARIES ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
 else()
-  set(CYCLES_GL_LIBRARIES
-    bf_intern_glew_mx
-    ${BLENDER_GL_LIBRARIES}
-    ${BLENDER_GLEW_LIBRARIES})
+  set(CYCLES_GL_LIBRARIES ${BLENDER_GL_LIBRARIES})
 endif()
 
 ###########################################################################
@@ -551,9 +543,11 @@ if(CYCLES_STANDALONE_REPOSITORY)
   endif()
 
   find_package(GLEW REQUIRED)
+  set(CYCLES_GLEW_LIBRARIES ${GLEW_LIBRARY})
 else()
   # Workaround for unconventional variable name use in Blender.
   set(GLEW_INCLUDE_DIR "${GLEW_INCLUDE_PATH}")
+  set(CYCLES_GLEW_LIBRARIES bf_intern_glew_mx ${BLENDER_GLEW_LIBRARIES})
 endif()
 
 unset(CMAKE_IGNORE_PATH)
