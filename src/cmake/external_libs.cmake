@@ -84,12 +84,100 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
     _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
     _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
-
-    # Ignore system libraries
-    set(CMAKE_IGNORE_PATH "${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES};${CMAKE_SYSTEM_INCLUDE_PATH};${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES};${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}")
   else()
     unset(_cycles_lib_dir)
   endif()
+endif()
+
+###########################################################################
+# *** System Libraries ***
+###########################################################################
+
+###########################################################################
+# OpenGL
+###########################################################################
+
+if(CYCLES_STANDALONE_REPOSITORY)
+  if(NOT DEFINED OpenGL_GL_PREFERENCE)
+    set(OpenGL_GL_PREFERENCE "LEGACY")
+  endif()
+
+  find_package(OpenGL REQUIRED)
+
+  set(CYCLES_GL_LIBRARIES
+    ${OPENGL_gl_LIBRARY}
+    ${OPENGL_glu_LIBRARY}
+    ${GLEW_LIBRARY}
+  )
+else()
+  set(CYCLES_GL_LIBRARIES
+    bf_intern_glew_mx
+    ${BLENDER_GL_LIBRARIES}
+    ${BLENDER_GLEW_LIBRARIES})
+endif()
+
+###########################################################################
+# GLUT
+###########################################################################
+
+if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    add_definitions(-DFREEGLUT_STATIC -DFREEGLUT_LIB_PRAGMAS=0)
+    set(GLUT_LIBRARIES "${_cycles_lib_dir}/opengl/lib/freeglut_static.lib")
+    set(GLUT_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
+  else()
+    find_package(GLUT)
+
+    if(NOT GLUT_FOUND)
+      set(WITH_CYCLES_STANDALONE_GUI OFF)
+      message(STATUS "GLUT not found, disabling Cycles standalone GUI")
+    endif()
+  endif()
+
+  include_directories(
+    SYSTEM
+    ${GLUT_INCLUDE_DIR}
+  )
+endif()
+
+###########################################################################
+# CUDA
+###########################################################################
+
+if(WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD)
+  find_package(CUDA) # Try to auto locate CUDA toolkit
+  if(CUDA_FOUND)
+    message(STATUS "CUDA nvcc = ${CUDA_NVCC_EXECUTABLE}")
+  else()
+    message(STATUS "CUDA compiler not found, disabling WITH_CYCLES_CUDA_BINARIES")
+    set(WITH_CYCLES_CUDA_BINARIES OFF)
+    if(NOT WITH_CUDA_DYNLOAD)
+      message(STATUS "Additionally falling back to dynamic CUDA load")
+      set(WITH_CUDA_DYNLOAD ON)
+    endif()
+  endif()
+endif()
+
+###########################################################################
+# macOS
+###########################################################################
+
+if(CYCLES_STANDALONE_REPOSITORY)
+  # On macOS, always use zlib from system.
+  if(APPLE)
+    set(ZLIB_ROOT /usr)
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+  endif()
+endif()
+
+###########################################################################
+# *** Other Libraries ***
+###########################################################################
+
+if(EXISTS ${_cycles_lib_dir})
+  # Ignore system libraries if using precompiled.
+  set(CMAKE_IGNORE_PATH "${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES};${CMAKE_SYSTEM_INCLUDE_PATH};${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES};${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}")
 endif()
 
 ###########################################################################
@@ -104,7 +192,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     set(ZLIB_LIBRARY ${_cycles_lib_dir}/zlib/lib/libz_st.lib)
     set(ZLIB_DIR ${_cycles_lib_dir}/zlib)
     set(ZLIB_FOUND ON)
-  else()
+  elseif(NOT APPLE)
     find_package(ZLIB REQUIRED)
   endif()
 endif()
@@ -401,7 +489,14 @@ if(WITH_CYCLES_OPENVDB)
     endif()
 
     find_package(OpenVDB REQUIRED)
-    find_package(Blosc REQUIRED)
+
+    if(APPLE AND EXISTS ${_cycles_lib_dir})
+        # With macOS libraries, blosc is part of OpenVDB.
+        list(APPEND OPENVDB_LIBRARIES ${OPENVDB_ROOT_DIR}/lib/libblosc.a)
+    else()
+      find_package(Blosc REQUIRED)
+    endif()
+
     set(WITH_OPENVDB ON)
     set(OPENVDB_DEFINITIONS -DNOMINMAX -D_USE_MATH_DEFINES)
   endif()
@@ -461,78 +556,5 @@ else()
   set(GLEW_INCLUDE_DIR "${GLEW_INCLUDE_PATH}")
 endif()
 
-###########################################################################
-# System Libraries
-###########################################################################
-
-# Detect system libraries again
-if(EXISTS ${_cycles_lib_dir})
-  unset(CMAKE_IGNORE_PATH)
-endif()
-
-###########################################################################
-# OpenGL
-###########################################################################
-
-if(CYCLES_STANDALONE_REPOSITORY)
-  if(NOT DEFINED OpenGL_GL_PREFERENCE)
-    set(OpenGL_GL_PREFERENCE "LEGACY")
-  endif()
-
-  find_package(OpenGL REQUIRED)
-
-  set(CYCLES_GL_LIBRARIES
-    ${OPENGL_gl_LIBRARY}
-    ${OPENGL_glu_LIBRARY}
-    ${GLEW_LIBRARY}
-  )
-else()
-  set(CYCLES_GL_LIBRARIES
-    bf_intern_glew_mx
-    ${BLENDER_GL_LIBRARIES}
-    ${BLENDER_GLEW_LIBRARIES})
-endif()
-
-###########################################################################
-# GLUT
-###########################################################################
-
-if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    add_definitions(-DFREEGLUT_STATIC -DFREEGLUT_LIB_PRAGMAS=0)
-    set(GLUT_LIBRARIES "${_cycles_lib_dir}/opengl/lib/freeglut_static.lib")
-    set(GLUT_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
-  else()
-    find_package(GLUT)
-
-    if(NOT GLUT_FOUND)
-      set(WITH_CYCLES_STANDALONE_GUI OFF)
-      message(STATUS "GLUT not found, disabling Cycles standalone GUI")
-    endif()
-  endif()
-
-  include_directories(
-    SYSTEM
-    ${GLUT_INCLUDE_DIR}
-  )
-endif()
-
-###########################################################################
-# CUDA
-###########################################################################
-
-if(WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD)
-  find_package(CUDA) # Try to auto locate CUDA toolkit
-  if(CUDA_FOUND)
-    message(STATUS "CUDA nvcc = ${CUDA_NVCC_EXECUTABLE}")
-  else()
-    message(STATUS "CUDA compiler not found, disabling WITH_CYCLES_CUDA_BINARIES")
-    set(WITH_CYCLES_CUDA_BINARIES OFF)
-    if(NOT WITH_CUDA_DYNLOAD)
-      message(STATUS "Additionally falling back to dynamic CUDA load")
-      set(WITH_CUDA_DYNLOAD ON)
-    endif()
-  endif()
-endif()
-
+unset(CMAKE_IGNORE_PATH)
 unset(_cycles_lib_dir)
