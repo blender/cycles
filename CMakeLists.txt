@@ -49,6 +49,7 @@ list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}/src/cmake"
 	"${PROJECT_SOURCE_DIR}/src/cmake/Modules"
 )
+include("${PROJECT_SOURCE_DIR}/src/cmake/compiler_utils.cmake")
 include("${PROJECT_SOURCE_DIR}/src/cmake/macros.cmake")
 
 ###########################################################################
