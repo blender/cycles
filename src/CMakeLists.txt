@@ -29,8 +29,10 @@ endif()
 
 # External Libraries
 
-include(cmake/external_libs.cmake)
-include(cmake/macros.cmake)
+if(NOT CYCLES_STANDALONE_REPOSITORY)
+  include(cmake/external_libs.cmake)
+  include(cmake/macros.cmake)
+endif()
 
 # Build Flags
 # todo: this code could be refactored a bit to avoid duplication

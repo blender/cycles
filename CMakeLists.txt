@@ -49,8 +49,9 @@ list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}/src/cmake"
 	"${PROJECT_SOURCE_DIR}/src/cmake/Modules"
 )
-include("${PROJECT_SOURCE_DIR}/src/cmake/compiler_utils.cmake")
-include("${PROJECT_SOURCE_DIR}/src/cmake/macros.cmake")
+
+include(compiler_utils)
+include(macros)
 
 ###########################################################################
 # Global settings.
@@ -94,6 +95,8 @@ endif()
 
 option(WITH_CUDA_DYNLOAD           "Dynamically load CUDA libraries at runtime" ON)
 mark_as_advanced(WITH_CUDA_DYNLOAD)
+
+include(external_libs)
 
 ###########################################################################
 # Configuration.
