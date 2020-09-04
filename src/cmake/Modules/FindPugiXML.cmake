@@ -14,12 +14,8 @@
 #=============================================================================
 # Copyright 2014 Blender Foundation.
 #
-# Distributed under the OSI-approved BSD License (the "License");
-# see accompanying file Copyright.txt for details.
-#
-# This software is distributed WITHOUT ANY WARRANTY; without even the
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the License for more information.
+# Distributed under the OSI-approved BSD 3-Clause License,
+# see accompanying file BSD-3-Clause-license.txt for details.
 #=============================================================================
 
 # If PUGIXML_ROOT_DIR was defined in the environment, use it.
@@ -29,10 +25,6 @@ ENDIF()
 
 SET(_pugixml_SEARCH_DIRS
   ${PUGIXML_ROOT_DIR}
-  /usr/local
-  /sw # Fink
-  /opt/local # DarwinPorts
-  /opt/csw # Blastwave
   /opt/lib/oiio
 )
 
@@ -54,7 +46,7 @@ FIND_LIBRARY(PUGIXML_LIBRARY
     lib64 lib
   )
 
-# handle the QUIETLY and REQUIRED arguments and set PUGIXML_FOUND to TRUE if 
+# handle the QUIETLY and REQUIRED arguments and set PUGIXML_FOUND to TRUE if
 # all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(PUGIXML DEFAULT_MSG

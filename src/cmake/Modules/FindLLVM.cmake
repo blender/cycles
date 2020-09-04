@@ -1,97 +1,91 @@
 # - Find LLVM library
 # Find the native LLVM includes and library
 # This module defines
-#  LLVM_INCLUDE_DIRS, where to find LLVM headers, Set when
-#                     LLVM_INCLUDE_DIR is found.
-#  LLVM_LIBRARIES, libraries to link against to use OpenSubdiv.
-#  LLVM_ROOT_DIR, the base directory to search for OpenSubdiv.
-#                 This can also be an environment variable.
-#  LLVM_CONFIG, full path to a llvm-config binary.
-#  LLVM_VERSION, the version of found LLVM library
-#  LLVM_FOUND, if false, do not try to use LLVM.
+#  LLVM_INCLUDE_DIRS, where to find LLVM.h, Set when LLVM_INCLUDE_DIR is found.
+#  LLVM_LIBRARIES, libraries to link against to use LLVM.
+#  LLVM_ROOT_DIR, The base directory to search for LLVM.
+#                This can also be an environment variable.
+#  LLVM_FOUND, If false, do not try to use LLVM.
 #
+# also defined, but not for general use are
+#  LLVM_LIBRARY, where to find the LLVM library.
+
 #=============================================================================
-# Copyright 2014 Blender Foundation.
+# Copyright 2015 Blender Foundation.
 #
-# Distributed under the OSI-approved BSD License (the "License");
-# see accompanying file Copyright.txt for details.
-#
-# This software is distributed WITHOUT ANY WARRANTY; without even the
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the License for more information.
+# Distributed under the OSI-approved BSD 3-Clause License,
+# see accompanying file BSD-3-Clause-license.txt for details.
 #=============================================================================
 
-IF(LLVM_ROOT_DIR)
-  FIND_PROGRAM(LLVM_CONFIG llvm-config-${LLVM_VERSION}
-               HINTS ${LLVM_ROOT_DIR}/bin
-               NO_CMAKE_PATH NO_DEFAULT_PATH)
-  IF(NOT LLVM_CONFIG)
-    FIND_PROGRAM(LLVM_CONFIG llvm-config
-                 HINTS ${LLVM_ROOT_DIR}/bin
-                 NO_CMAKE_PATH)
-  ENDIF()
-ELSE()
-  FIND_PROGRAM(LLVM_CONFIG llvm-config)
-  IF(NOT LLVM_CONFIG)
-    FOREACH(_llvm_VERSION 3.5 3.4 3.3 3.1 3.0)
-      FIND_PROGRAM(LLVM_CONFIG llvm-config-${_llvm_VERSION})
-      IF(LLVM_CONFIG)
-        BREAK()
-      ENDIF()
-    ENDFOREACH()
-  UNSET(_llvm_VERSION)
-  ENDIF()
-ENDIF()
+if(LLVM_ROOT_DIR)
+  if(DEFINED LLVM_VERSION)
+    find_program(LLVM_CONFIG llvm-config-${LLVM_VERSION} HINTS ${LLVM_ROOT_DIR}/bin NO_CMAKE_PATH)
+  endif()
+  if(NOT LLVM_CONFIG)
+    find_program(LLVM_CONFIG llvm-config HINTS ${LLVM_ROOT_DIR}/bin NO_CMAKE_PATH)
+  endif()
+else()
+  if(DEFINED LLVM_VERSION)
+        message(running llvm-config-${LLVM_VERSION})
+    find_program(LLVM_CONFIG llvm-config-${LLVM_VERSION})
+  endif()
+  if(NOT LLVM_CONFIG)
+    find_program(LLVM_CONFIG llvm-config)
+  endif()
+endif()
 
-IF(NOT DEFINED LLVM_VERSION)
-  EXECUTE_PROCESS(COMMAND ${LLVM_CONFIG} --version
-                  OUTPUT_VARIABLE LLVM_VERSION
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(LLVM_VERSION ${LLVM_VERSION} CACHE STRING "Version of LLVM to use")
-ENDIF()
+if(NOT DEFINED LLVM_VERSION)
+  execute_process(COMMAND ${LLVM_CONFIG} --version
+          OUTPUT_VARIABLE LLVM_VERSION
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(LLVM_VERSION ${LLVM_VERSION} CACHE STRING "Version of LLVM to use")
+endif()
+if(NOT LLVM_ROOT_DIR)
+  execute_process(COMMAND ${LLVM_CONFIG} --prefix
+          OUTPUT_VARIABLE LLVM_ROOT_DIR
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(LLVM_ROOT_DIR ${LLVM_ROOT_DIR} CACHE PATH "Path to the LLVM installation")
+endif()
+if(NOT LLVM_LIBPATH)
+  execute_process(COMMAND ${LLVM_CONFIG} --libdir
+          OUTPUT_VARIABLE LLVM_LIBPATH
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(LLVM_LIBPATH ${LLVM_LIBPATH} CACHE PATH "Path to the LLVM library path")
+  mark_as_advanced(LLVM_LIBPATH)
+endif()
 
-IF(NOT DEFINED LLVM_ROOT_DIR)
-  EXECUTE_PROCESS(COMMAND ${LLVM_CONFIG} --prefix
-                  OUTPUT_VARIABLE LLVM_ROOT_DIR
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(LLVM_ROOT_DIR ${LLVM_ROOT_DIR} CACHE PATH "Path to the LLVM installation")
-ENDIF()
-
-IF(NOT DEFINED LLVM_LIBPATH)
-  EXECUTE_PROCESS(COMMAND ${LLVM_CONFIG} --libdir
-                  OUTPUT_VARIABLE LLVM_LIBPATH
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(LLVM_LIBPATH ${LLVM_LIBPATH} CACHE PATH "Path to the LLVM library")
-  MARK_AS_ADVANCED(LLVM_LIBPATH)
-ENDIF()
-
-IF(NOT DEFINED LLVM_INCLUDE_DIRS)
-  EXECUTE_PROCESS(COMMAND ${LLVM_CONFIG} --includedir
-                  OUTPUT_VARIABLE LLVM_INCLUDE_DIRS
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(LLVM_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS} CACHE PATH "Path to the LLVM includes")
-  MARK_AS_ADVANCED(LLVM_INCLUDE_DIRS)
-ENDIF()
-
-IF(LLVM_STATIC)
-  FIND_LIBRARY(LLVM_LIBRARIES
+if(LLVM_STATIC)
+  find_library(LLVM_LIBRARY
                NAMES LLVMAnalysis # first of a whole bunch of libs to get
                PATHS ${LLVM_LIBPATH})
-ELSE()
-  FIND_LIBRARY(LLVM_LIBRARIES
-               NAMES LLVM-${LLVM_VERSION}
+else()
+  find_library(LLVM_LIBRARY
+               NAMES
+                 LLVM-${LLVM_VERSION}
+                 LLVMAnalysis  # check for the static library as a fall-back
                PATHS ${LLVM_LIBPATH})
-ENDIF()
+endif()
 
-IF(LLVM_LIBRARIES AND LLVM_ROOT_DIR AND LLVM_LIBPATH)
-  IF(LLVM_STATIC)
-    EXECUTE_PROCESS(COMMAND ${LLVM_CONFIG} --libfiles
-                    OUTPUT_VARIABLE LLVM_LIBRARIES
+
+if(LLVM_LIBRARY AND LLVM_ROOT_DIR AND LLVM_LIBPATH)
+  if(LLVM_STATIC)
+    # if static LLVM libraries were requested, use llvm-config to generate
+    # the list of what libraries we need, and substitute that in the right
+    # way for LLVM_LIBRARY.
+    execute_process(COMMAND ${LLVM_CONFIG} --libfiles
+                    OUTPUT_VARIABLE LLVM_LIBRARY
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
-    STRING(REPLACE " " ";" LLVM_LIBRARIES "${LLVM_LIBRARIES}")
-  ENDIF()
-ENDIF()
+    string(REPLACE " " ";" LLVM_LIBRARY "${LLVM_LIBRARY}")
+  endif()
+endif()
 
+
+# handle the QUIETLY and REQUIRED arguments and set SDL2_FOUND to TRUE if
+# all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(LLVM DEFAULT_MSG
-  LLVM_LIBRARIES LLVM_LIBPATH LLVM_ROOT_DIR)
+    LLVM_LIBRARY)
+
+MARK_AS_ADVANCED(
+  LLVM_LIBRARY
+)

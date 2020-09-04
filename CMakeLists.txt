@@ -31,10 +31,11 @@ cmake_policy(SET CMP0005 NEW)
 # Input directories must have CMakeLists.txt
 cmake_policy(SET CMP0014 NEW)
 
-if(NOT (${CMAKE_VERSION} VERSION_LESS 3.0))
-	# Keep until CMake-3.0 is min requirement.
-	cmake_policy(SET CMP0043 OLD)
-endif()
+# Compile definitions.
+cmake_policy(SET CMP0043 NEW)
+
+# Use ROOT variables in find_package.
+cmake_policy(SET CMP0074 NEW)
 
 ###########################################################################
 # Initialize project.
@@ -73,16 +74,22 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO  NDEBU
 ###########################################################################
 # Options.
 
-option(WITH_CPU_SSE                "Enable SIMD instruction if they're detected on the host machine" ON)
-option(WITH_CYCLES_STANDALONE_GUI  "Build Cycles standalone with GUI" ON)
-option(WITH_CYCLES_OSL             "Build Cycles with OSL support" OFF)
-option(WITH_CYCLES_OPENSUBDIV      "Build Cycles with OpenSubdiv support" OFF)
-option(WITH_CYCLES_OPENVDB         "Build Cycles with OpenVDB support" OFF)
-option(WITH_CYCLES_LOGGING         "Build Cycles with logging support" OFF)
-option(WITH_CYCLES_DEBUG           "Build Cycles with with extra debug capabilties" OFF)
-option(WITH_CYCLES_CUDA_BINARIES   "Build Cycles CUDA binaries" OFF)
+option(WITH_CPU_SSE                 "Enable SIMD instruction if they're detected on the host machine" ON)
+option(WITH_CYCLES_STANDALONE_GUI   "Build Cycles standalone with GUI" ON)
+option(WITH_CYCLES_OSL              "Build Cycles with OSL support" ON)
+option(WITH_CYCLES_OPENCOLORIO      "Build Cycles with OpenColorIO support" ON)
+option(WITH_CYCLES_OPENSUBDIV       "Build Cycles with OpenSubdiv support" ON)
+option(WITH_CYCLES_OPENIMAGEDENOISE "Build Cycles with OpenImageDenoise support" ON)
+option(WITH_CYCLES_OPENVDB          "Build Cycles with OpenVDB support" ON)
+option(WITH_CYCLES_EMBREE           "Build Cycles with embree support" ON)
+option(WITH_CYCLES_LOGGING          "Build Cycles with logging support" OFF)
+option(WITH_CYCLES_DEBUG            "Build Cycles with with extra debug capabilties" OFF)
+option(WITH_CYCLES_CUDA_BINARIES    "Build Cycles CUDA binaries" OFF)
 set(CYCLES_CUDA_BINARIES_ARCH sm_20 sm_21 sm_30 sm_35 sm_50 sm_52 CACHE STRING "CUDA architectures to build binaries for")
 mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
+if(UNIX AND NOT APPLE)
+  option(WITH_CXX11_ABI              "Build with glibc C++11 ABI. Precompiled libraries are built with the older ABI" ON)
+endif()
 
 option(WITH_CUDA_DYNLOAD           "Dynamically load CUDA libraries at runtime" ON)
 mark_as_advanced(WITH_CUDA_DYNLOAD)
