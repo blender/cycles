@@ -475,6 +475,10 @@ endif()
 if(WITH_CYCLES_OPENVDB)
   if(CYCLES_STANDALONE_REPOSITORY)
     if(MSVC AND EXISTS ${_cycles_lib_dir})
+      set(OPENVDB_LIBRARY
+          optimized ${OPENVDB_ROOT_DIR}/lib/openvdb${CMAKE_STATIC_LIBRARY_SUFFIX}
+          debug ${OPENVDB_ROOT_DIR}/lib/openvdb_d${CMAKE_STATIC_LIBRARY_SUFFIX}
+      )
       set(BLOSC_LIBRARY
           optimized ${BLOSC_ROOT_DIR}/lib/libblosc.lib
           debug ${BLOSC_ROOT_DIR}/lib/libblosc_d.lib)
