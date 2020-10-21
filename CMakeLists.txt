@@ -68,10 +68,12 @@ set(CYCLES_STANDALONE_REPOSITORY TRUE)
 set(WITH_CYCLES_STANDALONE TRUE)
 
 # Global compile definitions since add_definitions() adds for all.
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG           DEBUG _DEBUG)
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE         NDEBUG)
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_MINSIZEREL      NDEBUG)
-set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO  NDEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
+  $<$<CONFIG:Debug>:DEBUG;_DEBUG>
+  $<$<CONFIG:Release>:NDEBUG>
+  $<$<CONFIG:MinSizeRel>:NDEBUG>
+  $<$<CONFIG:RelWithDebInfo>:NDEBUG>
+)
 
 ###########################################################################
 # Options.
