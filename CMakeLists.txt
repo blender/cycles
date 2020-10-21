@@ -17,7 +17,7 @@ endif()
 ###########################################################################
 # Policies
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 # So library linking is more sane.
 cmake_policy(SET CMP0003 NEW)
