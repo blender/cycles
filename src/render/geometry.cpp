@@ -428,6 +428,8 @@ void GeometryManager::update_svm_attributes(Device *,
         attr_map[index].w = NODE_ATTR_FLOAT2;
       else if (req.type == TypeRGBA)
         attr_map[index].w = NODE_ATTR_RGBA;
+      else if (req.type == TypeFloat4)
+        attr_map[index].w = NODE_ATTR_FLOAT4;
       else
         attr_map[index].w = NODE_ATTR_FLOAT3;
 
@@ -450,6 +452,8 @@ void GeometryManager::update_svm_attributes(Device *,
             attr_map[index].w = NODE_ATTR_FLOAT2;
           else if (req.subd_type == TypeRGBA)
             attr_map[index].w = NODE_ATTR_RGBA;
+          else if (req.subd_type == TypeFloat4)
+            attr_map[index].w = NODE_ATTR_FLOAT4;
           else
             attr_map[index].w = NODE_ATTR_FLOAT3;
 
