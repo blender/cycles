@@ -61,22 +61,6 @@ Session::Session(const SessionParams &params_)
 
   TaskScheduler::init(params.threads);
 
-  /* Create CPU/GPU devices. */
-  device = Device::create(params.device, stats, profiler, params.background);
-
-  /* Create buffers for interactive rendering. */
-  if (params.background && !params.write_render_cb) {
-    buffers = NULL;
-    display = NULL;
-  }
-  else {
-    buffers = new RenderBuffers(device);
-    display = new DisplayBuffer(device, params.display_buffer_linear);
-  }
-
-  /* Validate denoising parameters. */
-  set_denoising(params.denoising);
-
   session_thread = NULL;
   scene = NULL;
 
@@ -90,13 +74,33 @@ Session::Session(const SessionParams &params_)
   gpu_draw_ready = false;
   gpu_need_display_buffer_update = false;
   pause = false;
+
+  buffers = NULL;
+  display = NULL;
+
+  /* Validate denoising parameters. */
+  set_denoising(params.denoising);
+
+  /* Create CPU/GPU devices. */
+  device = Device::create(params.device, stats, profiler, params.background);
+
+  if (!device->error_message().empty()) {
+    progress.set_error(device->error_message());
+    return;
+  }
+
+  /* Create buffers for interactive rendering. */
+  if (!(params.background && !params.write_render_cb)) {
+    buffers = new RenderBuffers(device);
+    display = new DisplayBuffer(device, params.display_buffer_linear);
+  }
 }
 
 Session::~Session()
 {
   cancel();
 
-  if (params.write_render_cb) {
+  if (buffers && params.write_render_cb) {
     /* Copy to display buffer and write out image if requested */
     delete display;
 
