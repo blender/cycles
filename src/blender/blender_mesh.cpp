@@ -1024,10 +1024,7 @@ static void sync_mesh_fluid_motion(BL::Object &b_ob, Scene *scene, Mesh *mesh)
   }
 }
 
-void BlenderSync::sync_mesh(BL::Depsgraph b_depsgraph,
-                            BL::Object b_ob,
-                            Mesh *mesh,
-                            const vector<Shader *> &used_shaders)
+void BlenderSync::sync_mesh(BL::Depsgraph b_depsgraph, BL::Object b_ob, Mesh *mesh)
 {
   array<int> oldtriangles;
   array<Mesh::SubdFace> oldsubd_faces;
@@ -1036,8 +1033,7 @@ void BlenderSync::sync_mesh(BL::Depsgraph b_depsgraph,
   oldsubd_faces.steal_data(mesh->subd_faces);
   oldsubd_face_corners.steal_data(mesh->subd_face_corners);
 
-  mesh->clear();
-  mesh->used_shaders = used_shaders;
+  mesh->clear(true);
 
   mesh->subdivision_type = Mesh::SUBDIVISION_NONE;
 

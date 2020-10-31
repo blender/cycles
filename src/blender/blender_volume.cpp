@@ -300,11 +300,9 @@ static void sync_volume_object(BL::BlendData &b_data,
   }
 }
 
-void BlenderSync::sync_volume(BL::Object &b_ob,
-                              Volume *volume,
-                              const vector<Shader *> &used_shaders){
-  volume->clear();
-  volume->used_shaders = used_shaders;
+void BlenderSync::sync_volume(BL::Object &b_ob, Volume *volume)
+{
+  volume->clear(true);
 
   if (view_layer.use_volumes) {
     if (b_ob.type() == BL::Object::type_VOLUME) {
