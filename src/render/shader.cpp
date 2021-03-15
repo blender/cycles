@@ -192,7 +192,7 @@ NODE_DEFINE(Shader)
   return type;
 }
 
-Shader::Shader() : Node(node_type)
+Shader::Shader() : Node(get_node_type())
 {
   pass_id = 0;
 
@@ -241,7 +241,7 @@ bool Shader::is_constant_emission(float3 *emission)
     return false;
   }
 
-  if (surf->link->parent->type == EmissionNode::node_type) {
+  if (surf->link->parent->type == EmissionNode::get_node_type()) {
     EmissionNode *node = (EmissionNode *)surf->link->parent;
 
     assert(node->input("Color"));
@@ -253,7 +253,7 @@ bool Shader::is_constant_emission(float3 *emission)
 
     *emission = node->get_color() * node->get_strength();
   }
-  else if (surf->link->parent->type == BackgroundNode::node_type) {
+  else if (surf->link->parent->type == BackgroundNode::get_node_type()) {
     BackgroundNode *node = (BackgroundNode *)surf->link->parent;
 
     assert(node->input("Color"));
