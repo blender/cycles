@@ -2,6 +2,9 @@
 .*
 .*.swp
 
+# Python cache
+__pycache__/
+
 # Editors
 *~
 *.swp

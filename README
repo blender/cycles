@@ -8,22 +8,35 @@ https://www.cycles-renderer.org
 Building
 --------
 
-The easiest way to build on macOS, Linux and Windows is to use the Blender precompiled libraries.
+Ensure the following software is installed and available in the PATH:
+- Git
+- Subversion
+- Python 3
+- CMake
 
-  https://svn.blender.org/svnroot/bf-blender/trunk/lib/
-
-Checkout the folder for your platform and place it in a lib/ folder next to the Cycles source directory. The libraries will then be automatically found as part of the build configuration.
-
-Quick setup is as follows:
+Quick build setup on Windows, macOS and Linux is as follows:
 
   git clone git://git.blender.org/cycles.git
 
-  mkdir lib
-  cd lib
-  svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/<platform>
-
-  cd ../cycles
+  cd cycles
+  make update
   make
+
+This will download the Cycles source code, precompiled libraries, configure CMake, and build.
+
+The resulting binary will be in cycles/build/bin.
+
+Build Details
+-------------
+
+Cycles uses the CMake build system. As an alternative to the "make" wrapper, CMake can be manually configured.
+
+See the CMake configuration to enable and disable various features.
+
+The precompiled libraries are shared with Blender, and will be automatically downlaod from the Blender repository with "make update" from:
+  https://svn.blender.org/svnroot/bf-blender/trunk/lib/
+
+The precompiled libraries are expected to be in a lib/<platform> folder next to the cycles/ source folder.
 
 Dependencies
 ------------
@@ -47,13 +60,8 @@ Optional:
 
 For GPU rendering support on NVIDIA cards, these need to be downloaded and installed from the NVIDIA website.
 
-- CUDA Toolkit
-- OptiX 7 SDK
-
-Build Options
--------------
-
-CMake is used for building, and standard CMake configuration can be used to configure the build and enable or disable features.
+- CUDA Toolkit 11 or newer
+- OptiX 7.1 SDK
 
 Examples
 --------

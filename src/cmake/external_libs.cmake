@@ -31,7 +31,11 @@ endmacro()
 
 if(CYCLES_STANDALONE_REPOSITORY)
   if(APPLE)
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin")
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+      set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin")
+    else()
+      set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin_arm64")
+    endif()
   elseif(WIN32)
     if(CMAKE_CL_64)
       set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/win64_vc15")
@@ -58,6 +62,10 @@ if(CYCLES_STANDALONE_REPOSITORY)
          CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
         message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
       endif()
+    endif()
+
+    if(DEFINED _cycles_lib_dir)
+      message(STATUS "Using precompiled libraries at ${_cycles_lib_dir}")
     endif()
 
     # Avoid namespace pollustion.

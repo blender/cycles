@@ -59,6 +59,7 @@ include(macros)
 # Avoid having empty buildtype.
 set(CMAKE_BUILD_TYPE_INIT "Release")
 
+set(CMAKE_INSTALL_MESSAGE LAZY)
 
 # Some stuff is different when building stabdalone Cycles from inside
 # Blender source code and when building it from it's own repository.
@@ -89,7 +90,7 @@ option(WITH_CYCLES_EMBREE           "Build Cycles with embree support" ON)
 option(WITH_CYCLES_LOGGING          "Build Cycles with logging support" OFF)
 option(WITH_CYCLES_DEBUG            "Build Cycles with with extra debug capabilties" OFF)
 option(WITH_CYCLES_CUDA_BINARIES    "Build Cycles CUDA binaries" OFF)
-set(CYCLES_CUDA_BINARIES_ARCH sm_20 sm_21 sm_30 sm_35 sm_50 sm_52 CACHE STRING "CUDA architectures to build binaries for")
+set(CYCLES_CUDA_BINARIES_ARCH sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 compute_75 CACHE STRING "CUDA architectures to build binaries for")
 mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
 if(UNIX AND NOT APPLE)
   option(WITH_CXX11_ABI              "Build with glibc C++11 ABI. Precompiled libraries are built with the older ABI" ON)

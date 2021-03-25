@@ -48,8 +48,7 @@ endmacro()
 
 # note this is a function instead of a macro so that ${BUILD_TYPE} in targetdir
 # does not get expanded in calling but is preserved
-function(delayed_do_install
-  targetdir)
+function(delayed_do_install)
 
   get_property(files GLOBAL PROPERTY DELAYED_INSTALL_FILES)
   get_property(destinations GLOBAL PROPERTY DELAYED_INSTALL_DESTINATIONS)
@@ -61,7 +60,7 @@ function(delayed_do_install
     foreach(i RANGE ${n})
       list(GET files ${i} f)
       list(GET destinations ${i} d)
-      install(FILES ${f} DESTINATION ${targetdir}/${d})
+      install(FILES ${f} DESTINATION ${d})
     endforeach()
   endif()
 endfunction()

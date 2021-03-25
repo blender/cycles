@@ -412,5 +412,5 @@ if(WITH_GTESTS)
 endif()
 
 if(NOT WITH_BLENDER AND WITH_CYCLES_STANDALONE)
-  delayed_do_install(${CMAKE_BINARY_DIR}/bin)
+  delayed_do_install()
 endif()
