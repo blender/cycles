@@ -99,12 +99,12 @@ endif()
 option(WITH_CUDA_DYNLOAD           "Dynamically load CUDA libraries at runtime" ON)
 mark_as_advanced(WITH_CUDA_DYNLOAD)
 
-include(external_libs)
-
 ###########################################################################
 # Configuration.
 
 include(CheckCXXCompilerFlag)
+include(detect_platform)
+include(external_libs)
 include(configure_build)
 
 ###########################################################################

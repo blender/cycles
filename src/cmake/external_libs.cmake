@@ -238,7 +238,9 @@ if(CYCLES_STANDALONE_REPOSITORY)
   endif()
 
   find_package(OpenImageIO REQUIRED)
-  if(OPENIMAGEIO_PUGIXML_FOUND)
+  # For our lib directory, always link with separate PugiXML, the auto
+  # detection fails due to outdated PugiXML headers in the OIIO folder.
+  if(OPENIMAGEIO_PUGIXML_FOUND AND NOT EXISTS ${_cycles_lib_dir})
     set(PUGIXML_INCLUDE_DIR "${OPENIMAGEIO_INCLUDE_DIR/OpenImageIO}")
     set(PUGIXML_LIBRARIES "")
   else()

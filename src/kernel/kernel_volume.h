@@ -1144,7 +1144,7 @@ ccl_device VolumeIntegrateResult kernel_volume_decoupled_scatter(KernelGlobals *
 
 /* decide if we need to use decoupled or not */
 ccl_device bool kernel_volume_use_decoupled(KernelGlobals *kg,
-                                            bool heterogeneous,
+                                            float step_size,
                                             bool direct,
                                             int sampling_method)
 {
@@ -1155,7 +1155,7 @@ ccl_device bool kernel_volume_use_decoupled(KernelGlobals *kg,
     return false;
 
 #  ifdef __KERNEL_GPU__
-  if (heterogeneous)
+  if (step_size != FLT_MAX)
     return false;
 #  endif
 
