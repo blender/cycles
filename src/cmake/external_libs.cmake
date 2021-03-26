@@ -116,21 +116,22 @@ endif()
 if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
   if(MSVC AND EXISTS ${_cycles_lib_dir})
     add_definitions(-DFREEGLUT_STATIC -DFREEGLUT_LIB_PRAGMAS=0)
+    set(GLUT_FOUND ON)
     set(GLUT_LIBRARIES "${_cycles_lib_dir}/opengl/lib/freeglut_static.lib")
     set(GLUT_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
   else()
     find_package(GLUT)
-
-    if(NOT GLUT_FOUND)
-      set(WITH_CYCLES_STANDALONE_GUI OFF)
-      message(STATUS "GLUT not found, disabling Cycles standalone GUI")
-    endif()
   endif()
 
-  include_directories(
-    SYSTEM
-    ${GLUT_INCLUDE_DIR}
-  )
+  if(GLUT_FOUND)
+    include_directories(
+      SYSTEM
+      ${GLUT_INCLUDE_DIR}
+    )
+  else()
+    set(WITH_CYCLES_STANDALONE_GUI OFF)
+    message(WARNING "GLUT not found, disabling WITH_CYCLES_STANDALONE_GUI")
+  endif()
 endif()
 
 ###########################################################################
