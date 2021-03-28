@@ -5,8 +5,8 @@ Cycles is a path tracing renderer focused on interactivity and ease of use, whil
 
 https://www.cycles-renderer.org
 
-Building
---------
+Quick Build
+-----------
 
 Ensure the following software is installed and available in the PATH:
 - Git
@@ -22,9 +22,11 @@ Quick build setup on Windows, macOS and Linux is as follows:
   make update
   make
 
-This will download the Cycles source code, precompiled libraries, configure CMake, and build.
+This will download the Cycles source code, download precompiled libraries, configure CMake, and build.
 
-The resulting binary will be in cycles/build/bin.
+The resulting binary will be in:
+
+  cycles/build/bin
 
 Build Details
 -------------
