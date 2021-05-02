@@ -85,6 +85,7 @@ Geometry::Geometry(const NodeType *node_type, const Type type)
 
 Geometry::~Geometry()
 {
+  dereference_all_used_nodes();
   delete bvh;
 }
 
