@@ -32,7 +32,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Blender libraries version compatible with this version */
 
-#define CYCLES_BLENDER_LIBRARIES_VERSION 2.92
+#define CYCLES_BLENDER_LIBRARIES_VERSION 2.93
 
 CCL_NAMESPACE_END
 

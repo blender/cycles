@@ -109,7 +109,7 @@ def do_versions(self):
         library_versions.setdefault(library.version, []).append(library)
 
     # Do versioning per library, since they might have different versions.
-    max_need_versioning = (2, 92, 14)
+    max_need_versioning = (2, 93, 7)
     for version, libraries in library_versions.items():
         if version > max_need_versioning:
             continue
@@ -205,7 +205,7 @@ def do_versions(self):
                     view_layer.pass_cryptomatte_depth = cview_layer.get("pass_crypto_depth", 6)
                     view_layer.use_pass_cryptomatte_accurate = cview_layer.get("pass_crypto_accurate", True)
 
-            if version <= (2, 92, 14):
+            if version <= (2, 93, 7):
                 if scene.render.engine == 'CYCLES':
                   for view_layer in scene.view_layers:
                     cview_layer = view_layer.cycles
