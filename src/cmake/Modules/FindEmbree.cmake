@@ -34,12 +34,17 @@ FIND_PATH(EMBREE_INCLUDE_DIR
     include
 )
 
+IF(NOT (APPLE AND ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")))
+  SET(_embree_SIMD_COMPONENTS
+    embree_sse42
+    embree_avx
+    embree_avx2
+  )
+ENDIF()
 
 SET(_embree_FIND_COMPONENTS
   embree3
-  embree_avx
-  embree_avx2
-  embree_sse42
+  ${_embree_SIMD_COMPONENTS}
   lexers
   math
   simd
@@ -59,14 +64,14 @@ FOREACH(COMPONENT ${_embree_FIND_COMPONENTS})
     PATH_SUFFIXES
       lib64 lib
     )
-  IF (NOT EMBREE_${UPPERCOMPONENT}_LIBRARY)
-    IF (EMBREE_EMBREE3_LIBRARY)
+  IF(NOT EMBREE_${UPPERCOMPONENT}_LIBRARY)
+    IF(EMBREE_EMBREE3_LIBRARY)
       # If we can't find all the static libraries, try to fall back to the shared library if found.
       # This allows building with a shared embree library
       SET(_embree_LIBRARIES ${EMBREE_EMBREE3_LIBRARY})
       BREAK()
-    ENDIF ()
-  ENDIF ()
+    ENDIF()
+  ENDIF()
   LIST(APPEND _embree_LIBRARIES "${EMBREE_${UPPERCOMPONENT}_LIBRARY}")
 ENDFOREACH()
 
@@ -80,7 +85,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(Embree DEFAULT_MSG
 IF(EMBREE_FOUND)
   SET(EMBREE_LIBRARIES ${_embree_LIBRARIES})
   SET(EMBREE_INCLUDE_DIRS ${EMBREE_INCLUDE_DIR})
-ENDIF(EMBREE_FOUND)
+ENDIF()
 
 MARK_AS_ADVANCED(
   EMBREE_INCLUDE_DIR

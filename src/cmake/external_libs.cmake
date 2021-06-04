@@ -530,7 +530,6 @@ if(WITH_CYCLES_OPENIMAGEDENOISE)
         debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/common_d.lib
         debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/dnnl_d.lib)
     endif()
-
   endif()
 endif()
 
