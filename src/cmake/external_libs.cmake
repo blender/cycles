@@ -80,6 +80,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(GLEW_ROOT_DIR "${_cycles_lib_dir}/glew")
     _set_default(JPEG_ROOT "${_cycles_lib_dir}/jpeg")
     _set_default(LLVM_ROOT_DIR "${_cycles_lib_dir}/llvm")
+    _set_default(CLANG_ROOT_DIR "${_cycles_lib_dir}/llvm")
     _set_default(OPENCOLORIO_ROOT_DIR "${_cycles_lib_dir}/opencolorio")
     _set_default(OPENEXR_ROOT_DIR "${_cycles_lib_dir}/openexr")
     _set_default(OPENIMAGEDENOISE_ROOT_DIR "${_cycles_lib_dir}/openimagedenoise")
@@ -302,6 +303,7 @@ if(WITH_CYCLES_OSL)
 
     find_package(OSL REQUIRED)
     find_package(LLVM REQUIRED)
+    find_package(Clang REQUIRED)
 
     if(MSVC AND EXISTS ${_cycles_lib_dir})
       # TODO(sergey): On Windows llvm-config doesn't give proper results for the
