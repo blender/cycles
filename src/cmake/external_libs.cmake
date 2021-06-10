@@ -301,10 +301,6 @@ if(WITH_CYCLES_OSL)
       set(LLVM_STATIC ON)
     endif()
 
-    find_package(OSL REQUIRED)
-    find_package(LLVM REQUIRED)
-    find_package(Clang REQUIRED)
-
     if(MSVC AND EXISTS ${_cycles_lib_dir})
       # TODO(sergey): On Windows llvm-config doesn't give proper results for the
       # library names, use hardcoded libraries for now.
@@ -330,12 +326,16 @@ if(WITH_CYCLES_OSL)
         optimized ${OSL_ROOT_DIR}/lib/oslcomp.lib
         optimized ${OSL_ROOT_DIR}/lib/oslexec.lib
         optimized ${OSL_ROOT_DIR}/lib/oslquery.lib
-        optimized ${OSL_ROOT_DIR}/lib/pugixml.lib
+        optimized ${_cycles_lib_dir}/pugixml/lib/pugixml.lib
         debug ${OSL_ROOT_DIR}/lib/oslcomp_d.lib
         debug ${OSL_ROOT_DIR}/lib/oslexec_d.lib
         debug ${OSL_ROOT_DIR}/lib/oslquery_d.lib
-        debug ${OSL_ROOT_DIR}/lib/pugixml_d.lib
+        debug ${_cycles_lib_dir}/pugixml/lib/pugixml_d.lib
       )
+    else()
+      find_package(OSL REQUIRED)
+      find_package(LLVM REQUIRED)
+      find_package(Clang REQUIRED)
     endif()
   endif()
 endif()
@@ -353,11 +353,13 @@ if(WITH_CYCLES_OPENCOLORIO)
       set(OPENCOLORIO_LIBPATH ${_cycles_lib_dir}/opencolorio/lib)
       set(OPENCOLORIO_LIBRARIES
         optimized ${OPENCOLORIO_LIBPATH}/OpenColorIO.lib
-        optimized ${OPENCOLORIO_LIBPATH}/tinyxml.lib
+        optimized ${OPENCOLORIO_LIBPATH}/libexpatMD.lib
         optimized ${OPENCOLORIO_LIBPATH}/libyaml-cpp.lib
+        optimized ${OPENCOLORIO_LIBPATH}/pystring.lib
         debug ${OPENCOLORIO_LIBPATH}/OpencolorIO_d.lib
-        debug ${OPENCOLORIO_LIBPATH}/tinyxml_d.lib
+        debug ${OPENCOLORIO_LIBPATH}/libexpatdMD.lib
         debug ${OPENCOLORIO_LIBPATH}/libyaml-cpp_d.lib
+        debug ${OPENCOLORIO_LIBPATH}/pystring_d.lib
       )
     endif()
   endif()
