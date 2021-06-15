@@ -332,6 +332,9 @@ if(WITH_CYCLES_OSL)
         debug ${OSL_ROOT_DIR}/lib/oslquery_d.lib
         debug ${_cycles_lib_dir}/pugixml/lib/pugixml_d.lib
       )
+      set(OSL_COMPILER ${OSL_ROOT_DIR}/bin/oslc.exe)
+      set(OSL_INCLUDE_DIR ${OSL_ROOT_DIR}/include)
+      set(OSL_FOUND ON)
     else()
       find_package(OSL REQUIRED)
       find_package(LLVM REQUIRED)
