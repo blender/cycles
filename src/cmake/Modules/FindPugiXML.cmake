@@ -10,6 +10,7 @@
 #
 # also defined, but not for general use are
 #  PUGIXML_LIBRARY, where to find the PugiXML library.
+#  PUGIXML_LIBRARY_DEBUG, where to find the debug PugiXML library.
 
 #=============================================================================
 # Copyright 2014 Blender Foundation.
@@ -46,6 +47,15 @@ FIND_LIBRARY(PUGIXML_LIBRARY
     lib64 lib
   )
 
+FIND_LIBRARY(PUGIXML_LIBRARY_DEBUG
+  NAMES
+    pugixml_d
+  HINTS
+    ${_pugixml_SEARCH_DIRS}
+  PATH_SUFFIXES
+    lib64 lib
+  )  
+
 # handle the QUIETLY and REQUIRED arguments and set PUGIXML_FOUND to TRUE if
 # all listed variables are TRUE
 INCLUDE(FindPackageHandleStandardArgs)
@@ -53,7 +63,11 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(PugiXML DEFAULT_MSG
     PUGIXML_LIBRARY PUGIXML_INCLUDE_DIR)
 
 IF(PUGIXML_FOUND)
-  SET(PUGIXML_LIBRARIES ${PUGIXML_LIBRARY})
+  if(PUGIXML_LIBRARY_DEBUG)
+    SET(PUGIXML_LIBRARIES optimized ${PUGIXML_LIBRARY} debug ${PUGIXML_LIBRARY_DEBUG})
+  else()
+    SET(PUGIXML_LIBRARIES ${PUGIXML_LIBRARY})
+  endif()
   SET(PUGIXML_INCLUDE_DIRS ${PUGIXML_INCLUDE_DIR})
 ELSE()
   SET(PUGIXML_PUGIXML_FOUND FALSE)
