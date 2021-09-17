@@ -109,39 +109,16 @@ endif()
 # OpenGL
 ###########################################################################
 
-if(CYCLES_STANDALONE_REPOSITORY)
-  if(NOT DEFINED OpenGL_GL_PREFERENCE)
-    set(OpenGL_GL_PREFERENCE "LEGACY")
-  endif()
-
-  find_package(OpenGL REQUIRED)
-  set(CYCLES_GL_LIBRARIES ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
-else()
-  set(CYCLES_GL_LIBRARIES ${BLENDER_GL_LIBRARIES})
-endif()
-
-###########################################################################
-# GLUT
-###########################################################################
-
 if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    add_definitions(-DFREEGLUT_STATIC -DFREEGLUT_LIB_PRAGMAS=0)
-    set(GLUT_FOUND ON)
-    set(GLUT_LIBRARIES "${_cycles_lib_dir}/opengl/lib/freeglut_static.lib")
-    set(GLUT_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
-  else()
-    find_package(GLUT)
-  endif()
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(NOT DEFINED OpenGL_GL_PREFERENCE)
+      set(OpenGL_GL_PREFERENCE "LEGACY")
+    endif()
 
-  if(GLUT_FOUND)
-    include_directories(
-      SYSTEM
-      ${GLUT_INCLUDE_DIR}
-    )
+    find_package(OpenGL REQUIRED)
+    set(CYCLES_GL_LIBRARIES ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
   else()
-    set(WITH_CYCLES_STANDALONE_GUI OFF)
-    message(WARNING "GLUT not found, disabling WITH_CYCLES_STANDALONE_GUI")
+    set(CYCLES_GL_LIBRARIES ${BLENDER_GL_LIBRARIES})
   endif()
 endif()
 
@@ -596,23 +573,22 @@ endif()
 # GLEW
 ###########################################################################
 
-if(CYCLES_STANDALONE_REPOSITORY)
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    set(GLEW_LIBRARY "${_cycles_lib_dir}/opengl/lib/glew.lib")
-    set(GLEW_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
-    add_definitions(-DGLEW_STATIC)
+if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(MSVC AND EXISTS ${_cycles_lib_dir})
+      set(GLEW_LIBRARY "${_cycles_lib_dir}/opengl/lib/glew.lib")
+      set(GLEW_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
+      add_definitions(-DGLEW_STATIC)
+    endif()
+
+    find_package(GLEW REQUIRED)
+    set(CYCLES_GLEW_LIBRARIES ${GLEW_LIBRARY})
+  else()
+    # Workaround for unconventional variable name use in Blender.
+    set(GLEW_INCLUDE_DIR "${GLEW_INCLUDE_PATH}")
+    set(CYCLES_GLEW_LIBRARIES bf_intern_glew_mx ${BLENDER_GLEW_LIBRARIES})
   endif()
-
-  find_package(GLEW REQUIRED)
-  set(CYCLES_GLEW_LIBRARIES ${GLEW_LIBRARY})
-else()
-  # Workaround for unconventional variable name use in Blender.
-  set(GLEW_INCLUDE_DIR "${GLEW_INCLUDE_PATH}")
-  set(CYCLES_GLEW_LIBRARIES bf_intern_glew_mx ${BLENDER_GLEW_LIBRARIES})
 endif()
-
-unset(CMAKE_IGNORE_PATH)
-unset(_cycles_lib_dir)
 
 ###########################################################################
 # Alembic
@@ -650,4 +626,31 @@ if(WITH_CYCLES_USD)
 
     set(WITH_USD ON)
   endif()
+endif()
+
+###########################################################################
+# End of using precompiled libraries
+###########################################################################
+
+unset(CMAKE_IGNORE_PATH)
+unset(_cycles_lib_dir)
+
+###########################################################################
+# SDL
+###########################################################################
+
+if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
+  # We can't use the version from the Blender precompiled libraries because
+  # it does not include the video subsystem.
+  find_package(SDL2 REQUIRED)
+
+  if(NOT SDL2_FOUND)
+    set(WITH_CYCLES_STANDALONE_GUI OFF)
+    message(STATUS "SDL not found, disabling Cycles standalone GUI")
+  endif()
+
+  include_directories(
+    SYSTEM
+    ${SDL2_INCLUDE_DIRS}
+  )
 endif()

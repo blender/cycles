@@ -44,7 +44,7 @@ The precompiled libraries are expected to be in a `lib/<platform>` folder next t
 Dependencies
 ------------
 
-The following library dependencies are required for building a feature complete Cycles version. These are all included as part of the precompiled libraries.
+Core Cycles has the following required and optional library dependencies. These are all included in precompiled libraries.
 
 Required:
 - Boost
@@ -58,12 +58,13 @@ Optional:
 - OpenVDB / NanoVDB
 - OpenShadingLanguage
 - OpenImageDenoise
+
+For GUI support, the following libraries are required. The SDL library must be manually provided, it's not part of the precompiled libraries.
 - OpenGL
 - GLEW
-- GLUT
+- SDL
 
 For GPU rendering support on NVIDIA cards, these need to be downloaded and installed from the NVIDIA website.
-
 - CUDA Toolkit 11 or newer
 - OptiX 7.3 SDK or newer
 
