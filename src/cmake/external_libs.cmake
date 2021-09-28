@@ -534,6 +534,10 @@ if(WITH_CYCLES_OPENIMAGEDENOISE)
     endif()
   endif()
 endif()
+if(NOT WITH_HIP_DYNLOAD)
+  message(STATUS "Setting up HIP Dynamic Load")
+  set(WITH_HIP_DYNLOAD ON)
+endif()
 
 ###########################################################################
 # TBB
