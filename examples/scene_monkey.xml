@@ -8,7 +8,7 @@
 
 <!-- Background Shader -->
 <background>
-	<sky_texture name="tex" />
+	<sky_texture name="tex" sky_type="hosek_wilkie" />
 	<background name="bg" strength="8.0" />
 	
 	<connect from="tex color" to="bg color" />
@@ -18,7 +18,7 @@
 <!-- Monkey Shader -->
 <shader name="monkey">
 	<noise_texture name="tex" scale="2.0"/>
-	<glass_bsdf name="monkey_closure" distribution="beckmann" ior="1.4" roughness="0.2" />
+	<glass_bsdf name="monkey_closure" distribution="beckmann" IOR="1.4" roughness="0.5" />
 	<connect from="tex color" to="monkey_closure color" />
 	<connect from="monkey_closure bsdf" to="output surface" />
 </shader>
@@ -26,7 +26,7 @@
 <!-- Floor Shader -->
 <shader name="floor">
 	<checker_texture name="checker" color1="0.8, 0.8, 0.8" color2="1.0, 0.1, 0.1" />
-	<glossy_bsdf name="floor_closure" roughness="0.1"/>
+	<glossy_bsdf name="floor_closure" distribution="beckmann" roughness="0.2"/>
 	<connect from="checker color" to="floor_closure color" />
 	<connect from="floor_closure bsdf" to="output surface" />
 </shader>
