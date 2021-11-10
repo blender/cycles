@@ -56,8 +56,7 @@
  */
 
 ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
-ccl_gpu_kernel_signature(integrator_reset,
-                          int num_states)
+    ccl_gpu_kernel_signature(integrator_reset, int num_states)
 {
   const int state = ccl_gpu_global_id_x();
 
@@ -265,7 +264,7 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
   }
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_queued_paths_array,
                              int num_states,
                              ccl_global int *indices,
@@ -273,14 +272,14 @@ ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
                              int kernel_index)
 {
   ccl_gpu_kernel_lambda(INTEGRATOR_STATE(state, path, queued_kernel) == kernel_index,
-                        int kernel_index)
-      .kernel_index = kernel_index;
+                        int kernel_index);
+  ccl_gpu_kernel_lambda_pass.kernel_index = kernel_index;
 
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_queued_shadow_paths_array,
                              int num_states,
                              ccl_global int *indices,
@@ -288,25 +287,26 @@ ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
                              int kernel_index)
 {
   ccl_gpu_kernel_lambda(INTEGRATOR_STATE(state, shadow_path, queued_kernel) == kernel_index,
-                        int kernel_index)
-      .kernel_index = kernel_index;
+                        int kernel_index);
+  ccl_gpu_kernel_lambda_pass.kernel_index = kernel_index;
 
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_active_paths_array,
                              int num_states,
                              ccl_global int *indices,
                              ccl_global int *num_indices)
 {
   ccl_gpu_kernel_lambda(INTEGRATOR_STATE(state, path, queued_kernel) != 0);
+
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_terminated_paths_array,
                              int num_states,
                              ccl_global int *indices,
@@ -314,11 +314,12 @@ ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
                              int indices_offset)
 {
   ccl_gpu_kernel_lambda(INTEGRATOR_STATE(state, path, queued_kernel) == 0);
+
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices + indices_offset, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_terminated_shadow_paths_array,
                              int num_states,
                              ccl_global int *indices,
@@ -326,11 +327,12 @@ ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
                              int indices_offset)
 {
   ccl_gpu_kernel_lambda(INTEGRATOR_STATE(state, shadow_path, queued_kernel) == 0);
+
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices + indices_offset, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_sorted_paths_array,
                              int num_states,
                              int num_states_limit,
@@ -343,37 +345,37 @@ ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
   ccl_gpu_kernel_lambda((INTEGRATOR_STATE(state, path, queued_kernel) == kernel_index) ?
                             INTEGRATOR_STATE(state, path, shader_sort_key) :
                             GPU_PARALLEL_SORTED_INDEX_INACTIVE_KEY,
-                        int kernel_index)
-    .kernel_index = kernel_index;
-  
+                        int kernel_index);
+  ccl_gpu_kernel_lambda_pass.kernel_index = kernel_index;
+
   const uint state_index = ccl_gpu_global_id_x();
-  gpu_parallel_sorted_index_array(
-      state_index,
-      num_states,
-      num_states_limit,
-      indices,
+  gpu_parallel_sorted_index_array(state_index,
+                                  num_states,
+                                  num_states_limit,
+                                  indices,
                                   num_indices,
                                   key_counter,
                                   key_prefix_sum,
                                   ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_compact_paths_array,
                              int num_states,
                              ccl_global int *indices,
-                         ccl_global int *num_indices,
-                         int num_active_paths)
+                             ccl_global int *num_indices,
+                             int num_active_paths)
 {
-  ccl_gpu_kernel_lambda((state >= num_active_paths) && (INTEGRATOR_STATE(state, path, queued_kernel) != 0),
-                        int num_active_paths)
-    .num_active_paths = num_active_paths;
-  
+  ccl_gpu_kernel_lambda((state >= num_active_paths) &&
+                            (INTEGRATOR_STATE(state, path, queued_kernel) != 0),
+                        int num_active_paths);
+  ccl_gpu_kernel_lambda_pass.num_active_paths = num_active_paths;
+
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_compact_states,
                              ccl_global const int *active_terminated_states,
                              const int active_states_offset,
@@ -390,22 +392,23 @@ ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
   }
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_compact_shadow_paths_array,
                              int num_states,
                              ccl_global int *indices,
-                         ccl_global int *num_indices,
-                         int num_active_paths)
+                             ccl_global int *num_indices,
+                             int num_active_paths)
 {
-  ccl_gpu_kernel_lambda((state >= num_active_paths) && (INTEGRATOR_STATE(state, shadow_path, queued_kernel) != 0),
-                        int num_active_paths)
-    .num_active_paths = num_active_paths;
+  ccl_gpu_kernel_lambda((state >= num_active_paths) &&
+                            (INTEGRATOR_STATE(state, shadow_path, queued_kernel) != 0),
+                        int num_active_paths);
+  ccl_gpu_kernel_lambda_pass.num_active_paths = num_active_paths;
 
   gpu_parallel_active_index_array<GPU_PARALLEL_ACTIVE_INDEX_DEFAULT_BLOCK_SIZE>(
       num_states, indices, num_indices, ccl_gpu_kernel_lambda_pass);
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
+ccl_gpu_kernel_threads(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
     ccl_gpu_kernel_signature(integrator_compact_shadow_states,
                              ccl_global const int *active_terminated_states,
                              const int active_states_offset,
@@ -422,7 +425,7 @@ ccl_gpu_kernel(GPU_PARALLEL_SORTED_INDEX_DEFAULT_BLOCK_SIZE)
   }
 }
 
-ccl_gpu_kernel(GPU_PARALLEL_PREFIX_SUM_DEFAULT_BLOCK_SIZE) ccl_gpu_kernel_signature(
+ccl_gpu_kernel_threads(GPU_PARALLEL_PREFIX_SUM_DEFAULT_BLOCK_SIZE) ccl_gpu_kernel_signature(
     prefix_sum, ccl_global int *counter, ccl_global int *prefix_sum, int num_values)
 {
   gpu_parallel_prefix_sum(ccl_gpu_global_id_x(), counter, prefix_sum, num_values);
