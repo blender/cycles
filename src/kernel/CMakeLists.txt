@@ -412,15 +412,14 @@ if(WITH_CYCLES_CUDA_BINARIES)
       --use_fast_math
       -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_file})
 
-    if(${experimental})
-      set(cuda_flags ${cuda_flags} -D __KERNEL_EXPERIMENTAL__)
-      set(name ${name}_experimental)
-    endif()
-
     if(WITH_NANOVDB)
       set(cuda_flags ${cuda_flags}
         -D WITH_NANOVDB
         -I "${NANOVDB_INCLUDE_DIR}")
+    endif()
+
+    if(WITH_CYCLES_DEBUG)
+      set(cuda_flags ${cuda_flags} -D WITH_CYCLES_DEBUG)
     endif()
 
     if(WITH_CYCLES_CUBIN_COMPILER)
@@ -571,11 +570,6 @@ if(WITH_CYCLES_HIP_BINARIES AND WITH_CYCLES_DEVICE_HIP)
       -ffast-math
       -o ${CMAKE_CURRENT_BINARY_DIR}/${hip_file})
 
-    if(${experimental})
-      set(hip_flags ${hip_flags} -D __KERNEL_EXPERIMENTAL__)
-      set(name ${name}_experimental)
-    endif()
-
     if(WITH_NANOVDB)
       set(hip_flags ${hip_flags}
         -D WITH_NANOVDB
@@ -583,7 +577,7 @@ if(WITH_CYCLES_HIP_BINARIES AND WITH_CYCLES_DEVICE_HIP)
     endif()
 
     if(WITH_CYCLES_DEBUG)
-      set(hip_flags ${hip_flags} -D __KERNEL_DEBUG__)
+      set(hip_flags ${hip_flags} -D WITH_CYCLES_DEBUG)
     endif()
 
     add_custom_command(
@@ -622,6 +616,10 @@ if(WITH_CYCLES_DEVICE_OPTIX AND WITH_CYCLES_CUDA_BINARIES)
       set(cuda_flags ${cuda_flags}
         -D WITH_NANOVDB
         -I "${NANOVDB_INCLUDE_DIR}")
+    endif()
+
+    if(WITH_CYCLES_DEBUG)
+      set(cuda_flags ${cuda_flags} -D WITH_CYCLES_DEBUG)
     endif()
 
     if(WITH_CYCLES_CUBIN_COMPILER)
