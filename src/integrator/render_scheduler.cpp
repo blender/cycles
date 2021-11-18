@@ -835,7 +835,7 @@ int RenderScheduler::get_num_samples_to_path_trace() const
      * When time limit is not used the number of samples per render iteration is either increasing
      * or stays the same, so there is no need to clamp number of samples calculated for occupancy.
      */
-    if (time_limit_ && state_.start_render_time) {
+    if (time_limit_ != 0.0 && state_.start_render_time != 0.0) {
       const double remaining_render_time = max(
           0.0, time_limit_ - (time_dt() - state_.start_render_time));
       const double time_per_sample_average = path_trace_time_.get_average();
