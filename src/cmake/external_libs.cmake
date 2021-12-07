@@ -555,6 +555,20 @@ if(NOT WITH_HIP_DYNLOAD)
 endif()
 
 ###########################################################################
+# Metal
+###########################################################################
+
+if(WITH_CYCLES_DEVICE_METAL)
+  FIND_LIBRARY(METAL_LIBRARY Metal)
+  if (METAL_LIBRARY)
+    message(STATUS "Found Metal: ${METAL_LIBRARY}")
+  else()
+    message(STATUS "Metal not found, disabling WITH_CYCLES_DEVICE_METAL")
+    set(WITH_CYCLES_DEVICE_METAL OFF)
+  endif()
+endif()
+
+###########################################################################
 # TBB
 ###########################################################################
 
