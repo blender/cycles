@@ -50,7 +50,7 @@ def svn_libraries_version():
                     return match.group(1)
         return None
 
-    return  _parse_header_file(os.path.join("src", "util", "util_version.h"), "CYCLES_BLENDER_LIBRARIES_VERSION")
+    return  _parse_header_file(os.path.join("src", "util", "version.h"), "CYCLES_BLENDER_LIBRARIES_VERSION")
 
 
 def svn_libraries_base_url():
