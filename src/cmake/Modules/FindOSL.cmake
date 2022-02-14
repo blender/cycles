@@ -75,7 +75,7 @@ FIND_PATH(OSL_SHADER_DIR
     /usr/share/OSL/
     /usr/include/OSL/
   PATH_SUFFIXES
-    shaders
+    share/OSL/shaders
 )
 
 # handle the QUIETLY and REQUIRED arguments and set OSL_FOUND to TRUE if
@@ -95,7 +95,7 @@ IF(OSL_FOUND)
          "\\1" OSL_LIBRARY_VERSION_MAJOR ${OSL_LIBRARY_VERSION_MAJOR})
   STRING(REGEX REPLACE ".*#define[ \t]+OSL_LIBRARY_VERSION_MINOR[ \t]+([.0-9]+).*"
          "\\1" OSL_LIBRARY_VERSION_MINOR ${OSL_LIBRARY_VERSION_MINOR})
-ENDIF(OSL_FOUND)
+ENDIF()
 
 MARK_AS_ADVANCED(
   OSL_INCLUDE_DIR

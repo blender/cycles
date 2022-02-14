@@ -23,8 +23,8 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <cuew.h>
 #include <assert.h>
+#include <cuew.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -771,6 +771,8 @@ const char *cuewErrorString(CUresult result)
       return "Nvlink uncorrectable";
     case CUDA_ERROR_JIT_COMPILER_NOT_FOUND:
       return "Jit compiler not found";
+    case CUDA_ERROR_UNSUPPORTED_PTX_VERSION:
+      return "Unsupported PTX version";
     case CUDA_ERROR_INVALID_SOURCE:
       return "Invalid source";
     case CUDA_ERROR_FILE_NOT_FOUND:

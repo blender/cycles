@@ -112,6 +112,9 @@ macro(cycles_target_link_libraries target)
       target_link_libraries(${target} "-framework Accelerate")
     endif()
   endif()
+  if(WITH_ALEMBIC)
+    target_link_libraries(${target} ${ALEMBIC_LIBRARIES})
+  endif()
   target_link_libraries(
     ${target}
     ${OPENIMAGEIO_LIBRARIES}

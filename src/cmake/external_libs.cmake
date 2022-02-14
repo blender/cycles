@@ -74,6 +74,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
   endif()
 
   if(EXISTS ${_cycles_lib_dir})
+    _set_default(ALEMBIC_ROOT_DIR "${_cycles_lib_dir}/alembic")
     _set_default(BOOST_ROOT "${_cycles_lib_dir}/boost")
     _set_default(BLOSC_ROOT_DIR "${_cycles_lib_dir}/blosc")
     _set_default(EMBREE_ROOT_DIR "${_cycles_lib_dir}/embree")
@@ -93,6 +94,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
     _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
     _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
+    _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
     _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
   else()
     unset(_cycles_lib_dir)
@@ -340,6 +342,8 @@ if(WITH_CYCLES_OSL)
       find_package(LLVM REQUIRED)
       find_package(Clang REQUIRED)
     endif()
+
+    set(WITH_CYCLES_OSL ON)
   endif()
 endif()
 
@@ -609,3 +613,41 @@ endif()
 
 unset(CMAKE_IGNORE_PATH)
 unset(_cycles_lib_dir)
+
+###########################################################################
+# Alembic
+###########################################################################
+
+if(WITH_CYCLES_ALEMBIC)
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(MSVC AND EXISTS ${_cycles_lib_dir})
+      set(ALEMBIC_INCLUDE_DIRS ${_cycles_lib_dir}/alembic/include)
+      set(ALEMBIC_LIBRARIES
+        optimized ${_cycles_lib_dir}/alembic/lib/Alembic.lib
+        debug ${_cycles_lib_dir}/alembic/lib/Alembic_d.lib)
+    else()
+      find_package(Alembic REQUIRED)
+    endif()
+
+    set(WITH_ALEMBIC ON)
+  endif()
+endif()
+
+###########################################################################
+# USD
+###########################################################################
+
+if(WITH_CYCLES_USD)
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(MSVC AND EXISTS ${_cycles_lib_dir})
+      set(USD_INCLUDE_DIRS ${_cycles_lib_dir}/usd/include)
+      set(USD_LIBRARIES
+        optimized ${_cycles_lib_dir}/usd/lib/libusd_m.lib
+        debug ${_cycles_lib_dir}/usd/lib/libusd_m_d.lib)
+    else()
+      find_package(USD REQUIRED)
+    endif()
+
+    set(WITH_USD ON)
+  endif()
+endif()

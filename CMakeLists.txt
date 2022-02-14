@@ -79,25 +79,56 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
 ###########################################################################
 # Options.
 
-option(WITH_CPU_SSE                 "Enable SIMD instruction if they're detected on the host machine" ON)
-option(WITH_CYCLES_STANDALONE_GUI   "Build Cycles standalone with GUI" ON)
-option(WITH_CYCLES_OSL              "Build Cycles with OSL support" ON)
-option(WITH_CYCLES_OPENCOLORIO      "Build Cycles with OpenColorIO support" ON)
-option(WITH_CYCLES_OPENSUBDIV       "Build Cycles with OpenSubdiv support" ON)
-option(WITH_CYCLES_OPENIMAGEDENOISE "Build Cycles with OpenImageDenoise support" ON)
-option(WITH_CYCLES_OPENVDB          "Build Cycles with OpenVDB support" ON)
-option(WITH_CYCLES_EMBREE           "Build Cycles with embree support" ON)
-option(WITH_CYCLES_LOGGING          "Build Cycles with logging support" OFF)
-option(WITH_CYCLES_DEBUG            "Build Cycles with with extra debug capabilties" OFF)
-option(WITH_CYCLES_CUDA_BINARIES    "Build Cycles CUDA binaries" OFF)
-set(CYCLES_CUDA_BINARIES_ARCH sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 compute_75 CACHE STRING "CUDA architectures to build binaries for")
-mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
+# Library dependencies
+option(WITH_CYCLES_ALEMBIC          "Build with Alembic procedural support" ON)
+option(WITH_CYCLES_EMBREE           "Build with Embree support" ON)
+option(WITH_CYCLES_LOGGING          "Build with logging support (using glog)" OFF)
+option(WITH_CYCLES_OPENCOLORIO      "Build with OpenColorIO support" ON)
+option(WITH_CYCLES_OPENIMAGEDENOISE "Build with OpenImageDenoise support" ON)
+option(WITH_CYCLES_OPENSUBDIV       "Build with OpenSubdiv support" ON)
+option(WITH_CYCLES_OPENVDB          "Build with OpenVDB support" ON)
+option(WITH_CYCLES_OSL              "Build with OSL support" ON)
+
 if(UNIX AND NOT APPLE)
   option(WITH_CXX11_ABI              "Build with glibc C++11 ABI. Precompiled libraries are built with the older ABI" ON)
 endif()
 
-option(WITH_CUDA_DYNLOAD           "Dynamically load CUDA libraries at runtime" ON)
-mark_as_advanced(WITH_CUDA_DYNLOAD)
+# Development Features
+option(WITH_CYCLES_DEBUG             "Build Cycles with options useful for debugging (e.g., MIS)" OFF)
+option(WITH_CYCLES_DEBUG_NAN         "Build Cycles with additional asserts for detecting NaNs and invalid values" OFF)
+option(WITH_CYCLES_NATIVE_ONLY       "Build Cycles with native kernel only (which fits current CPU, use for development only)" OFF)
+option(WITH_CYCLES_STANDALONE_GUI    "Build Cycles standalone with GUI" OFF)
+
+# NVIDIA CUDA & OptiX
+if(NOT APPLE)
+  option(WITH_CYCLES_DEVICE_CUDA       "Enable Cycles NVIDIA CUDA compute support" ON)
+  option(WITH_CYCLES_DEVICE_OPTIX      "Enable Cycles NVIDIA OptiX support" ON)
+  mark_as_advanced(WITH_CYCLES_DEVICE_CUDA)
+
+  option(WITH_CYCLES_CUDA_BINARIES     "Build Cycles NVIDIA CUDA binaries" OFF)
+  set(CYCLES_CUDA_BINARIES_ARCH sm_30 sm_35 sm_37 sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 compute_75 CACHE STRING "CUDA architectures to build binaries for")
+  option(WITH_CYCLES_CUBIN_COMPILER    "Build cubins with nvrtc based compiler instead of nvcc" OFF)
+  option(WITH_CYCLES_CUDA_BUILD_SERIAL "Build cubins one after another (useful on machines with limited RAM)" OFF)
+  option(WITH_CUDA_DYNLOAD             "Dynamically load CUDA libraries at runtime (for developers, makes cuda-gdb work)" ON)
+  mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
+  mark_as_advanced(WITH_CYCLES_CUBIN_COMPILER)
+  mark_as_advanced(WITH_CYCLES_CUDA_BUILD_SERIAL)
+  mark_as_advanced(WITH_CUDA_DYNLOAD)
+endif()
+
+# AMD HIP
+if(NOT APPLE)
+  option(WITH_CYCLES_DEVICE_HIP          "Enable Cycles AMD HIP support" OFF)
+  option(WITH_CYCLES_HIP_BINARIES        "Build Cycles AMD HIP binaries" OFF)
+  set(CYCLES_HIP_BINARIES_ARCH gfx1010 gfx1011 gfx1012 gfx1030 gfx1031 gfx1032 gfx1034 CACHE STRING "AMD HIP architectures to build binaries for")
+  mark_as_advanced(WITH_CYCLES_DEVICE_HIP)
+  mark_as_advanced(CYCLES_HIP_BINARIES_ARCH)
+endif()
+
+# Apple Metal
+if(APPLE)
+  option(WITH_CYCLES_DEVICE_METAL       "Enable Cycles Apple Metal compute support" ON)
+endif()
 
 ###########################################################################
 # Configuration.
@@ -112,6 +143,7 @@ include(configure_build)
 
 include_directories(
 	third_party/cuew/include
+	third_party/hipew/include
 )
 
 ###########################################################################
