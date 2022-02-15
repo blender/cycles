@@ -16,29 +16,30 @@ Ensure the following software is installed and available in the PATH:
 
 Quick build setup on Windows, macOS and Linux is as follows:
 
-  git clone git://git.blender.org/cycles.git
+    git clone git://git.blender.org/cycles.git
 
-  cd cycles
-  make update
-  make
+    cd cycles
+    make update
+    make
 
 This will download the Cycles source code, download precompiled libraries, configure CMake, and build.
 
 The resulting binary will be in:
 
-  cycles/build/bin
+    cycles/build/bin
 
 Build Details
 -------------
 
-Cycles uses the CMake build system. As an alternative to the "make" wrapper, CMake can be manually configured.
+Cycles uses the CMake build system. As an alternative to the `make` wrapper, CMake can be manually configured.
 
 See the CMake configuration to enable and disable various features.
 
-The precompiled libraries are shared with Blender, and will be automatically downlaod from the Blender repository with "make update" from:
-  https://svn.blender.org/svnroot/bf-blender/trunk/lib/
+The precompiled libraries are shared with Blender, and will be automatically downlaod from the Blender repository with `make update` from:
 
-The precompiled libraries are expected to be in a lib/<platform> folder next to the cycles/ source folder.
+https://svn.blender.org/svnroot/bf-blender/trunk/lib/
+
+The precompiled libraries are expected to be in a `lib/<platform>` folder next to the `cycles/` source folder.
 
 Dependencies
 ------------
@@ -46,24 +47,25 @@ Dependencies
 The following library dependencies are required for building a feature complete Cycles version. These are all included as part of the precompiled libraries.
 
 Required:
-- OpenGL
-- GLEW
-- GLUT
 - Boost
 - OpenImageIO
 - TBB
 
 Optional:
+- Alembic
 - Embree
 - OpenColorIO
 - OpenVDB / NanoVDB
 - OpenShadingLanguage
 - OpenImageDenoise
+- OpenGL
+- GLEW
+- GLUT
 
 For GPU rendering support on NVIDIA cards, these need to be downloaded and installed from the NVIDIA website.
 
 - CUDA Toolkit 11 or newer
-- OptiX 7.1 SDK
+- OptiX 7.3 SDK
 
 Examples
 --------
@@ -72,15 +74,15 @@ The repository contains example xml scenes which could be used for testing.
 
 Example usage:
 
-  ./cycles scene_monkey.xml
+    ./cycles scene_monkey.xml
 
 You can also use optional parameters (see ./cycles --help), like:
 
-  ./cycles --samples 100 --output ./image.png scene_monkey.xml
+    ./cycles --samples 100 --output ./image.png scene_monkey.xml
 
 For the OSL scene you need to enable the OSL shading system:
 
-  ./cycles --shadingsys osl scene_osl_stripes.xml
+    ./cycles --shadingsys osl scene_osl_stripes.xml
 
 Contact
 -------
