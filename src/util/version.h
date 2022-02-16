@@ -22,7 +22,7 @@
 CCL_NAMESPACE_BEGIN
 
 #define CYCLES_VERSION_MAJOR 3
-#define CYCLES_VERSION_MINOR 0
+#define CYCLES_VERSION_MINOR 1
 #define CYCLES_VERSION_PATCH 0
 
 #define CYCLES_MAKE_VERSION_STRING2(a, b, c) #a "." #b "." #c
@@ -32,7 +32,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Blender libraries version compatible with this version */
 
-#define CYCLES_BLENDER_LIBRARIES_VERSION 3.0
+#define CYCLES_BLENDER_LIBRARIES_VERSION 3.1
 
 CCL_NAMESPACE_END
 
