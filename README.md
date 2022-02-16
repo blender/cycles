@@ -35,7 +35,7 @@ Cycles uses the CMake build system. As an alternative to the `make` wrapper, CMa
 
 See the CMake configuration to enable and disable various features.
 
-The precompiled libraries are shared with Blender, and will be automatically downlaod from the Blender repository with `make update` from:
+The precompiled libraries are shared with Blender, and will be automatically downloaded from the Blender repository with `make update`. They can also be manually downloaded from:
 
 https://svn.blender.org/svnroot/bf-blender/trunk/lib/
 
@@ -65,7 +65,7 @@ Optional:
 For GPU rendering support on NVIDIA cards, these need to be downloaded and installed from the NVIDIA website.
 
 - CUDA Toolkit 11 or newer
-- OptiX 7.3 SDK
+- OptiX 7.3 SDK or newer
 
 Examples
 --------
