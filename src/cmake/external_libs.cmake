@@ -82,72 +82,13 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
     _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
     _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
-    _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
     _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
+
+    # Ignore system libraries
+    set(CMAKE_IGNORE_PATH "${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES};${CMAKE_SYSTEM_INCLUDE_PATH};${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES};${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}")
   else()
     unset(_cycles_lib_dir)
   endif()
-endif()
-
-###########################################################################
-# *** System Libraries ***
-###########################################################################
-
-###########################################################################
-# OpenGL
-###########################################################################
-
-if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
-  if(CYCLES_STANDALONE_REPOSITORY)
-    if(NOT DEFINED OpenGL_GL_PREFERENCE)
-      set(OpenGL_GL_PREFERENCE "LEGACY")
-    endif()
-
-    find_package(OpenGL REQUIRED)
-    set(CYCLES_GL_LIBRARIES ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
-  else()
-    set(CYCLES_GL_LIBRARIES ${BLENDER_GL_LIBRARIES})
-  endif()
-endif()
-
-###########################################################################
-# CUDA
-###########################################################################
-
-if(WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD)
-  find_package(CUDA) # Try to auto locate CUDA toolkit
-  if(CUDA_FOUND)
-    message(STATUS "Found CUDA ${CUDA_NVCC_EXECUTABLE} (${CUDA_VERSION})")
-  else()
-    message(STATUS "CUDA compiler not found, disabling WITH_CYCLES_CUDA_BINARIES")
-    set(WITH_CYCLES_CUDA_BINARIES OFF)
-    if(NOT WITH_CUDA_DYNLOAD)
-      message(STATUS "Additionally falling back to dynamic CUDA load")
-      set(WITH_CUDA_DYNLOAD ON)
-    endif()
-  endif()
-endif()
-
-###########################################################################
-# macOS
-###########################################################################
-
-if(CYCLES_STANDALONE_REPOSITORY)
-  # On macOS, always use zlib from system.
-  if(APPLE)
-    set(ZLIB_ROOT /usr)
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-  endif()
-endif()
-
-###########################################################################
-# *** Other Libraries ***
-###########################################################################
-
-if(EXISTS ${_cycles_lib_dir})
-  # Ignore system libraries if using precompiled.
-  set(CMAKE_IGNORE_PATH "${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES};${CMAKE_SYSTEM_INCLUDE_PATH};${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES};${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}")
 endif()
 
 ###########################################################################
@@ -567,9 +508,10 @@ if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
       set(GLEW_LIBRARY "${_cycles_lib_dir}/opengl/lib/glew.lib")
       set(GLEW_INCLUDE_DIR "${_cycles_lib_dir}/opengl/include")
       add_definitions(-DGLEW_STATIC)
+    else()
+      find_package(GLEW REQUIRED)
     endif()
 
-    find_package(GLEW REQUIRED)
     set(CYCLES_GLEW_LIBRARIES ${GLEW_LIBRARY})
   else()
     # Workaround for unconventional variable name use in Blender.
@@ -617,11 +559,32 @@ if(WITH_CYCLES_USD)
 endif()
 
 ###########################################################################
-# End of using precompiled libraries
+# System Libraries
 ###########################################################################
 
-unset(CMAKE_IGNORE_PATH)
-unset(_cycles_lib_dir)
+# Detect system libraries again
+if(EXISTS ${_cycles_lib_dir})
+  unset(CMAKE_IGNORE_PATH)
+  unset(_cycles_lib_dir)
+endif()
+
+###########################################################################
+# OpenGL
+###########################################################################
+
+if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(NOT DEFINED OpenGL_GL_PREFERENCE)
+      set(OpenGL_GL_PREFERENCE "LEGACY")
+    endif()
+
+    find_package(OpenGL REQUIRED)
+
+    set(CYCLES_GL_LIBRARIES ${OPENGL_gl_LIBRARY})
+  else()
+    set(CYCLES_GL_LIBRARIES ${BLENDER_GL_LIBRARIES})
+  endif()
+endif()
 
 ###########################################################################
 # SDL
@@ -641,4 +604,72 @@ if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
     SYSTEM
     ${SDL2_INCLUDE_DIRS}
   )
+endif()
+
+###########################################################################
+# CUDA
+###########################################################################
+
+if(WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD)
+  find_package(CUDA) # Try to auto locate CUDA toolkit
+  if(CUDA_FOUND)
+    message(STATUS "Found CUDA ${CUDA_NVCC_EXECUTABLE} (${CUDA_VERSION})")
+  else()
+    message(STATUS "CUDA compiler not found, disabling WITH_CYCLES_CUDA_BINARIES")
+    set(WITH_CYCLES_CUDA_BINARIES OFF)
+    if(NOT WITH_CUDA_DYNLOAD)
+      message(STATUS "Additionally falling back to dynamic CUDA load")
+      set(WITH_CUDA_DYNLOAD ON)
+    endif()
+  endif()
+endif()
+
+###########################################################################
+# HIP
+###########################################################################
+
+if(WITH_CYCLES_HIP_BINARIES AND WITH_CYCLES_DEVICE_HIP)
+  find_package(HIP)
+  if(HIP_FOUND)
+    message(STATUS "Found HIP ${HIP_HIPCC_EXECUTABLE} (${HIP_VERSION})")
+  else()
+    message(STATUS "HIP compiler not found, disabling WITH_CYCLES_HIP_BINARIES")
+    set(WITH_CYCLES_HIP_BINARIES OFF)
+  endif()
+endif()
+
+if(NOT WITH_HIP_DYNLOAD)
+  set(WITH_HIP_DYNLOAD ON)
+endif()
+
+###########################################################################
+# Metal
+###########################################################################
+
+if(WITH_CYCLES_DEVICE_METAL)
+  find_library(METAL_LIBRARY Metal)
+
+  # This file was added in the 12.0 SDK, use it as a way to detect the version.
+  if(METAL_LIBRARY AND NOT EXISTS "${METAL_LIBRARY}/Headers/MTLFunctionStitching.h")
+    message(STATUS "Metal version too old, must be SDK 12.0 or newer, disabling WITH_CYCLES_DEVICE_METAL")
+    set(WITH_CYCLES_DEVICE_METAL OFF)
+  elseif(NOT METAL_LIBRARY)
+    message(STATUS "Metal not found, disabling WITH_CYCLES_DEVICE_METAL")
+    set(WITH_CYCLES_DEVICE_METAL OFF)
+  else()
+    message(STATUS "Found Metal: ${METAL_LIBRARY}")
+  endif()
+endif()
+
+###########################################################################
+# macOS
+###########################################################################
+
+if(CYCLES_STANDALONE_REPOSITORY)
+  # On macOS, always use zlib from system.
+  if(APPLE)
+    set(ZLIB_ROOT /usr)
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+  endif()
 endif()

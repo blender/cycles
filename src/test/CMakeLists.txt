@@ -22,8 +22,6 @@ set(ALL_CYCLES_LIBRARIES
   cycles_subd
   cycles_device
   cycles_util
-  ${CYCLES_GL_LIBRARIES}
-  ${CYCLES_GLEW_LIBRARIES}
 )
 include_directories(${INC})
 
