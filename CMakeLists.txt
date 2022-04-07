@@ -132,6 +132,9 @@ if(APPLE)
   option(WITH_CYCLES_DEVICE_METAL       "Enable Cycles Apple Metal compute support" ON)
 endif()
 
+# Hydra Render Delegate
+option(WITH_CYCLES_HYDRA_RENDER_DELEGATE "Build Cycles Hydra render delegate" ON)
+
 ###########################################################################
 # Configuration.
 

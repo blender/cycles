@@ -189,6 +189,10 @@ if(CYCLES_STANDALONE_REPOSITORY)
 
   find_package(JPEG REQUIRED)
   find_package(TIFF REQUIRED)
+
+  if(EXISTS ${_cycles_lib_dir})
+    set(PNG_NAMES png16 libpng16 png libpng)
+  endif()
   find_package(PNG REQUIRED)
 endif()
 
@@ -262,6 +266,7 @@ if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_OSL)
   else()
     find_package(OSL REQUIRED)
     find_package(LLVM REQUIRED)
+    find_package(Clang REQUIRED)
   endif()
 endif()
 
@@ -322,12 +327,14 @@ if(CYCLES_STANDALONE_REPOSITORY)
     set(BOOST_DEBUG_POSTFIX "vc141-mt-gd-x64-${BOOST_VERSION}.lib")
     set(BOOST_LIBRARIES
       optimized ${BOOST_ROOT}/lib/libboost_date_time-${BOOST_POSTFIX}
+      optimized ${BOOST_ROOT}/lib/libboost_iostreams-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_filesystem-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_regex-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_system-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_thread-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_chrono-${BOOST_POSTFIX}
       debug ${BOOST_ROOT}/lib/libboost_date_time-${BOOST_DEBUG_POSTFIX}
+      debug ${BOOST_ROOT}/lib/libboost_iostreams-${BOOST_DEBUG_POSTFIX}
       debug ${BOOST_ROOT}/lib/libboost_filesystem-${BOOST_DEBUG_POSTFIX}
       debug ${BOOST_ROOT}/lib/libboost_regex-${BOOST_DEBUG_POSTFIX}
       debug ${BOOST_ROOT}/lib/libboost_system-${BOOST_DEBUG_POSTFIX}
@@ -340,7 +347,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
         debug ${BOOST_ROOT}/lib/libboost_wave-${BOOST_DEBUG_POSTFIX})
     endif()
   else()
-    set(__boost_packages filesystem regex system thread date_time)
+    set(__boost_packages iostreams filesystem regex system thread date_time)
     if(WITH_CYCLES_OSL)
       list(APPEND __boost_packages wave)
     endif()
@@ -527,7 +534,8 @@ endif()
 # GLEW
 ###########################################################################
 
-if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
+if((WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI) OR
+   WITH_CYCLES_HYDRA_RENDER_DELEGATE)
   if(CYCLES_STANDALONE_REPOSITORY)
     if(MSVC AND EXISTS ${_cycles_lib_dir})
       set(GLEW_LIBRARY "${_cycles_lib_dir}/opengl/lib/glew.lib")
