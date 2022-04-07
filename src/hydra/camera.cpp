@@ -61,12 +61,19 @@ void HdCyclesCamera::Sync(HdSceneDelegate *sceneDelegate,
   if (*dirtyBits & DirtyBits::DirtyTransform) {
     sceneDelegate->SampleTransform(id, &_transformSamples);
 
+    bool transform_found = false;
     for (size_t i = 0; i < _transformSamples.count; ++i) {
       if (_transformSamples.times[i] == 0.0f) {
         _transform = _transformSamples.values[i];
         _data.SetTransform(_transform);
+        transform_found = true;
         break;
       }
+    }
+
+    if (!transform_found && _transformSamples.count) {
+      _transform = _transformSamples.values[0];
+      _data.SetTransform(_transform);
     }
   }
 #else

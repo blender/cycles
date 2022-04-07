@@ -97,9 +97,7 @@ target_compile_definitions(hdCyclesStatic
 
 target_link_libraries(hdCyclesStatic
   PUBLIC
-  hd
-  hgi
-  hgiGL
+  ${USD_HYDRA_LIBRARIES}
   PRIVATE
   ${LIB}
 )
@@ -128,6 +126,22 @@ target_link_libraries(${HdCyclesPluginName}
   hdCyclesStatic
 )
 
+if(APPLE)
+  set_property(
+    TARGET
+    ${HdCyclesPluginName}
+    APPEND_STRING PROPERTY LINK_FLAGS
+    " -Wl,-exported_symbols_list,'${CMAKE_CURRENT_SOURCE_DIR}/resources/apple_symbols.map'"
+  )
+elseif(UNIX)
+  set_property(
+    TARGET
+    ${HdCyclesPluginName}
+    APPEND_STRING PROPERTY LINK_FLAGS
+    " -Wl,--version-script='${CMAKE_CURRENT_SOURCE_DIR}/resources/linux_symbols.map'"
+  )
+endif()
+
 if(WITH_CYCLES_BLENDER)
   set(CYCLES_HYDRA_INSTALL_PATH "../")
 else()
@@ -147,5 +161,10 @@ configure_file(resources/plugInfo.json
   ${CMAKE_CURRENT_BINARY_DIR}/resources/plugInfo.json
   @ONLY
 )
+configure_file(resources/cycles.json
+  ${CMAKE_CURRENT_BINARY_DIR}/resources/cycles.json
+  @ONLY
+)
 
 delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "plugInfo.json" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}/resources")
+delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "cycles.json" "${CYCLES_HYDRA_INSTALL_PATH}/houdini/packages")

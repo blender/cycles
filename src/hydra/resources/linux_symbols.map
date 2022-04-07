@@ -1,0 +1,9 @@
+/* Hide everything except USD / Hydra symbols, to avoid conflicts with other
+ * application using different library versions. */
+{
+global:
+  pxrInternal*;
+  PXR*;
+local:
+  *;
+};

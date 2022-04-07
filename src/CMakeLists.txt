@@ -223,7 +223,6 @@ include_directories(
   ${OPENIMAGEIO_INCLUDE_DIRS}
   ${OPENEXR_INCLUDE_DIRS}
   ${PUGIXML_INCLUDE_DIR}
-  ${TBB_INCLUDE_DIRS}
 )
 
 if(WITH_CYCLES_DEBUG)
@@ -280,14 +279,6 @@ if(WITH_NANOVDB)
   )
 endif()
 
-if(WITH_OPENSUBDIV)
-  add_definitions(-DWITH_OPENSUBDIV)
-  include_directories(
-    SYSTEM
-    ${OPENSUBDIV_INCLUDE_DIRS}
-  )
-endif()
-
 if(WITH_OPENIMAGEDENOISE)
   add_definitions(-DWITH_OPENIMAGEDENOISE)
   include_directories(
@@ -306,6 +297,55 @@ if(WITH_CYCLES_LOGGING)
     ${GLOG_INCLUDE_DIRS}
     ${GFLAGS_INCLUDE_DIRS}
   )
+endif()
+
+if(WITH_ALEMBIC)
+  add_definitions(-DWITH_ALEMBIC)
+  include_directories(
+    SYSTEM
+    ${ALEMBIC_INCLUDE_DIRS}
+  )
+endif()
+
+if(WITH_NANOVDB)
+  include_directories(
+    SYSTEM
+    ${NANOVDB_INCLUDE_DIRS}
+  )
+endif()
+
+# Includes that might be overrides by USD last, to avoid compiling
+# against the wrong versions of other libraries.
+include_directories(
+  SYSTEM
+  ${TBB_INCLUDE_DIRS}
+)
+
+if(WITH_OPENVDB)
+  add_definitions(-DWITH_OPENVDB ${OPENVDB_DEFINITIONS})
+  include_directories(
+    SYSTEM
+    ${OPENVDB_INCLUDE_DIRS}
+  )
+endif()
+
+if(WITH_OPENSUBDIV)
+  add_definitions(-DWITH_OPENSUBDIV)
+  include_directories(
+    SYSTEM
+    ${OPENSUBDIV_INCLUDE_DIRS}
+  )
+endif()
+
+if(WITH_OPENCOLORIO)
+  add_definitions(-DWITH_OCIO)
+  include_directories(
+    SYSTEM
+    ${OPENCOLORIO_INCLUDE_DIRS}
+  )
+  if(WIN32)
+    add_definitions(-DOpenColorIO_SKIP_IMPORTS)
+  endif()
 endif()
 
 # NaN debugging

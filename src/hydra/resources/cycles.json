@@ -1,0 +1,7 @@
+{
+   "env":[
+      {
+         "PXR_PLUGINPATH_NAME":"@CYCLES_HYDRA_INSTALL_PATH@"
+      }
+   ]
+}
