@@ -1,14 +1,6 @@
 Building Cycles
 ===============
 
-## Table of Contents
-
-* [Quick Setup](#quick-setup)
-* [Hydra Render Delegate with USD Repository](#hydra-render-delegate-with-usd-repository)
-* [Hydra Render Delegate for Houdini](#hydra-render-delegate-for-houdini)
-* [Build System](#build-system)
-* [Dependencies](#dependencies)
-
 ## Quick Setup
 
 Ensure the following software is installed and available in the PATH:
