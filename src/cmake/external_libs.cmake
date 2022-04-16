@@ -85,6 +85,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
     _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
     _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
+    _set_default(WEBP_ROOT_DIR "${_cycles_lib_dir}/webp")
     _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
 
     # Ignore system libraries
@@ -192,6 +193,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
 
   find_package(JPEG REQUIRED)
   find_package(TIFF REQUIRED)
+  find_package(WebP)
 
   if(EXISTS ${_cycles_lib_dir})
     set(PNG_NAMES png16 libpng16 png libpng)
