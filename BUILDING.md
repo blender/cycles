@@ -54,7 +54,7 @@ The path to Houdini depends on the operating system, typically:
 
 Test in Houdini using an environment variable.
 
-    PXR_PLUGINPATH_NAME=<path to cycles>/build/bin houdini
+    PXR_PLUGINPATH_NAME=<path to cycles>/build/bin/houdini/dso/usd_plugins houdini
 
 Or copy `build/bin/houdini/packages/cycles.json` to the Houdini packages directory to make it always available.
 
