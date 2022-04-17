@@ -13,7 +13,7 @@ if(pxr_FOUND)
 
   # USD
   set(USD_INCLUDE_DIRS ${PXR_INCLUDE_DIRS})
-  set(USD_HYDRA_LIBRARIES hd hgi hgiGL)
+  set(USD_LIBRARIES hd hgi hgiGL)
 
   # OpenSubdiv
   find_library(_opensubdiv_library_cpu_debug_pxr NAMES osdCPU_d osdCPU PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)

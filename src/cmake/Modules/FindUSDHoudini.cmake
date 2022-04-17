@@ -4,15 +4,6 @@
 # Find USD libraries in Houdini installation.
 # Variables are matching those output by FindUSDPixar.cmake.
 
-# If HOUDINI_ROOT or HDK was defined in the environment, use it.
-if(NOT HOUDINI_ROOT)
-  if(NOT $ENV{HOUDINI_ROOT} STREQUAL "")
-    set(HOUDINI_ROOT $ENV{HOUDINI_ROOT})
-  elseif(NOT $ENV{HDK} STREQUAL "")
-    set(HOUDINI_ROOT $ENV{HDK})
-  endif()
-endif()
-
 if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
   message(STATUS "Found Houdini: ${HOUDINI_ROOT}")
 
@@ -32,9 +23,9 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
   endif()
 
   # USD
-  set(USD_HYDRA_LIBRARIES hd hgi hgiGL gf arch garch plug tf trace vt work sdf cameraUtil hf pxOsd)
+  set(USD_LIBRARIES hd hgi hgiGL gf arch garch plug tf trace vt work sdf cameraUtil hf pxOsd)
 
-  foreach(lib ${USD_HYDRA_LIBRARIES})
+  foreach(lib ${USD_LIBRARIES})
     find_library(_pxr_library NAMES pxr_${lib} PATHS ${_library_dir} NO_DEFAULT_PATH)
     add_library(${lib} SHARED IMPORTED)
     set_property(TARGET ${lib} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
@@ -81,7 +72,7 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
     NO_DEFAULT_PATH)
 
   list(APPEND USD_INCLUDE_DIRS ${_python_include_dir})
-  list(APPEND USD_HYDRA_LIBRARIES ${_python_library} ${_boost_python_library})
+  list(APPEND USD_LIBRARIES ${_python_library} ${_boost_python_library})
 
   unset(_python_name)
   unset(_python_major)
@@ -130,4 +121,6 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
   # Cleanup
   unset(_library_dir)
   unset(_include_dir)
+else()
+  message(STATUS "Did not find Houdini at ${HOUDINI_ROOT}")
 endif()

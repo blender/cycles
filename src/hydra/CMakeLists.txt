@@ -76,18 +76,18 @@ endif()
 include_directories(${INC})
 include_directories(SYSTEM ${INC_SYS})
 
-add_library(hdCyclesStatic STATIC
+add_library(cycles_hydra STATIC
   ${SRC_HD_CYCLES}
   ${INC_HD_CYCLES}
 )
 
-target_compile_options(hdCyclesStatic
+target_compile_options(cycles_hydra
   PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/wd4003 /wd4244 /wd4506>
   $<$<CXX_COMPILER_ID:GNU>:-Wno-float-conversion -Wno-double-promotion -Wno-deprecated>
 )
 
-target_compile_definitions(hdCyclesStatic
+target_compile_definitions(cycles_hydra
   PRIVATE
   GLOG_NO_ABBREVIATED_SEVERITIES=1
   OSL_DEBUG=$<CONFIG:DEBUG>
@@ -95,76 +95,78 @@ target_compile_definitions(hdCyclesStatic
   $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX=1>
 )
 
-target_link_libraries(hdCyclesStatic
+target_link_libraries(cycles_hydra
   PUBLIC
-  ${USD_HYDRA_LIBRARIES}
+  ${USD_LIBRARIES}
   PRIVATE
   ${LIB}
 )
 
-set(HdCyclesPluginName hdCycles)
-add_library(${HdCyclesPluginName} SHARED
-  plugin.h
-  plugin.cpp
-)
-
-set_target_properties(${HdCyclesPluginName}
-  PROPERTIES PREFIX ""
-)
-
-target_compile_definitions(${HdCyclesPluginName}
-  PRIVATE
-  MFB_PACKAGE_NAME=${HdCyclesPluginName}
-  MFB_ALT_PACKAGE_NAME=${HdCyclesPluginName}
-  GLOG_NO_ABBREVIATED_SEVERITIES=1
-  OSL_DEBUG=$<CONFIG:DEBUG>
-  TBB_USE_DEBUG=$<CONFIG:DEBUG>
-  $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX=1>
-)
-
-target_link_libraries(${HdCyclesPluginName}
-  hdCyclesStatic
-)
-
-if(APPLE)
-  set_property(
-    TARGET
-    ${HdCyclesPluginName}
-    APPEND_STRING PROPERTY LINK_FLAGS
-    " -Wl,-exported_symbols_list,'${CMAKE_CURRENT_SOURCE_DIR}/resources/apple_symbols.map'"
+if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
+  set(HdCyclesPluginName hdCycles)
+  add_library(${HdCyclesPluginName} SHARED
+    plugin.h
+    plugin.cpp
   )
-elseif(UNIX)
-  set_property(
-    TARGET
-    ${HdCyclesPluginName}
-    APPEND_STRING PROPERTY LINK_FLAGS
-    " -Wl,--version-script='${CMAKE_CURRENT_SOURCE_DIR}/resources/linux_symbols.map'"
+
+  set_target_properties(${HdCyclesPluginName}
+    PROPERTIES PREFIX ""
   )
+
+  target_compile_definitions(${HdCyclesPluginName}
+    PRIVATE
+    MFB_PACKAGE_NAME=${HdCyclesPluginName}
+    MFB_ALT_PACKAGE_NAME=${HdCyclesPluginName}
+    GLOG_NO_ABBREVIATED_SEVERITIES=1
+    OSL_DEBUG=$<CONFIG:DEBUG>
+    TBB_USE_DEBUG=$<CONFIG:DEBUG>
+    $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX=1>
+  )
+
+  target_link_libraries(${HdCyclesPluginName}
+    cycles_hydra
+  )
+
+  if(APPLE)
+    set_property(
+      TARGET
+      ${HdCyclesPluginName}
+      APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,-exported_symbols_list,'${CMAKE_CURRENT_SOURCE_DIR}/resources/apple_symbols.map'"
+    )
+  elseif(UNIX)
+    set_property(
+      TARGET
+      ${HdCyclesPluginName}
+      APPEND_STRING PROPERTY LINK_FLAGS
+      " -Wl,--version-script='${CMAKE_CURRENT_SOURCE_DIR}/resources/linux_symbols.map'"
+    )
+  endif()
+
+  if(WITH_CYCLES_BLENDER)
+    set(CYCLES_HYDRA_INSTALL_PATH "../")
+  else()
+    set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
+    # Put the root plugInfo.json one level up
+    delayed_install("${CMAKE_CURRENT_SOURCE_DIR}" "plugInfo.json" ${CYCLES_HYDRA_INSTALL_PATH})
+  endif()
+
+  delayed_install("" $<TARGET_FILE:${HdCyclesPluginName}> ${CYCLES_HYDRA_INSTALL_PATH})
+
+  set(PLUG_INFO_ROOT "..")
+
+  file(RELATIVE_PATH PLUG_INFO_LIBRARY_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_INSTALL_PATH}")
+
+  configure_file(resources/plugInfo.json
+    ${CMAKE_CURRENT_BINARY_DIR}/resources/plugInfo.json
+    @ONLY
+  )
+  configure_file(resources/cycles.json
+    ${CMAKE_CURRENT_BINARY_DIR}/resources/cycles.json
+    @ONLY
+  )
+
+  delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "plugInfo.json" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}/resources")
+  delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "cycles.json" "${CYCLES_HYDRA_INSTALL_PATH}/houdini/packages")
 endif()
-
-if(WITH_CYCLES_BLENDER)
-  set(CYCLES_HYDRA_INSTALL_PATH "../")
-else()
-  set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
-  # Put the root plugInfo.json one level up
-  delayed_install("${CMAKE_CURRENT_SOURCE_DIR}" "plugInfo.json" ${CMAKE_INSTALL_PREFIX})
-endif()
-
-delayed_install("" $<TARGET_FILE:${HdCyclesPluginName}> ${CYCLES_HYDRA_INSTALL_PATH})
-
-set(PLUG_INFO_ROOT "..")
-
-file(RELATIVE_PATH PLUG_INFO_LIBRARY_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_INSTALL_PATH}")
-
-configure_file(resources/plugInfo.json
-  ${CMAKE_CURRENT_BINARY_DIR}/resources/plugInfo.json
-  @ONLY
-)
-configure_file(resources/cycles.json
-  ${CMAKE_CURRENT_BINARY_DIR}/resources/cycles.json
-  @ONLY
-)
-
-delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "plugInfo.json" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}/resources")
-delayed_install("${CMAKE_CURRENT_BINARY_DIR}/resources" "cycles.json" "${CYCLES_HYDRA_INSTALL_PATH}/houdini/packages")

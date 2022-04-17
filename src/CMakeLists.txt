@@ -369,6 +369,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   unset(_has_no_error_unused_macros)
 endif()
 
+if(WITH_USD)
+  add_definitions(-DWITH_USD)
+endif()
+
 if(WITH_CYCLES_HYDRA_RENDER_DELEGATE AND (NOT WITH_USD))
   message(STATUS "USD not found, disabling WITH_CYCLES_HYDRA_RENDER_DELEGATE")
   set(WITH_CYCLES_HYDRA_RENDER_DELEGATE OFF)
@@ -437,7 +441,7 @@ if(WITH_GTESTS)
   add_subdirectory(test)
 endif()
 
-if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
+if(WITH_CYCLES_HYDRA_RENDER_DELEGATE OR (WITH_CYCLES_STANDALONE AND WITH_USD))
   add_subdirectory(hydra)
 endif()
 

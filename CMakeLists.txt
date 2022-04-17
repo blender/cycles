@@ -88,6 +88,7 @@ option(WITH_CYCLES_OPENIMAGEDENOISE "Build with OpenImageDenoise support" ON)
 option(WITH_CYCLES_OPENSUBDIV       "Build with OpenSubdiv support" ON)
 option(WITH_CYCLES_OPENVDB          "Build with OpenVDB support" ON)
 option(WITH_CYCLES_OSL              "Build with OSL support" ON)
+option(WITH_CYCLES_USD              "Build with USD support" ON)
 
 if(UNIX AND NOT APPLE)
   option(WITH_CXX11_ABI              "Build with glibc C++11 ABI. Precompiled libraries are built with the older ABI" ON)

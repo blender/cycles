@@ -85,6 +85,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
     _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
     _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
+    _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
     _set_default(WEBP_ROOT_DIR "${_cycles_lib_dir}/webp")
     _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
 
@@ -99,16 +100,25 @@ endif()
 # USD
 ###########################################################################
 
-if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_HYDRA_RENDER_DELEGATE)
+if(CYCLES_STANDALONE_REPOSITORY AND (WITH_CYCLES_HYDRA_RENDER_DELEGATE OR WITH_CYCLES_USD))
   set(WITH_USD ON)
 endif()
-if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
-  find_package(USDHoudini)
-  if(NOT USD_FOUND)
-    find_package(USDPixar)
+
+if(WITH_USD)
+  if(CYCLES_STANDALONE_REPOSITORY)
+    if(HOUDINI_ROOT)
+      find_package(USDHoudini)
+    elseif(PXR_ROOT)
+      find_package(USDPixar)
+    else()
+      find_package(USD)
+    endif()
   endif()
+
   if(NOT USD_FOUND)
     set(WITH_USD OFF)
+    set(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
+    message(STATUS "USD not found, disabling WITH_CYCLES_HYDRA_RENDER_DELEGATE")
   endif()
 endif()
 
@@ -596,7 +606,7 @@ endif()
 # CUDA
 ###########################################################################
 
-if(WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD)
+if(WITH_CYCLES_DEVICE_CUDA AND (WITH_CYCLES_CUDA_BINARIES OR NOT WITH_CUDA_DYNLOAD))
   find_package(CUDA) # Try to auto locate CUDA toolkit
   if(CUDA_FOUND)
     message(STATUS "Found CUDA ${CUDA_NVCC_EXECUTABLE} (${CUDA_VERSION})")
