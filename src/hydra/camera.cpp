@@ -265,9 +265,12 @@ void HdCyclesCamera::ApplyCameraSettings(const GfCamera &dataUnconformedWindow,
   auto data = dataUnconformedWindow;
   CameraUtilConformWindow(&data, windowPolicy, width / height);
 
-  static_assert(GfCamera::Perspective == CAMERA_PERSPECTIVE &&
-                GfCamera::Orthographic == CAMERA_ORTHOGRAPHIC);
-  cam->set_camera_type(static_cast<CameraType>(data.GetProjection()));
+  if (data.GetProjection() == GfCamera::Orthographic) {
+    cam->set_camera_type(CAMERA_ORTHOGRAPHIC);
+  }
+  else {
+    cam->set_camera_type(CAMERA_PERSPECTIVE);
+  }
 
   auto viewplane = data.GetFrustum().GetWindow();
   auto focalLength = 1.0f;
