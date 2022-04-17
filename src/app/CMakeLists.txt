@@ -48,6 +48,16 @@ if(WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI)
   list(APPEND LIB ${CYCLES_GL_LIBRARIES} ${CYCLES_GLEW_LIBRARIES} ${SDL2_LIBRARIES})
 endif()
 
+if(WITH_USD)
+  list(APPEND INC_SYS
+    ${USD_INCLUDE_DIRS}
+  )
+  list(APPEND LIB
+    cycles_hydra
+    ${USD_LIBRARIES}
+  )
+endif()
+
 cycles_external_libraries_append(LIB)
 
 # Common configuration.
@@ -95,6 +105,18 @@ if(WITH_CYCLES_STANDALONE)
 
   if(CYCLES_STANDALONE_REPOSITORY)
     cycles_install_libraries(cycles)
+  endif()
+
+  if(WITH_USD AND USD_LIBRARY_DIR)
+    install(DIRECTORY
+      ${USD_LIBRARY_DIR}/usd
+      DESTINATION ${CMAKE_INSTALL_PREFIX}
+    )
+
+    install(DIRECTORY
+      ${USD_LIBRARY_DIR}/../plugin/usd
+      DESTINATION ${CMAKE_INSTALL_PREFIX}
+    )
   endif()
 endif()
 

@@ -28,6 +28,7 @@ set(INC_HD_CYCLES
   curves.h
   display_driver.h
   field.h
+  file_reader.h
   geometry.h
   geometry.inl
   instancer.h
@@ -50,6 +51,7 @@ set(SRC_HD_CYCLES
   camera.cpp
   display_driver.cpp
   field.cpp
+  file_reader.cpp
   instancer.cpp
   light.cpp
   material.cpp

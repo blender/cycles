@@ -23,7 +23,7 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
   endif()
 
   # USD
-  set(USD_LIBRARIES hd hgi hgiGL gf arch garch plug tf trace vt work sdf cameraUtil hf pxOsd)
+  set(USD_LIBRARIES hd hgi hgiGL gf arch garch plug tf trace vt work sdf cameraUtil hf pxOsd usd usdImaging usdGeom)
 
   foreach(lib ${USD_LIBRARIES})
     find_library(_pxr_library NAMES pxr_${lib} PATHS ${_library_dir} NO_DEFAULT_PATH)
