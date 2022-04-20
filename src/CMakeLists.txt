@@ -343,9 +343,6 @@ if(WITH_OPENCOLORIO)
     SYSTEM
     ${OPENCOLORIO_INCLUDE_DIRS}
   )
-  if(WIN32)
-    add_definitions(-DOpenColorIO_SKIP_IMPORTS)
-  endif()
 endif()
 
 # NaN debugging
