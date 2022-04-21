@@ -26,11 +26,22 @@ IF(NOT OPENEXR_ROOT_DIR AND NOT $ENV{OPENEXR_ROOT_DIR} STREQUAL "")
   SET(OPENEXR_ROOT_DIR $ENV{OPENEXR_ROOT_DIR})
 ENDIF()
 
+IF(NOT IMATH_ROOT_DIR AND NOT $ENV{IMATH_ROOT_DIR} STREQUAL "")
+  SET(IMATH_ROOT_DIR $ENV{IMATH_ROOT_DIR})
+ENDIF()
+
 # Old versions (before 2.0?) do not have any version string, just assuming this should be fine though.
 SET(_openexr_libs_ver_init "2.0")
 
 SET(_openexr_SEARCH_DIRS
   ${OPENEXR_ROOT_DIR}
+  /opt/lib/openexr
+)
+
+SET(_imath_SEARCH_DIRS
+  ${IMATH_ROOT_DIR}
+  ${OPENEXR_ROOT_DIR}
+  /opt/lib/imath
   /opt/lib/openexr
 )
 
@@ -84,10 +95,10 @@ STRING(REGEX REPLACE "([0-9]+)[.]([0-9]+).*" "\\1_\\2" _openexr_libs_ver ${OPENE
 # Different library names in 3.0, and Imath and Half moved out.
 IF(OPENEXR_VERSION VERSION_GREATER_EQUAL "3.0.0")
   SET(_openexr_FIND_COMPONENTS
-    Iex
-    IlmThread
     OpenEXR
     OpenEXRCore
+    IlmThread
+    Iex
   )
 ELSE()
   SET(_openexr_FIND_COMPONENTS
@@ -128,7 +139,7 @@ IF(OPENEXR_VERSION VERSION_GREATER_EQUAL "3.0.0")
     NAMES
       Imath/ImathMath.h
     HINTS
-      ${_openexr_SEARCH_DIRS}
+      ${_imath_SEARCH_DIRS}
     PATH_SUFFIXES
       include
   )
@@ -155,7 +166,7 @@ IF(OPENEXR_VERSION VERSION_GREATER_EQUAL "3.0.0")
       Imath-${_imath_libs_ver} Imath
     NAMES_PER_DIR
     HINTS
-      ${_openexr_SEARCH_DIRS}
+      ${_imath_SEARCH_DIRS}
     PATH_SUFFIXES
       lib64 lib
     )
@@ -206,3 +217,4 @@ UNSET(UPPERCOMPONENT)
 UNSET(_openexr_FIND_COMPONENTS)
 UNSET(_openexr_LIBRARIES)
 UNSET(_openexr_SEARCH_DIRS)
+UNSET(_imath_SEARCH_DIRS)
