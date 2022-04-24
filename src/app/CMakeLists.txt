@@ -118,6 +118,10 @@ if(WITH_CYCLES_STANDALONE)
       DESTINATION ${CMAKE_INSTALL_PREFIX}
     )
   endif()
+
+  install(PROGRAMS
+    $<TARGET_FILE:cycles>
+    DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 
 #####################################################################

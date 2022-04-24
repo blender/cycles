@@ -19,33 +19,35 @@ Quick build setup on Windows, macOS and Linux is as follows:
 
 This will download the Cycles source code, download precompiled libraries, configure CMake, and build.
 
-The resulting binary will be in:
+The resulting binary will be at:
 
-    cycles/build/bin
+    ./install/cycles
 
 ## Hydra Render Delegate with USD Repository
 
 This will make the render delegate work with usdview and other applications built using the USD repository.
 
-USD includes script to build and install in a specified directory. On Linux, use `--use-cxx11-abi 0` to match Blender and the VFX reference platform.
+USD includes a script to build itself and all required dependencies and then install the result a specified directory. On Linux, use `--use-cxx11-abi 0` to match Blender and the VFX reference platform.
 
     git clone https://github.com/PixarAnimationStudios/USD.git
     cd USD
-    python3 build_scripts/build_usd.py --use-cxx11-abi 0 <path to USD>
+    python3 build_scripts/build_usd.py --use-cxx11-abi 0 "<path to USD install>"
 
 Build Cycles pointing to this directory.
 
-    make BUILD_CMAKE_ARGS="WITH_CYCLES_HYDRA_RENDER_DELEGATE=ON -DPXR_ROOT=<path to USD>"
+    cmake -B ./build -DPXR_ROOT="<path to USD install>"
+    make
 
 Test in usdview.
 
-    PYTHONPATH=<path to usd>/lib/python PXR_PLUGINPATH_NAME=<path to cycles>/build/bin <path to USD>/bin/usdview
+    PYTHONPATH=<path to USD install>/lib/python PXR_PLUGINPATH_NAME=<path to cycles>/install/hydra <path to USD install>/bin/usdview
 
 ## Hydra Render Delegate for Houdini
 
 For use in Houdini, Cycles must be built using Houdini's USD libraries.
 
-    make BUILD_CMAKE_ARGS="WITH_CYCLES_HYDRA_RENDER_DELEGATE=ON -DHOUDINI_ROOT=<path to Houdini>"
+    cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>"
+    make
 
 The path to Houdini depends on the operating system, typically:
 - Linux: `/opt/hfsX.Y`
@@ -54,9 +56,9 @@ The path to Houdini depends on the operating system, typically:
 
 Test in Houdini using an environment variable.
 
-    PXR_PLUGINPATH_NAME=<path to cycles>/build/bin/houdini/dso/usd_plugins houdini
+    PXR_PLUGINPATH_NAME=<path to cycles>/install/houdini/dso/usd_plugins houdini
 
-Or copy `build/bin/houdini/packages/cycles.json` to the Houdini packages directory to make it always available.
+Or copy `install/houdini/packages/cycles.json` to the Houdini packages directory to make it always available.
 
 ## Build System
 

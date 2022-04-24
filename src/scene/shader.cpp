@@ -783,7 +783,7 @@ static bool to_scene_linear_transform(OCIO::ConstConfigRcPtr &config,
 {
   OCIO::ConstProcessorRcPtr processor;
   try {
-    processor = config->getProcessor(OCIO::ROLE_SCENE_LINEAR, colorspace);
+    processor = config->getProcessor("scene_linear", colorspace);
   }
   catch (OCIO::Exception &) {
     return false;
@@ -837,7 +837,7 @@ void ShaderManager::init_xyz_transforms()
 #ifdef WITH_OCIO
   /* Get from OpenColorO config if it has the required roles. */
   OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
-  if (!(config && config->hasRole(OCIO::ROLE_SCENE_LINEAR))) {
+  if (!(config && config->hasRole("scene_linear"))) {
     return;
   }
 

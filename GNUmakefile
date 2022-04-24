@@ -32,11 +32,11 @@ all: release
 
 release:
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && cmake $(BUILD_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./bin .. && cmake --build . -j $(PARALLEL_JOBS) --target install
+	cd $(BUILD_DIR) && cmake $(BUILD_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=Release .. && cmake --build . -j $(PARALLEL_JOBS) --target install
 
 debug:
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && cmake $(BUILD_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=./bin .. && cmake --build . -j $(PARALLEL_JOBS) --target install
+	cd $(BUILD_DIR) && cmake $(BUILD_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=Debug .. && cmake --build . -j $(PARALLEL_JOBS) --target install
 
 clean:
 	rm -rf $(BUILD_DIR)

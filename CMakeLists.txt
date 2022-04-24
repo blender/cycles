@@ -37,6 +37,9 @@ cmake_policy(SET CMP0043 NEW)
 # Use ROOT variables in find_package.
 cmake_policy(SET CMP0074 NEW)
 
+# Avoid having empty buildtype.
+set(CMAKE_BUILD_TYPE_INIT "Release")
+
 ###########################################################################
 # Initialize project.
 
@@ -56,10 +59,11 @@ include(macros)
 ###########################################################################
 # Global settings.
 
-# Avoid having empty buildtype.
-set(CMAKE_BUILD_TYPE_INIT "Release")
-
 set(CMAKE_INSTALL_MESSAGE LAZY)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install" CACHE PATH "Installation path" FORCE)
+endif()
 
 # Some stuff is different when building stabdalone Cycles from inside
 # Blender source code and when building it from it's own repository.

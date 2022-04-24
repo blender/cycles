@@ -145,25 +145,30 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
     )
   endif()
 
-  if(WITH_CYCLES_BLENDER)
-    set(CYCLES_HYDRA_INSTALL_PATH "../")
+  if(HOUDINI_ROOT)
+    set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/houdini/dso/usd_plugins)
   else()
-    if(HOUDINI_ROOT)
-      set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/houdini/dso/usd_plugins)
-    else()
-      set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
-    endif()
-
-    # Put the root plugInfo.json one level up
-    delayed_install("${CMAKE_CURRENT_SOURCE_DIR}" "plugInfo.json" ${CYCLES_HYDRA_INSTALL_PATH})
+    set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/hydra)
   endif()
 
+  # Put the root plugInfo.json one level up
+  delayed_install("${CMAKE_CURRENT_SOURCE_DIR}" "plugInfo.json" ${CYCLES_HYDRA_INSTALL_PATH})
   delayed_install("" $<TARGET_FILE:${HdCyclesPluginName}> ${CYCLES_HYDRA_INSTALL_PATH})
+
+  set_target_properties(${HdCyclesPluginName}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   set(PLUG_INFO_ROOT "..")
 
-  file(RELATIVE_PATH PLUG_INFO_LIBRARY_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}" "${CYCLES_INSTALL_PATH}")
+  file(RELATIVE_PATH
+    PLUG_INFO_LIBRARY_PATH
+    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
+    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH
+    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
+    "${CYCLES_INSTALL_PATH}")
 
   configure_file(resources/plugInfo.json
     ${CMAKE_CURRENT_BINARY_DIR}/resources/plugInfo.json
