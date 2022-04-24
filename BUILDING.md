@@ -45,7 +45,7 @@ Test in usdview.
 
 For use in Houdini, Cycles must be built using Houdini's USD libraries.
 
-    make BUILD_CMAKE_ARGS="WITH_CYCLES_HYDRA_RENDER_DELEGATE=ON -DHOUDINI_ROOT=<path to Houdini>"
+    make BUILD_CMAKE_ARGS="WITH_CYCLES_HYDRA_RENDER_DELEGATE=ON -HOUDINI_ROOT=<path to Houdini>"
 
 The path to Houdini depends on the operating system, typically:
 - Linux: `/opt/hfsX.Y`
