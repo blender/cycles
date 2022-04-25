@@ -25,7 +25,7 @@ The resulting binary will be at:
 
 ## Hydra Render Delegate with USD Repository
 
-This will make the render delegate work with usdview and other applications built using the USD repository.
+This will make the render delegate work with usdview and other applications built using the USD repository. USD version 21.11 or newer is required.
 
 USD includes a script to build itself and all required dependencies and then install the result a specified directory. On Linux, use `--use-cxx11-abi 0` to match Blender and the VFX reference platform.
 
@@ -44,7 +44,7 @@ Test in usdview.
 
 ## Hydra Render Delegate for Houdini
 
-For use in Houdini, Cycles must be built using Houdini's USD libraries.
+For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 19 or newer is required.
 
     cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>"
     make
