@@ -271,14 +271,6 @@ if(WITH_CYCLES_EMBREE)
   )
 endif()
 
-if(WITH_NANOVDB)
-  add_definitions(-DWITH_NANOVDB)
-  include_directories(
-    SYSTEM
-    ${NANOVDB_INCLUDE_DIR}
-  )
-endif()
-
 if(WITH_OPENIMAGEDENOISE)
   add_definitions(-DWITH_OPENIMAGEDENOISE)
   include_directories(
@@ -307,13 +299,6 @@ if(WITH_ALEMBIC)
   )
 endif()
 
-if(WITH_NANOVDB)
-  include_directories(
-    SYSTEM
-    ${NANOVDB_INCLUDE_DIRS}
-  )
-endif()
-
 # Includes that might be overrides by USD last, to avoid compiling
 # against the wrong versions of other libraries.
 include_directories(
@@ -326,6 +311,14 @@ if(WITH_OPENVDB)
   include_directories(
     SYSTEM
     ${OPENVDB_INCLUDE_DIRS}
+  )
+endif()
+
+if(WITH_NANOVDB)
+  add_definitions(-DWITH_NANOVDB)
+  include_directories(
+    SYSTEM
+    ${NANOVDB_INCLUDE_DIR}
   )
 endif()
 

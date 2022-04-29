@@ -74,6 +74,7 @@ if(CYCLES_STANDALONE_REPOSITORY)
     _set_default(JPEG_ROOT "${_cycles_lib_dir}/jpeg")
     _set_default(LLVM_ROOT_DIR "${_cycles_lib_dir}/llvm")
     _set_default(CLANG_ROOT_DIR "${_cycles_lib_dir}/llvm")
+    _set_default(NANOVDB_ROOT_DIR "${_cycles_lib_dir}/openvdb")
     _set_default(OPENCOLORIO_ROOT_DIR "${_cycles_lib_dir}/opencolorio")
     _set_default(OPENEXR_ROOT_DIR "${_cycles_lib_dir}/openexr")
     _set_default(OPENIMAGEDENOISE_ROOT_DIR "${_cycles_lib_dir}/openimagedenoise")
@@ -468,6 +469,20 @@ if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_OPENVDB)
     else()
       find_package(Blosc REQUIRED)
     endif()
+  endif()
+endif()
+
+###########################################################################
+# NanoVDB
+###########################################################################
+
+if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_NANOVDB)
+  set(WITH_NANOVDB ON)
+
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(NANOVDB_INCLUDE_DIR ${NANOVDB_ROOT_DIR}/include)
+  else()
+    find_package(NanoVDB REQUIRED)
   endif()
 endif()
 

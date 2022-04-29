@@ -91,6 +91,7 @@ option(WITH_CYCLES_OPENCOLORIO      "Build with OpenColorIO support" ON)
 option(WITH_CYCLES_OPENIMAGEDENOISE "Build with OpenImageDenoise support" ON)
 option(WITH_CYCLES_OPENSUBDIV       "Build with OpenSubdiv support" ON)
 option(WITH_CYCLES_OPENVDB          "Build with OpenVDB support" ON)
+option(WITH_CYCLES_NANOVDB          "Build with NanoVDB support" ON)
 option(WITH_CYCLES_OSL              "Build with OSL support" ON)
 option(WITH_CYCLES_USD              "Build with USD support" ON)
 
