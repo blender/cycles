@@ -26,7 +26,6 @@ set(INC_HD_CYCLES
   camera.h
   config.h
   curves.h
-  display_driver.h
   field.h
   file_reader.h
   geometry.h
@@ -49,7 +48,6 @@ set(SRC_HD_CYCLES
   attribute.cpp
   curves.cpp
   camera.cpp
-  display_driver.cpp
   field.cpp
   file_reader.cpp
   instancer.cpp
@@ -73,6 +71,13 @@ if(WITH_OPENVDB)
   list(APPEND INC_SYS
     ${OPENVDB_INCLUDE_DIRS}
   )
+endif()
+
+# Blender libraries do not include hgiGL, so build without display driver then.
+if(EXISTS ${USD_INCLUDE_DIR}/pxr/imaging/hgiGL)
+  add_definitions(-DWITH_HYDRA_DISPLAY_DRIVER)
+  list(APPEND SRC_HD_CYCLES display_driver.cpp)
+  list(APPEND INC_HD_CYCLES display_driver.h)
 endif()
 
 include_directories(${INC})
@@ -147,7 +152,11 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
 
   if(HOUDINI_ROOT)
     set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/houdini/dso/usd_plugins)
+  elseif(WITH_CYCLES_BLENDER)
+    # Install inside add-on
+    set(CYCLES_HYDRA_INSTALL_PATH ${CYCLES_INSTALL_PATH}/hydra)
   else()
+    # Install next to cycles executable
     set(CYCLES_HYDRA_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/hydra)
   endif()
 
@@ -162,13 +171,20 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
 
   set(PLUG_INFO_ROOT "..")
 
-  file(RELATIVE_PATH
-    PLUG_INFO_LIBRARY_PATH
-    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
-    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH
-    "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
-    "${CYCLES_INSTALL_PATH}")
+  if(WITH_CYCLES_BLENDER)
+    # Full path not yet know at this point and RELATIVE_PATH requires
+    # absolute path as input. So just set manually.
+    set(PLUG_INFO_LIBRARY_PATH "../${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(PLUG_INFO_RESOURCE_PATH "../..")
+  else()
+    file(RELATIVE_PATH
+      PLUG_INFO_LIBRARY_PATH
+      "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
+      "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    file(RELATIVE_PATH PLUG_INFO_RESOURCE_PATH
+      "${CYCLES_HYDRA_INSTALL_PATH}/${HdCyclesPluginName}"
+      "${CYCLES_INSTALL_PATH}")
+  endif()
 
   configure_file(resources/plugInfo.json
     ${CMAKE_CURRENT_BINARY_DIR}/resources/plugInfo.json
