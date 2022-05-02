@@ -481,6 +481,7 @@ if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_NANOVDB)
 
   if(MSVC AND EXISTS ${_cycles_lib_dir})
     set(NANOVDB_INCLUDE_DIR ${NANOVDB_ROOT_DIR}/include)
+    set(NANOVDB_INCLUDE_DIRS ${NANOVDB_INCLUDE_DIR})
   else()
     find_package(NanoVDB REQUIRED)
   endif()
