@@ -71,6 +71,7 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
       ${_library_dir}
     NO_DEFAULT_PATH)
 
+  set(USD_INCLUDE_DIR ${_include_dir})
   list(APPEND USD_INCLUDE_DIRS ${_python_include_dir})
   list(APPEND USD_LIBRARIES ${_python_library} ${_boost_python_library})
 
