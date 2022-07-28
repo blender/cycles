@@ -131,8 +131,6 @@ set(SRC_HEADERS
   types_uint4.h
   types_uint4_impl.h
   types_ushort4.h
-  types_vector3.h
-  types_vector3_impl.h
   unique_ptr.h
   vector.h
   version.h
