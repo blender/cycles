@@ -122,6 +122,9 @@ if(WITH_USD)
     else()
       find_package(USD)
     endif()
+    if(MSVC AND EXISTS ${_cycles_lib_dir})
+      add_definitions(-DPXR_STATIC)
+    endif()
   endif()
 
   if(NOT USD_FOUND)
@@ -225,17 +228,17 @@ endif()
 if(CYCLES_STANDALONE_REPOSITORY)
   if(MSVC AND EXISTS ${_cycles_lib_dir})
     set(OPENEXR_INCLUDE_DIR ${OPENEXR_ROOT_DIR}/include)
-    set(OPENEXR_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIR} ${OPENEXR_ROOT_DIR}/include/OpenEXR)
+    set(OPENEXR_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIR} ${OPENEXR_ROOT_DIR}/include/OpenEXR ${IMATH_ROOT_DIR}/include ${IMATH_ROOT_DIR}/include/Imath)
     set(OPENEXR_LIBRARIES
+      optimized ${OPENEXR_ROOT_DIR}/lib/OpenEXR_s.lib
+      optimized ${OPENEXR_ROOT_DIR}/lib/OpenEXRCore_s.lib
       optimized ${OPENEXR_ROOT_DIR}/lib/Iex_s.lib
-      optimized ${OPENEXR_ROOT_DIR}/lib/Half_s.lib
-      optimized ${OPENEXR_ROOT_DIR}/lib/IlmImf_s.lib
-      optimized ${OPENEXR_ROOT_DIR}/lib/Imath_s.lib
+      optimized ${IMATH_ROOT_DIR}/lib/Imath_s.lib
       optimized ${OPENEXR_ROOT_DIR}/lib/IlmThread_s.lib
+      debug ${OPENEXR_ROOT_DIR}/lib/OpenEXR_s_d.lib
+      debug ${OPENEXR_ROOT_DIR}/lib/OpenEXRCore_s_d.lib
       debug ${OPENEXR_ROOT_DIR}/lib/Iex_s_d.lib
-      debug ${OPENEXR_ROOT_DIR}/lib/Half_s_d.lib
-      debug ${OPENEXR_ROOT_DIR}/lib/IlmImf_s_d.lib
-      debug ${OPENEXR_ROOT_DIR}/lib/Imath_s_d.lib
+      debug ${IMATH_ROOT_DIR}/lib/Imath_s_d.lib
       debug ${OPENEXR_ROOT_DIR}/lib/IlmThread_s_d.lib
     )
   else()
@@ -347,8 +350,8 @@ if(CYCLES_STANDALONE_REPOSITORY)
     if(NOT BOOST_VERSION)
       message(FATAL_ERROR "Unable to determine Boost version")
     endif()
-    set(BOOST_POSTFIX "vc141-mt-x64-${BOOST_VERSION}.lib")
-    set(BOOST_DEBUG_POSTFIX "vc141-mt-gd-x64-${BOOST_VERSION}.lib")
+    set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
+    set(BOOST_DEBUG_POSTFIX "vc142-mt-gd-x64-${BOOST_VERSION}.lib")
     set(BOOST_LIBRARIES
       optimized ${BOOST_ROOT}/lib/libboost_date_time-${BOOST_POSTFIX}
       optimized ${BOOST_ROOT}/lib/libboost_iostreams-${BOOST_POSTFIX}
