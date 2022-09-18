@@ -185,8 +185,7 @@ bool OIIOImageLoader::load_pixels(const ImageMetaData &metadata,
 
   /* Load without automatic OIIO alpha conversion, we do it ourselves. OIIO
    * will associate alpha in the 8bit buffer for PNGs, which leads to too
-   * much precision loss when we load it as half float to do a color-space
-   * transform. */
+   * much precision loss when we load it as half float to do a color-space transform. */
   config.attribute("oiio:UnassociatedAlpha", 1);
 
   if (!in->open(filepath.string(), spec, config)) {
