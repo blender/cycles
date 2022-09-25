@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2021-2022 Blender Foundation
+
+# Note CI is disabled by default in forked repositories. To enable, go to
+# repository Settings > Secrets and add secret CI_ENABLE with value 1.
+#
+# These actions require downloading large precompiled libraries, which will
+# take up significant cache space.
+
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - 'gh-pages'
+    paths-ignore:
+      - '**.md'
+      - 'web/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'web/**'
+  workflow_dispatch:
+
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    outputs:
+      CI_ENABLE: ${{ steps.check_secret.outputs.CI_ENABLE }}
+    steps:
+      - name: Check Secret
+        id: check_secret
+        env:
+          CI_ENABLE: ${{ secrets.CI_ENABLE }}
+        run: |
+          echo "CI_ENABLE: ${{ env.CI_ENABLE != '' }}"
+          echo "::set-output name=CI_ENABLE::${{ env.CI_ENABLE != '' }}"
+
+  Build:
+    needs: [Setup]
+    if: needs.Setup.outputs.CI_ENABLE == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [Linux, macOS, Windows]
+        include:
+          - platform: Linux
+            os: ubuntu-latest
+            make: make
+          - platform: macOS
+            os: macos-latest
+            make: make
+          - platform: Windows
+            os: windows-latest
+            make: cmd /c make.bat
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Restore Libraries
+        uses: actions/cache@v3
+        with:
+          path: lib
+          key: libs-${{ matrix.os }}-${{ github.ref }}
+          restore-keys: libs-${{ matrix.os }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: cycles
+
+      - name: Update
+        working-directory: cycles
+        run: ${{ matrix.make }} update
+
+      - name: Build
+        working-directory: cycles
+        run: ${{ matrix.make }}
+
+      - name: Test
+        working-directory: cycles
+        run: ${{ matrix.make }} test
