@@ -1,0 +1,28 @@
+<div class="site-masthead">
+  <div class="container">
+    <!-- Title -->
+    <div class="site-header">
+      <h1 class="site-title">
+        <a href="/">{{ .Site.Title }}</a>&nbsp;<span class="site-subtitle">{{ .Site.Params.Subtitle  }}</span>
+      </h1>
+    </div>
+    <!-- Navigation -->
+    <div class="site-nav">
+      <ul class="menu">
+          {{ range .Site.Menus.main }}
+          <li class="menu-item">
+          <a class="link" href="{{ .URL }}">
+          {{ if .Pre }}
+          {{ $icon := printf "<i class=\"%s\"></i> " .Pre | safeHTML }}
+          {{ $icon }}
+          {{ end }}
+          {{ $text := print .Name | safeHTML }}
+          {{ $text }}
+          </a>
+          </li>
+          {{ end }}
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="container">

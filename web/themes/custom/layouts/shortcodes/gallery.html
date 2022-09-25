@@ -1,0 +1,7 @@
+<!-- SPDX-License-Identifier: MIT, Copyright (c) 2017 Li-Wen Yip -->
+
+<link rel="stylesheet" href={{ "css/photoswipe-gallery.css" | relURL }} />
+{{ $baseURL := .Site.BaseURL }}
+<div class="gallery gallery-columns-3 gallery-size-thumbnail" itemscope itemtype="http://schema.org/ImageGallery">
+  {{ .Inner }}
+</div>

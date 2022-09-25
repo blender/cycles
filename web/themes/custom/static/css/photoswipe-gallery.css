@@ -1,0 +1,80 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2017 Li-Wen Yip */
+
+/* Grid Layout Styles */
+
+.gallery {
+    overflow: hidden;
+    margin: 10px;
+    max-width: 900px;
+}
+.gallery .box {
+    float: left;
+    position: relative;
+    /* Default: 1 tile wide */
+    width: 100%;
+    padding-bottom: 100%;
+}
+@media only screen and (min-width : 365px) {
+    /* Tablet view: 2 tiles */
+    .gallery .box {
+        width: 50%;
+        padding-bottom: 50%;
+    }
+}
+@media only screen and (min-width : 480px) {
+    /* Small desktop / ipad view: 3 tiles */
+    .gallery .box {
+        width: 33.3%;
+        padding-bottom: 33.3%; /*  */
+    }
+}
+@media only screen and (min-width : 9999px) {
+   /* Medium desktop: 4 tiles */
+   .box {
+      width: 25%;
+      padding-bottom: 25%;
+   }
+}
+
+/* figure styles */
+figure {
+    position:relative; /* purely to allow absolution positioning of figcaption */
+    overflow: hidden;
+}
+.gallery figure {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    top: 5px;
+    bottom: 5px;
+}
+
+/* img / a styles */
+
+.gallery .img {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+}
+
+.gallery img {
+    display: none; /* only show the img if not inside a gallery */
+}
+
+figure a {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+figcaption {
+  display: none;
+}

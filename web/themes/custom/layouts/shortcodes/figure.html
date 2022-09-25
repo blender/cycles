@@ -1,0 +1,14 @@
+<!-- SPDX-License-Identifier: MIT, Copyright (c) 2017 Li-Wen Yip -->
+
+<div class="box">
+  <figure itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img" style="background-image: url('{{ .Get "thumb" | relURL }}');">
+      <img itemprop="thumbnail" src="{{ .Get "thumb" | relURL }}"/>
+      </img>
+    </div>
+    <a href="{{ .Get "full" }}" itemprop="contentUrl"></a>
+    <figcaption>
+      {{ .Inner }}
+    </figcaption>
+  </figure>
+</div>

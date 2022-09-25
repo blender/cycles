@@ -1,44 +1,131 @@
-Andrew Wiggin <ender79bl@gmail.com>
-Antony Riakiotakis <kalast@gmail.com>
-Bastien Montagne <montagne29@wanadoo.fr>
-Brecht Van Lommel <brechtvanlommel@pandora.be>
-Campbell Barton <ideasman42@gmail.com>
-Carlo Andreacchio <carlorules@gmail.com>
-Dalai Felinto <dfelinto@gmail.com>
-Daniel Genrich <daniel.genrich@gmx.net>
-Gaia Clary <gaia.clary@machinimatrix.org>
-George Kyriazis <George.Kyriazis@amd.com>
-Greg Zaal <gregzzmail@gmail.com>
-Guillermo S. Romero <gsr.b3d@infernal-iceberg.com>
-Jason Wilkins <Jason.A.Wilkins@gmail.com>
-Jens Verwiebe <info@jensverwiebe.de>
-John Pavel <jrp@dial.pipex.com>
-Jonas Eschenburg <indyjo@gmx.de>
-Joshua Leung <aligorith@gmail.com>
-Julian Eisel <eiseljulian@gmail.com>
-Jürgen Herrmann <shadowrom@me.com>
-Karsten Schwenk <macnihilist@gmx.net>
-Kevin Dietrich <kevin.dietrich@mailoo.org>
-Lukas Stockner <lukas.stockner@freenet.de>
-Konrad Kleine <konrad.wilhelm.kleine@gmail.com>
-Lukas Tönne <lukas.toenne@gmail.com>
-Marcus von Appen <mva@freebsd.org>
-Martijn Berger <martijn.berger@gmail.com>
-Matt Heimlich <matt.heimlich@gmail.com>
-Miika Hamalainen <blender@miikah.org>
-Mike Farnsworth <mike.farnsworth@gmail.com>
-Mai Lavelle <mai.lavelle@gmail.com>
-Nathan Letwory <nathan@letworyinteractive.com>
-Nicholas Bishop <nicholasbishop@gmail.com>
-Pablo Vazquez <venomgfx@gmail.com>
-Peter Staples <batfinger@gmail.com>
-Philipp Oeser <info@graphics-engineer.com>
-Sergej Reich <sergej.reich@googlemail.com>
-Sergey Sharybin <sergey.vfx@gmail.com>
-Stefan Werner <swerner@smithmicro.com>
-Stuart Broadfoot <gbroadfoot@hotmail.com>
-Sv. Lockal <lockalsash@gmail.com>
-Tamito Kajiyama <rd6t-kjym@asahi-net.or.jp>
-Thomas Dinges <blender@dingto.org>
-Thomas Laroche <tho.laroche@gmail.com>
-Ton Roosendaal <ton@blender.org>
+Aaron Carlisle
+Adrian Newton
+Alex Fuller
+Alex Strand
+Alexander Gavrilov
+Alexander Romanov
+Andrew Wiggin
+Andrii Symkin
+Ankit Meel
+Antonio Vazquez
+Antony Riakiotakis
+Bartosz Moniewski
+Bastien Montagne
+Bob Mercier
+Brecht Van Lommel
+Brian Savery
+Campbell Barton
+Carlo Andreacchio
+Charles Flèche
+Charlie Jolly
+Chris Eveleigh
+Christian Baars
+Christian Rauch
+Christophe Hery
+Clément Foucault
+Dalai Felinto
+Daniel Genrich
+Daniel Santana
+Edward O'Callaghan
+Ethan-Hall
+Gaia Clary
+Garry R. Osgood
+George Kyriazis
+Germano Cavalcante
+Giovanni Remigi
+Greg Zaal
+Guillaume Chereau
+Guillermo S. Romero
+Ha Hyung-jin
+Håkan Ardö
+Hallam Roberts
+Hans Goudey
+Harley Acheson
+Hristo Gueorguiev
+Imre Palik
+Jacques Lucke
+Jagannadhan Ravi
+James Horsley
+Jason Wilkins
+Jeff Knox
+Jeff Witthuhn
+Jens Verwiebe
+Jeroen Bakker
+Jesse Yurkovich
+Joan Bonet Orantos
+Johan Walles
+John Pavel
+Jonas Eschenburg
+Josh Belanich
+Joshua Leung
+Julian Eisel
+Jürgen Herrmann
+Karsten Schwenk
+Kévin Dietrich
+Kim Christensen
+Konrad Kleine
+L. E. Segovia
+Leon Zandman
+Luca Rood
+Luis Pereira
+Lukas Stockner
+Lukas Tönne
+Mai Lavelle
+Marcus von Appen
+Martijn Berger
+Martijn Versteegh
+Mathieu Menuet
+Matt Heimlich
+Matt McClellan
+Matteo Falduto
+Maxym Dmytrychenko
+Michael Jones
+Miguel Pozo
+Miika Hamalainen
+Mike Erwin
+Mike Farnsworth
+Mikhail Matrosov
+Milan Jaros
+Nathan Letwory
+Nathan Vegdahl
+Nicholas Bishop
+Nikhil Shringarpurey
+Nikita Sirgienko
+Olivier Maury
+OmarSquircleArt
+Pablo Vazquez
+Pascal Schoen
+Pascal Schön
+Patrick Mours
+Peter Staples
+Philipp Oeser
+Piotr Barejko
+Ray Molenkamp
+Ray molenkamp
+Robert Guetzkow
+Sayak Biswas
+Scott Wu
+Sebastián Barschkis
+Sebastian Herholz
+Sebastian Parborg
+Sergej Reich
+Sergey Sharybin
+Shane Ambler
+Stefan Werner
+Stuart Broadfoot
+Sv. Lockal
+Sybren A. Stüvel
+Szymon Ulatowski
+Tamito Kajiyama
+Tautvydas Andrikys
+Thomas Beck
+Thomas Dinges
+Thomas Laroche
+Tianhao Chai
+Tim Stullich
+Ton Roosendaal
+Valdemar Lindberg
+William Leeson
+William Reynish
+Xavier Hallade
+Yevgeny Makarov

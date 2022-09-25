@@ -1,0 +1,175 @@
+/* Globals */
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+  background-color: #f8f8f8;
+}
+
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+  font-family: 'PT Sans Narrow', sans-serif;
+  font-weight: normal;
+  color: #111;
+}
+
+h3 {
+  font-size: 1.45em;
+}
+
+/* Links */
+
+a, a:visited, a:active {
+  color: #48d;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #f84;
+  text-decoration: none;
+}
+
+h1 a:link, h1 a:visited,
+h2 a:link, h2 a:visited,
+h3 a:link, h3 a:visited {
+  color: #111;
+}
+
+h1 a:hover,
+h2 a:hover,
+h3 a:hover {
+  color: #48d;
+}
+
+/* Container width */
+
+.container {
+  max-width: 900px;
+}
+
+@media (min-width: 1200px) {
+  .container {
+    width: 900px;
+  }
+}
+
+/* Masthead */
+
+.site-masthead {
+  background-color: #fff;
+  box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+  line-height: 20px;
+}
+
+.site-masthead .container {
+  position: relative;
+}
+
+/* Nav links */
+
+.site-nav {
+  text-align: center;
+  font-family: 'PT Sans Narrow', sans-serif;
+  font-size: 19.6px;
+  color: #111;
+}
+
+@media only screen and (min-width:700px) {
+  .site-nav {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+}
+
+ul.menu {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+li.menu-item {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-item a:link,
+.menu-item a:visited {
+  padding: 13px;
+  box-sizing: border-box;
+  color: #111;
+}
+
+.menu-item a:hover {
+  color: #48d;
+  text-decoration: none;
+  box-shadow: inset 0px -2px #48d;
+  box-sizing: border-box;
+  padding: 13px;
+}
+
+.current-menu-item a:link,
+.current-menu-item a:visited {
+  color: #f84;
+  box-shadow: inset 0 -2px #f84;
+  box-sizing: border-box;
+  padding: 13px;
+}
+
+/* Title and description */
+
+.site-header {
+  display: inline-block;
+}
+
+.site-logo {
+  vertical-align: middle;
+  margin-bottom: 8px;
+  margin-right: 1px;
+}
+
+.site-title {
+  margin-top: 20px;
+  margin-bottom: 7px;
+  color: #111;
+  font-size: 40px;
+  font-weight: normal;
+  letter-spacing: 2px;
+}
+
+.site-subtitle {
+  display: block;
+  font-size: 20px;
+  font-weight: normal;
+  color: #888;
+  letter-spacing: 0px;
+}
+
+@media only screen and (min-width:440px) {
+  .site-subtitle {
+    display: inline;
+  }
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 40px 0;
+  color: #999;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* Image gallery */
+
+.pswp__counter,
+.pswp__button--share,
+.pswp__button--fs,
+.pswp__button--zoom {
+  display: none !important;
+}

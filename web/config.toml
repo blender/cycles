@@ -1,0 +1,21 @@
+baseURL = 'https://www.cycles-renderer.org'
+title = 'Cycles'
+theme = "custom"
+
+[params]
+  subtitle = 'Open Source Production Rendering'
+
+[menu]
+  [[menu.main]]
+    name = "Features"
+    url = "/features/"
+    weight = 2
+  [[menu.main]]
+    name = "Development"
+    url = "/development/"
+    weight = 3
+  [[menu.main]]
+    name = ""
+    pre = "fa fa-twitter"
+    url = "https://twitter.com/cyclesrenderer"
+    weight = 4
