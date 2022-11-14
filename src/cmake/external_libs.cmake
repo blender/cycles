@@ -277,17 +277,34 @@ if(CYCLES_STANDALONE_REPOSITORY AND WITH_CYCLES_OSL)
     unset(_llvm_libs_debug)
     unset(_llvm_libs_release)
 
-    set(OSL_INCLUDE_DIR ${OSL_ROOT_DIR}/include)
-    set(OSL_LIBRARIES
-      optimized ${OSL_ROOT_DIR}/lib/oslcomp.lib
-      optimized ${OSL_ROOT_DIR}/lib/oslexec.lib
-      optimized ${OSL_ROOT_DIR}/lib/oslquery.lib
-      debug ${OSL_ROOT_DIR}/lib/oslcomp_d.lib
-      debug ${OSL_ROOT_DIR}/lib/oslexec_d.lib
-      debug ${OSL_ROOT_DIR}/lib/oslquery_d.lib
+    set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/shaders)
+    if(NOT EXISTS "${OSL_SHADER_DIR}")
+      set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/share/OSL/shaders)
+    endif()
+    find_library(OSL_LIB_EXEC NAMES oslexec PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_COMP NAMES oslcomp PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_QUERY NAMES oslquery PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_NOISE NAMES oslnoise PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_EXEC_DEBUG NAMES oslexec_d PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_COMP_DEBUG NAMES oslcomp_d PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_QUERY_DEBUG NAMES oslquery_d PATHS ${OSL_ROOT_DIR}/lib)
+    find_library(OSL_LIB_NOISE_DEBUG NAMES oslnoise_d PATHS ${OSL_ROOT_DIR}/lib)
+    list(APPEND OSL_LIBRARIES
+      optimized ${OSL_LIB_COMP}
+      optimized ${OSL_LIB_EXEC}
+      optimized ${OSL_LIB_QUERY}
+      debug ${OSL_LIB_EXEC_DEBUG}
+      debug ${OSL_LIB_COMP_DEBUG}
+      debug ${OSL_LIB_QUERY_DEBUG}
       ${PUGIXML_LIBRARIES}
     )
-
+    if(OSL_LIB_NOISE)
+      list(APPEND OSL_LIBRARIES optimized ${OSL_LIB_NOISE})
+    endif()
+    if(OSL_LIB_NOISE_DEBUG)
+      list(APPEND OSL_LIBRARIES debug ${OSL_LIB_NOISE_DEBUG})
+    endif()
+    find_path(OSL_INCLUDE_DIR OSL/oslclosure.h PATHS ${OSL_ROOT_DIR}/include)
     find_program(OSL_COMPILER NAMES oslc PATHS ${OSL_ROOT_DIR}/bin)
   else()
     find_package(OSL REQUIRED)
