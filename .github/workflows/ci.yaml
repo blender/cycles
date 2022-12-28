@@ -34,9 +34,7 @@ jobs:
         id: check_secret
         env:
           CI_ENABLE: ${{ secrets.CI_ENABLE }}
-        run: |
-          echo "CI_ENABLE: ${{ env.CI_ENABLE != '' }}"
-          echo "::set-output name=CI_ENABLE::${{ env.CI_ENABLE != '' }}"
+        run: echo "CI_ENABLE=${{ env.CI_ENABLE != '' }}" >> $GITHUB_OUTPUT
 
   Build:
     needs: [Setup]
