@@ -136,6 +136,8 @@ NODE_DEFINE(Light)
 
   SOCKET_STRING(lightgroup, "Light Group", ustring());
 
+  SOCKET_BOOLEAN(normalize, "Normalize", true);
+
   return type;
 }
 
@@ -776,7 +778,8 @@ void LightManager::device_update_points(Device *, DeviceScene *dscene, Scene *sc
       shader_id &= ~SHADER_AREA_LIGHT;
 
       float radius = light->size;
-      float invarea = (radius > 0.0f) ? 1.0f / (M_PI_F * radius * radius) : 1.0f;
+      float invarea = (light->normalize && radius > 0.0f) ? 1.0f / (M_PI_F * radius * radius) :
+                                                            1.0f;
 
       if (light->use_mis && radius > 0.0f)
         shader_id |= SHADER_USE_MIS;
@@ -795,7 +798,7 @@ void LightManager::device_update_points(Device *, DeviceScene *dscene, Scene *sc
       float radius = tanf(angle);
       float cosangle = cosf(angle);
       float area = M_PI_F * radius * radius;
-      float invarea = (area > 0.0f) ? 1.0f / area : 1.0f;
+      float invarea = (light->normalize && area > 0.0f) ? 1.0f / area : 1.0f;
       float3 dir = light->dir;
 
       dir = safe_normalize(dir);
@@ -837,7 +840,7 @@ void LightManager::device_update_points(Device *, DeviceScene *dscene, Scene *sc
       if (light->round) {
         area *= -M_PI_4_F;
       }
-      float invarea = (area != 0.0f) ? 1.0f / area : 1.0f;
+      float invarea = (light->normalize && area != 0.0f) ? 1.0f / area : 1.0f;
       float3 dir = light->dir;
 
       /* Convert from spread angle 0..180 to 90..0, clamping to a minimum
@@ -875,7 +878,8 @@ void LightManager::device_update_points(Device *, DeviceScene *dscene, Scene *sc
       shader_id &= ~SHADER_AREA_LIGHT;
 
       float radius = light->size;
-      float invarea = (radius > 0.0f) ? 1.0f / (M_PI_F * radius * radius) : 1.0f;
+      float invarea = (light->normalize && radius > 0.0f) ? 1.0f / (M_PI_F * radius * radius) :
+                                                            1.0f;
       float spot_angle = cosf(light->spot_angle * 0.5f);
       float spot_smooth = (1.0f - spot_angle) * light->spot_smooth;
       float3 dir = light->dir;
@@ -933,7 +937,7 @@ void LightManager::device_update_points(Device *, DeviceScene *dscene, Scene *sc
     if (light->round) {
       area *= -M_PI_4_F;
     }
-    float invarea = (area != 0.0f) ? 1.0f / area : 1.0f;
+    float invarea = (light->normalize && area != 0.0f) ? 1.0f / area : 1.0f;
     float3 dir = light->dir;
 
     dir = safe_normalize(dir);
