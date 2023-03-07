@@ -77,7 +77,6 @@ The precompiled libraries are expected to be in a `lib/<platform>` folder next t
 Core Cycles has the following required and optional library dependencies. These are all included in precompiled libraries.
 
 Required:
-- Boost
 - OpenImageIO
 - TBB
 
