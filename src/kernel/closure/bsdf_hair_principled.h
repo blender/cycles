@@ -305,13 +305,12 @@ ccl_device Spectrum bsdf_principled_hair_eval(KernelGlobals kg,
 
   /* Primary specular (R), Transmission (TT) and Secondary Specular (TRT). */
   for (int i = 0; i < 3; i++) {
-    const float Mp = longitudinal_scattering(angles[2 * i],
-                                             angles[2 * i + 1],
-                                             sin_theta_o,
-                                             cos_theta_o,
-                                             (i == 0) ? bsdf->m0_roughness :
-                                             (i == 1) ? 0.25f * bsdf->v :
-                                                        4.0f * bsdf->v);
+    const float Mp = longitudinal_scattering(
+        angles[2 * i],
+        angles[2 * i + 1],
+        sin_theta_o,
+        cos_theta_o,
+        (i == 0) ? bsdf->m0_roughness : (i == 1) ? 0.25f * bsdf->v : 4.0f * bsdf->v);
     const float Np = azimuthal_scattering(phi, i, bsdf->s, gamma_o, gamma_t);
     F += Ap[i] * Mp * Np;
     F_energy += Ap_energy[i] * Mp * Np;
@@ -424,13 +423,12 @@ ccl_device int bsdf_principled_hair_sample(KernelGlobals kg,
 
   /* Primary specular (R), Transmission (TT) and Secondary Specular (TRT). */
   for (int i = 0; i < 3; i++) {
-    const float Mp = longitudinal_scattering(angles[2 * i],
-                                             angles[2 * i + 1],
-                                             sin_theta_o,
-                                             cos_theta_o,
-                                             (i == 0) ? bsdf->m0_roughness :
-                                             (i == 1) ? 0.25f * bsdf->v :
-                                                        4.0f * bsdf->v);
+    const float Mp = longitudinal_scattering(
+        angles[2 * i],
+        angles[2 * i + 1],
+        sin_theta_o,
+        cos_theta_o,
+        (i == 0) ? bsdf->m0_roughness : (i == 1) ? 0.25f * bsdf->v : 4.0f * bsdf->v);
     const float Np = azimuthal_scattering(phi, i, bsdf->s, gamma_o, gamma_t);
     F += Ap[i] * Mp * Np;
     F_energy += Ap_energy[i] * Mp * Np;

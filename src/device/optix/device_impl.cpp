@@ -209,10 +209,11 @@ bool OptiXDevice::load_kernels(const uint kernel_features)
   /* Detect existence of OptiX kernel and SDK here early. So we can error out
    * before compiling the CUDA kernels, to avoid failing right after when
    * compiling the OptiX kernel. */
-  string suffix = use_osl ? "_osl" :
-                  (kernel_features & (KERNEL_FEATURE_NODE_RAYTRACE | KERNEL_FEATURE_MNEE)) ?
-                            "_shader_raytrace" :
-                            "";
+  string suffix = use_osl ?
+                      "_osl" :
+                      (kernel_features & (KERNEL_FEATURE_NODE_RAYTRACE | KERNEL_FEATURE_MNEE)) ?
+                      "_shader_raytrace" :
+                      "";
   string ptx_filename;
   if (need_optix_kernels) {
     ptx_filename = path_get("lib/kernel_optix" + suffix + ".ptx");
@@ -696,9 +697,9 @@ bool OptiXDevice::load_osl_kernels()
        type = static_cast<ShaderType>(type + 1)) {
     const vector<OSL::ShaderGroupRef> &groups = (type == SHADER_TYPE_SURFACE ?
                                                      osl_globals.surface_state :
-                                                 type == SHADER_TYPE_VOLUME ?
+                                                     type == SHADER_TYPE_VOLUME ?
                                                      osl_globals.volume_state :
-                                                 type == SHADER_TYPE_DISPLACEMENT ?
+                                                     type == SHADER_TYPE_DISPLACEMENT ?
                                                      osl_globals.displacement_state :
                                                      osl_globals.bump_state);
     for (const OSL::ShaderGroupRef &group : groups) {

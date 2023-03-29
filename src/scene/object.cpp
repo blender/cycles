@@ -113,9 +113,7 @@ Object::Object() : Node(get_node_type())
   intersects_volume = false;
 }
 
-Object::~Object()
-{
-}
+Object::~Object() {}
 
 void Object::update_motion()
 {
@@ -380,9 +378,7 @@ ObjectManager::ObjectManager()
   need_flags_update = true;
 }
 
-ObjectManager::~ObjectManager()
-{
-}
+ObjectManager::~ObjectManager() {}
 
 static float object_volume_density(const Transform &tfm, Geometry *geom)
 {
@@ -504,7 +500,7 @@ void ObjectManager::device_update_object_transform(UpdateObjectTransformState *s
   kobject.dupli_generated[2] = ob->dupli_generated[2];
   kobject.numkeys = (geom->geometry_type == Geometry::HAIR) ?
                         static_cast<Hair *>(geom)->get_curve_keys().size() :
-                    (geom->geometry_type == Geometry::POINTCLOUD) ?
+                        (geom->geometry_type == Geometry::POINTCLOUD) ?
                         static_cast<PointCloud *>(geom)->num_points() :
                         0;
   kobject.dupli_uv[0] = ob->dupli_uv[0];

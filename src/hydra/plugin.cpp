@@ -35,9 +35,7 @@ HdCyclesPlugin::HdCyclesPlugin()
 #endif
 }
 
-HdCyclesPlugin::~HdCyclesPlugin()
-{
-}
+HdCyclesPlugin::~HdCyclesPlugin() {}
 
 #if PXR_VERSION < 2302
 bool HdCyclesPlugin::IsSupported() const

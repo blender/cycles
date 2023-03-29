@@ -55,4 +55,3 @@ extern "C" __global__ void __raygen__kernel_optix_integrator_intersect_volume_st
                              global_index;
   integrator_intersect_volume_stack(nullptr, path_index);
 }
-

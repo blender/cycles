@@ -459,7 +459,7 @@ void CUDADevice::reserve_local_memory(const uint kernel_features)
     /* Use the biggest kernel for estimation. */
     const DeviceKernel test_kernel = (kernel_features & KERNEL_FEATURE_NODE_RAYTRACE) ?
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE_RAYTRACE :
-                                     (kernel_features & KERNEL_FEATURE_MNEE) ?
+                                         (kernel_features & KERNEL_FEATURE_MNEE) ?
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE_MNEE :
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE;
 

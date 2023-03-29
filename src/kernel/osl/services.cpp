@@ -1029,36 +1029,32 @@ bool OSLRenderServices::get_background_attribute(const KernelGlobalsCPU *kg,
     /* Diffuse Ray Depth */
     const IntegratorStateCPU *state = sd->osl_path_state;
     const IntegratorShadowStateCPU *shadow_state = sd->osl_shadow_path_state;
-    int f = (state)        ? state->path.diffuse_bounce :
-            (shadow_state) ? shadow_state->shadow_path.diffuse_bounce :
-                             0;
+    int f = (state) ? state->path.diffuse_bounce :
+                      (shadow_state) ? shadow_state->shadow_path.diffuse_bounce : 0;
     return set_attribute_int(f, type, derivatives, val);
   }
   else if (name == u_path_glossy_depth) {
     /* Glossy Ray Depth */
     const IntegratorStateCPU *state = sd->osl_path_state;
     const IntegratorShadowStateCPU *shadow_state = sd->osl_shadow_path_state;
-    int f = (state)        ? state->path.glossy_bounce :
-            (shadow_state) ? shadow_state->shadow_path.glossy_bounce :
-                             0;
+    int f = (state) ? state->path.glossy_bounce :
+                      (shadow_state) ? shadow_state->shadow_path.glossy_bounce : 0;
     return set_attribute_int(f, type, derivatives, val);
   }
   else if (name == u_path_transmission_depth) {
     /* Transmission Ray Depth */
     const IntegratorStateCPU *state = sd->osl_path_state;
     const IntegratorShadowStateCPU *shadow_state = sd->osl_shadow_path_state;
-    int f = (state)        ? state->path.transmission_bounce :
-            (shadow_state) ? shadow_state->shadow_path.transmission_bounce :
-                             0;
+    int f = (state) ? state->path.transmission_bounce :
+                      (shadow_state) ? shadow_state->shadow_path.transmission_bounce : 0;
     return set_attribute_int(f, type, derivatives, val);
   }
   else if (name == u_path_transparent_depth) {
     /* Transparent Ray Depth */
     const IntegratorStateCPU *state = sd->osl_path_state;
     const IntegratorShadowStateCPU *shadow_state = sd->osl_shadow_path_state;
-    int f = (state)        ? state->path.transparent_bounce :
-            (shadow_state) ? shadow_state->shadow_path.transparent_bounce :
-                             0;
+    int f = (state) ? state->path.transparent_bounce :
+                      (shadow_state) ? shadow_state->shadow_path.transparent_bounce : 0;
     return set_attribute_int(f, type, derivatives, val);
   }
   else if (name == u_ndc) {
