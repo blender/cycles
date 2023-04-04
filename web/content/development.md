@@ -5,14 +5,14 @@ To get in touch, use the following channels:
 * [Cycles forum](https://devtalk.blender.org/c/cycles) on devtalk.blender.org
 * [#render-cycles-module](https://blender.chat/channel/render-cycles-module) on blender.chat
 
-Bug reports and patches are to be filed against the from [Cycles](https://developer.blender.org/project/view/26/) project
+Bug reports and patches are to be filed against the from [Cycles](https://projects.blender.org/blender/blender/wiki/Module:-Render-&-Cycles) project
 
 ### Source Code
 
-Source code is available either as standalone repository or bundled with the Blender sources, from [developer.blender.org](https://developer.blender.org/project/view/26/).
+Source code is available either as standalone repository or bundled with the Blender sources, from [projects.blender.org](https://projects.blender.org/blender/blender/wiki/Module:-Render-&-Cycles).
 
-* [Cycles Repository](https://github.com/blender/cycles)
-* [Blender Repository](https://developer.blender.org/diffusion/B) in `intern/cycles/`
+* [Cycles Repository](https://projects.blender.org/blender/cycles)
+* [Blender Repository](https://projects.blender.org/blender/blender) in `intern/cycles/`
 
 ### Documentation
 
