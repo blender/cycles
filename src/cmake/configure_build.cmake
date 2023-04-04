@@ -22,6 +22,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 ###########################################################################
 # Per-compiler configuration.
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-sign-compare -fno-strict-aliasing -fPIC")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-sign-compare -Wno-invalid-offsetof -fno-strict-aliasing -std=c++17 -fPIC")
@@ -66,6 +70,8 @@ elseif(MSVC)
 	if(MSVC_VERSION GREATER_EQUAL 1920)
 		string(APPEND CMAKE_CXX_FLAGS " /Zc:inline-")
 	endif()
+
+	add_definitions(-D_USE_MATH_DEFINES)
 endif()
 
 if(UNIX AND NOT APPLE)

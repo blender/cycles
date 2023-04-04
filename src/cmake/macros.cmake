@@ -120,11 +120,13 @@ macro(cycles_external_libraries_append libraries)
     list(APPEND ${libraries} ${ALEMBIC_LIBRARIES})
   endif()
   if(WITH_PATH_GUIDING)
-    target_link_libraries(${target} ${OPENPGL_LIBRARIES})
+    list(APPEND ${libraries} ${OPENPGL_LIBRARIES})
+  endif()
+  if(UNIX AND NOT APPLE)
+    list(APPEND ${libraries} "-lm -lc -lutil")
   endif()
 
   list(APPEND ${libraries}
-    ${OPENIMAGEIO_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${TIFF_LIBRARY}
@@ -134,6 +136,7 @@ macro(cycles_external_libraries_append libraries)
     ${OPENEXR_LIBRARIES} # For circular dependencies between libs.
     ${PUGIXML_LIBRARIES}
     ${BOOST_LIBRARIES}
+    ${PYTHON_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${CMAKE_DL_LIBS}
     ${PTHREADS_LIBRARIES}
@@ -155,6 +158,9 @@ macro(cycles_external_libraries_append libraries)
   if(UNIX AND NOT APPLE)
     if(CYCLES_STANDALONE_REPOSITORY)
       list(APPEND ${libraries} extern_libc_compat)
+      # Hack to solve linking order issue where external libs depend on
+      # on our compatibility lib.
+      list(APPEND ${libraries} $<TARGET_FILE:extern_libc_compat>)
     else()
       list(APPEND ${libraries} bf_intern_libc_compat)
     endif()
@@ -166,22 +172,17 @@ macro(cycles_external_libraries_append libraries)
 endmacro()
 
 macro(cycles_install_libraries target)
-  # Copy DLLs for dynamically linked libraries.
-  if(WIN32)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-      install(
-        FILES
-        ${TBB_ROOT_DIR}/bin/tbb_debug${CMAKE_SHARED_LIBRARY_SUFFIX}
-        ${OPENVDB_ROOT_DIR}/bin/openvdb_d${CMAKE_SHARED_LIBRARY_SUFFIX}
-        DESTINATION ${CMAKE_INSTALL_PREFIX})
-    else()
-      install(
-        FILES
-        ${TBB_ROOT_DIR}/bin/tbb${CMAKE_SHARED_LIBRARY_SUFFIX}
-        ${OPENVDB_ROOT_DIR}/bin/openvdb${CMAKE_SHARED_LIBRARY_SUFFIX}
-        DESTINATION ${CMAKE_INSTALL_PREFIX})
-    endif()
-  endif()
+  # Install shared libraries.
+  install(
+    FILES ${PLATFORM_BUNDLED_LIBRARIES_RELEASE}
+    DESTINATION ${PLATFORM_LIB_INSTALL_DIR}
+    CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+  )
+  install(
+    FILES ${PLATFORM_BUNDLED_LIBRARIES_DEBUG}
+    DESTINATION ${PLATFORM_LIB_INSTALL_DIR}
+    CONFIGURATIONS Debug
+  )
 endmacro()
 
 macro(set_and_warn_library_found

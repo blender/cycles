@@ -27,11 +27,11 @@ The resulting binary will be at:
 
 This will make the render delegate work with usdview and other applications built using the USD repository. USD version 21.11 or newer is required.
 
-USD includes a script to build itself and all required dependencies and then install the result a specified directory. On Linux, use `--use-cxx11-abi 0` to match Blender and the VFX reference platform.
+USD includes a script to build itself and all required dependencies and then install the result a specified directory.
 
     git clone https://github.com/PixarAnimationStudios/USD.git
     cd USD
-    python3 build_scripts/build_usd.py --use-cxx11-abi 0 "<path to USD install>"
+    python3 build_scripts/build_usd.py "<path to USD install>"
 
 Build Cycles pointing to this directory.
 

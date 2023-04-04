@@ -11,6 +11,7 @@ set(INC
 set(INC_SYS
   ${USD_INCLUDE_DIRS}
   ${Epoxy_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}
 )
 
 set(LIB
@@ -65,7 +66,7 @@ set(SRC_HD_CYCLES
 )
 
 if(WITH_OPENVDB)
-  add_definitions(-DWITH_OPENVDB ${OPENVDB_DEFINITIONS})
+  add_definitions(-DWITH_OPENVDB)
   list(APPEND INC_SYS
     ${OPENVDB_INCLUDE_DIRS}
   )

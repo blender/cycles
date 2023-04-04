@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2012 Blender Foundation.
+
 # - Find OpenColorIO library
 # Find the native OpenColorIO includes and library
 # This module defines
@@ -18,9 +21,6 @@ ENDIF()
 
 SET(_opencolorio_FIND_COMPONENTS
   OpenColorIO
-  yaml-cpp
-  expat
-  pystring
 )
 
 SET(_opencolorio_SEARCH_DIRS

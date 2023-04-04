@@ -45,19 +45,19 @@ def svn_update(args):
     # Checkout precompiled libraries
     if sys.platform == 'darwin':
         if platform.machine() == 'x86_64':
-            lib_platform = "darwin"
+            libs_platform = ["darwin"]
         elif platform.machine() == 'arm64':
-            lib_platform = "darwin_arm64"
+            libs_platform = ["darwin_arm64"]
         else:
-            lib_platform = None
+            libs_platform = []
     elif sys.platform == 'win32' and platform.machine() == 'AMD64':
-        lib_platform = "win64_vc15"
+        libs_platform = ["win64_vc15"]
     elif sys.platform == 'linux' and platform.machine() == 'x86_64':
-        lib_platform = "linux_centos7_x86_64"
+        libs_platform = ["linux_x86_64_glibc_228", "linux_centos7_x86_64"]
     else:
-        lib_platform = None
+        libs_platform = []
 
-    if lib_platform:
+    for lib_platform in libs_platform:
         lib_platform_dirpath = os.path.join(lib_dirpath, lib_platform)
 
         if not os.path.exists(lib_platform_dirpath):
