@@ -12,4 +12,6 @@
 #include "kernel/osl/services_gpu.h"
 // clang-format on
 
-extern "C" __device__ void __direct_callable__dummy_services() {}
+extern "C" __device__ void __direct_callable__dummy_services()
+{
+}

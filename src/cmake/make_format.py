@@ -23,7 +23,7 @@ def source_files_from_git(paths):
     return [f.decode('ascii') for f in files]
 
 def clang_format_file(files):
-    cmd = ["clang-format", "-i", "-verbose"] + files
+    cmd = ["/home/brecht/dev/lib/linux_centos7_x86_64/llvm/bin/clang-format", "-i", "-verbose"] + files
     return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
 def clang_print_output(output):

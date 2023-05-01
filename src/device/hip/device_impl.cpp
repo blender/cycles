@@ -421,7 +421,7 @@ void HIPDevice::reserve_local_memory(const uint kernel_features)
     /* Use the biggest kernel for estimation. */
     const DeviceKernel test_kernel = (kernel_features & KERNEL_FEATURE_NODE_RAYTRACE) ?
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE_RAYTRACE :
-                                         (kernel_features & KERNEL_FEATURE_MNEE) ?
+                                     (kernel_features & KERNEL_FEATURE_MNEE) ?
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE_MNEE :
                                          DEVICE_KERNEL_INTEGRATOR_SHADE_SURFACE;
 
@@ -812,7 +812,8 @@ void HIPDevice::tex_alloc(device_texture &mem)
   if (mem.info.data_type != IMAGE_DATA_TYPE_NANOVDB_FLOAT &&
       mem.info.data_type != IMAGE_DATA_TYPE_NANOVDB_FLOAT3 &&
       mem.info.data_type != IMAGE_DATA_TYPE_NANOVDB_FPN &&
-      mem.info.data_type != IMAGE_DATA_TYPE_NANOVDB_FP16) {
+      mem.info.data_type != IMAGE_DATA_TYPE_NANOVDB_FP16)
+  {
     /* Bindless textures. */
     hipResourceDesc resDesc;
     memset(&resDesc, 0, sizeof(resDesc));

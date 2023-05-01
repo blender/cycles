@@ -205,11 +205,13 @@ ccl_device float3 svm_math_blackbody_color_rec709(float t)
     return make_float3(5.413294490189271f, -0.20319390035873933f, -0.0822535242887164f);
   }
 
-  int i = (t >= 6365.0f) ?
-              6 :
-              (t >= 3315.0f) ?
-              5 :
-              (t >= 1902.0f) ? 4 : (t >= 1449.0f) ? 3 : (t >= 1167.0f) ? 2 : (t >= 965.0f) ? 1 : 0;
+  int i = (t >= 6365.0f) ? 6 :
+          (t >= 3315.0f) ? 5 :
+          (t >= 1902.0f) ? 4 :
+          (t >= 1449.0f) ? 3 :
+          (t >= 1167.0f) ? 2 :
+          (t >= 965.0f)  ? 1 :
+                           0;
 
   ccl_constant float *r = blackbody_table_r[i];
   ccl_constant float *g = blackbody_table_g[i];
