@@ -129,6 +129,7 @@ macro(cycles_external_libraries_append libraries)
   endif()
 
   list(APPEND ${libraries}
+    ${OPENIMAGEIO_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${TIFF_LIBRARY}
