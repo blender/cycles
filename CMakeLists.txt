@@ -120,25 +120,34 @@ if(NOT APPLE)
   mark_as_advanced(WITH_CYCLES_DEVICE_CUDA)
 
   option(WITH_CYCLES_CUDA_BINARIES     "Build Cycles NVIDIA CUDA binaries" OFF)
-  set(CYCLES_CUDA_BINARIES_ARCH sm_30 sm_35 sm_37 sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 compute_75 CACHE STRING "CUDA architectures to build binaries for")
-  option(WITH_CYCLES_CUBIN_COMPILER    "Build cubins with nvrtc based compiler instead of nvcc" OFF)
+  set(CYCLES_CUDA_BINARIES_ARCH sm_30 sm_35 sm_37 sm_50 sm_52 sm_60 sm_61 sm_70 sm_75 sm_86 sm_89 compute_75 CACHE STRING "CUDA architectures to build binaries for")
   option(WITH_CYCLES_CUDA_BUILD_SERIAL "Build cubins one after another (useful on machines with limited RAM)" OFF)
   option(WITH_CUDA_DYNLOAD             "Dynamically load CUDA libraries at runtime (for developers, makes cuda-gdb work)" ON)
-  set(CUDA_HOST_COMPILER "" CACHE FILEPATH "Specify CUDA host compiler (nvcc --compiler-bindir)")
+
+  set(OPTIX_ROOT_DIR                   "" CACHE PATH "Path to the OptiX SDK root directory, for building Cycles OptiX kernels.")
+  set(CYCLES_RUNTIME_OPTIX_ROOT_DIR    "" CACHE PATH "Path to the OptiX SDK root directory. When set, this path will be used at runtime to compile OptiX kernels.")
+
   mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
-  mark_as_advanced(WITH_CYCLES_CUBIN_COMPILER)
   mark_as_advanced(WITH_CYCLES_CUDA_BUILD_SERIAL)
   mark_as_advanced(WITH_CUDA_DYNLOAD)
-  mark_as_advanced(CUDA_HOST_COMPILER)
+  mark_as_advanced(OPTIX_ROOT_DIR)
+  mark_as_advanced(CYCLES_RUNTIME_OPTIX_ROOT_DIR)
 endif()
 
 # AMD HIP
 if(NOT APPLE)
-  option(WITH_CYCLES_DEVICE_HIP          "Enable Cycles AMD HIP support" OFF)
-  option(WITH_CYCLES_HIP_BINARIES        "Build Cycles AMD HIP binaries" OFF)
-  set(CYCLES_HIP_BINARIES_ARCH gfx900 gfx906 gfx90c gfx902 gfx1010 gfx1011 gfx1012 gfx1030 gfx1031 gfx1032 gfx1034 gfx1035 CACHE STRING "AMD HIP architectures to build binaries for")
+  option(WITH_CYCLES_DEVICE_HIP        "Enable Cycles AMD HIP support" ON)
+  option(WITH_CYCLES_HIP_BINARIES      "Build Cycles AMD HIP binaries" OFF)
+  # Radeon VII (gfx906) not currently working with HIP SDK, so left out of the list.
+  set(CYCLES_HIP_BINARIES_ARCH gfx900 gfx90c gfx902 gfx1010 gfx1011 gfx1012 gfx1030 gfx1031 gfx1032 gfx1034 gfx1035 gfx1100 gfx1101 gfx1102 CACHE STRING "AMD HIP architectures to build binaries for")
   mark_as_advanced(WITH_CYCLES_DEVICE_HIP)
   mark_as_advanced(CYCLES_HIP_BINARIES_ARCH)
+
+  # HIPRT is only available on Windows for now.
+  if(WIN32)
+    option(WITH_CYCLES_DEVICE_HIPRT      "Enable Cycles AMD HIPRT support" OFF)
+    mark_as_advanced(WITH_CYCLES_DEVICE_HIPRT)
+  endif()
 endif()
 
 # Apple Metal
@@ -150,13 +159,14 @@ endif()
 if(NOT APPLE)
   option(WITH_CYCLES_DEVICE_ONEAPI "Enable Cycles oneAPI compute support" OFF)
   option(WITH_CYCLES_ONEAPI_BINARIES "Enable Ahead-Of-Time compilation for Cycles oneAPI device" OFF)
-  option(WITH_CYCLES_ONEAPI_SYCL_HOST_ENABLED "Enable use of SYCL host (CPU) device execution by oneAPI implementation. This option is for debugging purposes and impacts GPU execution." OFF)
+  option(WITH_CYCLES_ONEAPI_HOST_TASK_EXECUTION "Switch target of oneAPI implementation from SYCL devices to Host Task (single thread on CPU). This option is only for debugging purposes." OFF)
 
   # https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-compiler-dev-guide-and-reference/top/compilation/ahead-of-time-compilation.html
-  SET (CYCLES_ONEAPI_SPIR64_GEN_DEVICES "dg2" CACHE STRING "oneAPI Intel GPU architectures to build binaries for")
-  SET (CYCLES_ONEAPI_SYCL_TARGETS spir64 spir64_gen CACHE STRING "oneAPI targets to build AOT binaries for")
+  # acm-g10 is the target for the first Intel Arc Alchemist GPUs.
+  set(CYCLES_ONEAPI_SPIR64_GEN_DEVICES "acm-g10" CACHE STRING "oneAPI Intel GPU architectures to build binaries for")
+  set(CYCLES_ONEAPI_SYCL_TARGETS spir64 spir64_gen CACHE STRING "oneAPI targets to build AOT binaries for")
 
-  mark_as_advanced(WITH_CYCLES_ONEAPI_SYCL_HOST_ENABLED)
+  mark_as_advanced(WITH_CYCLES_ONEAPI_HOST_TASK_EXECUTION)
   mark_as_advanced(CYCLES_ONEAPI_SPIR64_GEN_DEVICES)
   mark_as_advanced(CYCLES_ONEAPI_SYCL_TARGETS)
 endif()

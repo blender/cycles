@@ -94,6 +94,11 @@ if(EXISTS ${_cycles_lib_dir})
   _set_default(JPEG_ROOT "${_cycles_lib_dir}/jpeg")
   _set_default(LLVM_ROOT_DIR "${_cycles_lib_dir}/llvm")
   _set_default(CLANG_ROOT_DIR "${_cycles_lib_dir}/llvm")
+  if(WIN32)
+    _set_default(MATERIALX_ROOT_DIR "${_cycles_lib_dir}/MaterialX")
+  else()
+    _set_default(MATERIALX_ROOT_DIR "${_cycles_lib_dir}/materialx")
+  endif()
   _set_default(NANOVDB_ROOT_DIR "${_cycles_lib_dir}/openvdb")
   _set_default(OPENCOLORIO_ROOT_DIR "${_cycles_lib_dir}/opencolorio")
   _set_default(OPENEXR_ROOT_DIR "${_cycles_lib_dir}/openexr")
@@ -504,30 +509,79 @@ add_bundled_libraries(boost/lib)
 
 if(WITH_CYCLES_EMBREE)
   if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(EMBREE_ROOT_DIR ${_cycles_lib_dir}/embree)
     set(EMBREE_INCLUDE_DIRS ${EMBREE_ROOT_DIR}/include)
+
+    if(EXISTS ${EMBREE_ROOT_DIR}/include/embree4/rtcore_config.h)
+      set(EMBREE_MAJOR_VERSION 4)
+    else()
+      set(EMBREE_MAJOR_VERSION 3)
+    endif()
+
+    file(READ ${EMBREE_ROOT_DIR}/include/embree${EMBREE_MAJOR_VERSION}/rtcore_config.h _embree_config_header)
+    if(_embree_config_header MATCHES "#define EMBREE_STATIC_LIB")
+      set(EMBREE_STATIC_LIB TRUE)
+    else()
+      set(EMBREE_STATIC_LIB FALSE)
+    endif()
+
+    if(_embree_config_header MATCHES "#define EMBREE_SYCL_SUPPORT")
+      set(EMBREE_SYCL_SUPPORT TRUE)
+    else()
+      set(EMBREE_SYCL_SUPPORT FALSE)
+    endif()
+
     set(EMBREE_LIBRARIES
-      optimized ${EMBREE_ROOT_DIR}/lib/embree3.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/embree_avx2.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/embree_avx.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/embree_sse42.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/lexers.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/math.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/simd.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/tasking.lib
-      optimized ${EMBREE_ROOT_DIR}/lib/sys.lib
-      debug ${EMBREE_ROOT_DIR}/lib/embree3_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/embree_avx2_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/embree_avx_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/embree_sse42_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/lexers_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/math_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/simd_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/sys_d.lib
-      debug ${EMBREE_ROOT_DIR}/lib/tasking_d.lib
+      optimized ${EMBREE_ROOT_DIR}/lib/embree${EMBREE_MAJOR_VERSION}.lib
+      debug ${EMBREE_ROOT_DIR}/lib/embree${EMBREE_MAJOR_VERSION}_d.lib
     )
+
+    if(EMBREE_SYCL_SUPPORT)
+      set(EMBREE_LIBRARIES
+        ${EMBREE_LIBRARIES}
+        optimized ${EMBREE_ROOT_DIR}/lib/embree4_sycl.lib
+        debug ${EMBREE_ROOT_DIR}/lib/embree4_sycl_d.lib
+      )
+    endif()
+
+    if(EMBREE_STATIC_LIB)
+      set(EMBREE_LIBRARIES
+        ${EMBREE_LIBRARIES}
+        optimized ${EMBREE_ROOT_DIR}/lib/embree_avx2.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/embree_avx.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/embree_sse42.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/lexers.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/math.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/simd.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/sys.lib
+        optimized ${EMBREE_ROOT_DIR}/lib/tasking.lib
+        debug ${EMBREE_ROOT_DIR}/lib/embree_avx2_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/embree_avx_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/embree_sse42_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/lexers_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/math_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/simd_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/sys_d.lib
+        debug ${EMBREE_ROOT_DIR}/lib/tasking_d.lib
+      )
+
+      if(EMBREE_SYCL_SUPPORT)
+        set(EMBREE_LIBRARIES
+          ${EMBREE_LIBRARIES}
+          optimized ${EMBREE_ROOT_DIR}/lib/embree_rthwif.lib
+          debug ${EMBREE_ROOT_DIR}/lib/embree_rthwif_d.lib
+        )
+      endif()
+    endif()
   else()
     find_package(Embree 3.8.0 REQUIRED)
   endif()
+endif()
+
+if(WIN32)
+  add_bundled_libraries(embree/bin)
+else()
+  add_bundled_libraries(embree/lib)
 endif()
 
 ###########################################################################
@@ -676,6 +730,23 @@ if(WITH_CYCLES_ALEMBIC)
 endif()
 
 ###########################################################################
+# MaterialX
+###########################################################################
+
+if(WIN32)
+  add_bundled_libraries(MaterialX/bin)
+else()
+  add_bundled_libraries(materialx/lib)
+endif()
+
+if(WITH_USD)
+  # USD linking needs to be able to find MaterialX libraries.
+  if(DEFINED _cycles_lib_dir)
+    link_directories(${MATERIALX_ROOT_DIR}/lib)
+  endif()
+endif()
+
+###########################################################################
 # System Libraries
 ###########################################################################
 
@@ -793,6 +864,22 @@ if(WITH_CYCLES_DEVICE_ONEAPI)
     message(STATUS "SYCL 6.0+ or Level Zero not found, disabling WITH_CYCLES_DEVICE_ONEAPI")
     set(WITH_CYCLES_DEVICE_ONEAPI OFF)
   endif()
+
+  if(UNIX)
+    if(DEFINED SYCL_ROOT_DIR)
+      file(GLOB _sycl_runtime_libraries
+        ${SYCL_ROOT_DIR}/lib/libsycl.so
+        ${SYCL_ROOT_DIR}/lib/libsycl.so.*
+        ${SYCL_ROOT_DIR}/lib/libpi_*.so
+      )
+      list(FILTER _sycl_runtime_libraries EXCLUDE REGEX ".*\.py")
+      list(REMOVE_ITEM _sycl_runtime_libraries "${SYCL_ROOT_DIR}/lib/libpi_opencl.so")
+      list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE ${_sycl_runtime_libraries})
+      list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG ${_sycl_runtime_libraries})
+      unset(_sycl_runtime_libraries)
+  endif()
+endif()
+
 endif()
 
 ###########################################################################
