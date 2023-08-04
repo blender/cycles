@@ -11,7 +11,7 @@ Ensure the following software is installed and available in the PATH:
 
 Quick build setup on Windows, macOS and Linux is as follows:
 
-    git clone git://git.blender.org/cycles.git
+    git clone https://projects.blender.org/blender/cycles.git
 
     cd cycles
     make update
