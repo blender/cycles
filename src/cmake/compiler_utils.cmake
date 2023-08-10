@@ -12,21 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-macro(ADD_CHECK_CXX_COMPILER_FLAG
+function(add_check_cxx_compiler_flag_impl
   _CXXFLAGS
   _CACHE_VAR
   _FLAG)
 
   include(CheckCXXCompilerFlag)
 
-  CHECK_CXX_COMPILER_FLAG("${_FLAG}" "${_CACHE_VAR}")
+  check_cxx_compiler_flag("${_FLAG}" "${_CACHE_VAR}")
   if(${_CACHE_VAR})
     # message(STATUS "Using CXXFLAG: ${_FLAG}")
-    set(${_CXXFLAGS} "${${_CXXFLAGS}} ${_FLAG}")
+    set(${_CXXFLAGS} "${${_CXXFLAGS}} ${_FLAG}" PARENT_SCOPE)
   else()
     message(STATUS "Unsupported CXXFLAG: ${_FLAG}")
   endif()
-endmacro()
+endfunction()
+
+function(ADD_CHECK_CXX_COMPILER_FLAGS _CXXFLAGS)
+  # Iterate over pairs & check each.
+  set(cache_var "")
+  foreach(arg ${ARGN})
+    if(cache_var)
+      add_check_cxx_compiler_flag_impl("${_CXXFLAGS}" "${cache_var}" "${arg}")
+      set(cache_var "")
+    else()
+      set(cache_var "${arg}")
+    endif()
+  endforeach()
+  set(${_CXXFLAGS} "${${_CXXFLAGS}}" PARENT_SCOPE)
+endfunction()
 
 # pair of macros to allow libraries to be specify files to install, but to
 # only install them at the end so the directories don't get cleared with
