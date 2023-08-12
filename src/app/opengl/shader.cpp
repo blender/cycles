@@ -7,6 +7,8 @@
 #include "util/log.h"
 #include "util/string.h"
 
+#include <sstream>
+
 #include <epoxy/gl.h>
 
 CCL_NAMESPACE_BEGIN
@@ -51,7 +53,7 @@ static void shader_print_errors(const char *task, const char *log, const char *c
   LOG(ERROR) << "Shader: " << task << " error:";
   LOG(ERROR) << "===== shader string ====";
 
-  stringstream stream(code);
+  std::stringstream stream(code);
   string partial;
 
   int line = 1;
