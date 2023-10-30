@@ -9,8 +9,6 @@
 #include "util/log.h"
 #include "util/math.h"
 
-#include <ostream>
-
 CCL_NAMESPACE_BEGIN
 
 std::ostream &operator<<(std::ostream &os, const TileSize &tile_size)
