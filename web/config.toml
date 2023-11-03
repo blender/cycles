@@ -14,8 +14,3 @@ theme = "custom"
     name = "Development"
     url = "/development/"
     weight = 3
-  [[menu.main]]
-    name = ""
-    pre = "fa fa-twitter"
-    url = "https://twitter.com/cyclesrenderer"
-    weight = 4
