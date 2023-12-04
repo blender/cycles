@@ -87,7 +87,7 @@ endif()
 
 if(EXISTS ${_cycles_lib_dir})
   _set_default(ALEMBIC_ROOT_DIR "${_cycles_lib_dir}/alembic")
-  _set_default(BOOST_ROOT "${_cycles_lib_dir}/boost")
+  _set_default(Boost_ROOT "${_cycles_lib_dir}/boost")
   _set_default(EMBREE_ROOT_DIR "${_cycles_lib_dir}/embree")
   _set_default(EPOXY_ROOT_DIR "${_cycles_lib_dir}/epoxy")
   _set_default(IMATH_ROOT_DIR "${_cycles_lib_dir}/imath")
@@ -449,7 +449,7 @@ if(EXISTS ${_cycles_lib_dir})
 endif()
 
 if(MSVC AND EXISTS ${_cycles_lib_dir})
-  set(BOOST_INCLUDE_DIR ${BOOST_ROOT}/include)
+  set(BOOST_INCLUDE_DIR ${Boost_ROOT}/include)
   set(BOOST_VERSION_HEADER ${BOOST_INCLUDE_DIR}/boost/version.hpp)
   if(EXISTS ${BOOST_VERSION_HEADER})
     file(STRINGS "${BOOST_VERSION_HEADER}" BOOST_LIB_VERSION REGEX "#define BOOST_LIB_VERSION ")
@@ -463,30 +463,30 @@ if(MSVC AND EXISTS ${_cycles_lib_dir})
   set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
   set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
   set(BOOST_LIBRARIES
-    optimized ${BOOST_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_filesystem-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_regex-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_system-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_thread-${BOOST_POSTFIX}
-    optimized ${BOOST_ROOT}/lib/boost_chrono-${BOOST_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_date_time-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_iostreams-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_filesystem-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_regex-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_system-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_thread-${BOOST_DEBUG_POSTFIX}
-    debug ${BOOST_ROOT}/lib/boost_chrono-${BOOST_DEBUG_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_filesystem-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_regex-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_system-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_thread-${BOOST_POSTFIX}
+    optimized ${Boost_ROOT}/lib/boost_chrono-${BOOST_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_date_time-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_iostreams-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_filesystem-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_regex-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_system-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_thread-${BOOST_DEBUG_POSTFIX}
+    debug ${Boost_ROOT}/lib/boost_chrono-${BOOST_DEBUG_POSTFIX}
   )
   if(WITH_CYCLES_OSL)
     set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
-      optimized ${BOOST_ROOT}/lib/boost_wave-${BOOST_POSTFIX}
-      debug ${BOOST_ROOT}/lib/boost_wave-${BOOST_DEBUG_POSTFIX})
+      optimized ${Boost_ROOT}/lib/boost_wave-${BOOST_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_wave-${BOOST_DEBUG_POSTFIX})
   endif()
   if(WITH_USD)
     set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
-      optimized ${BOOST_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_POSTFIX}
-      debug ${BOOST_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_DEBUG_POSTFIX})
+      optimized ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_DEBUG_POSTFIX})
   endif()
 else()
   set(__boost_packages iostreams filesystem regex system thread date_time)
