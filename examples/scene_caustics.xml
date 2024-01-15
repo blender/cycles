@@ -1,0 +1,65 @@
+<cycles>
+
+<integrator
+    caustics_reflective="true"
+    caustics_refractive="true"
+/>
+
+<!--Camera-->
+<transform
+    rotate="65.75944715 0.93999645 0.10960667 0.32309913"
+    translate="3 -12 5"
+    scale="1 1 -1" >
+    <camera
+        type="perspective"
+        fov="0.78539819"
+        full_width="800"
+        full_height="600"
+    />
+</transform>
+
+<!--PointLight-->
+<shader name="PointLight_shader">
+<emission
+    name="PointLight_emit"
+    color="1.0 1.0 1.0"
+    strength="1000"
+/>
+<connect from="PointLight_emit emission" to="output surface"/>
+</shader>
+<state shader="PointLight_shader">
+<light
+    name="PointLight"
+    light_type="point"
+    strength="1 1 1"
+    tfm="1 0 0 4  0 1 0 0  0 0 1 4"
+    use_caustics="true"
+/>
+</state>
+
+<!--Suzanne-->
+<shader name="Suzanne">
+<glass_bsdf name="Suzanne_bsdf" IOR="1.5" color="1.0 1.0 1.0" />
+<connect from="Suzanne_bsdf bsdf" to="output surface"/>
+</shader>
+<transform
+  rotate="90.0  0.0 0.0 1.0"
+  translate="0.0 0.0 1.0"
+>
+<object name="Suzanne" is_caustics_caster="true"/>
+<state interpolation="smooth" shader="Suzanne" object="Suzanne">
+  <include src="objects/suzanne.xml"/>
+</state>
+</transform>
+
+<!--Ground-->
+<shader name="Ground">
+<diffuse_bsdf name="Ground_bsdf" color="0.60 0.60 0.60"/>
+<connect from="Ground_bsdf bsdf" to="output surface"/>
+</shader>
+<object name="Ground" is_caustics_receiver="true" />
+<state interpolation="smooth" shader="Ground" object="Ground">
+<mesh P="-6 6 0  6 6 0  6 -6 0  -6 -6 0" nverts="4" verts="0 1 2 3" />
+</state>
+
+</cycles>
