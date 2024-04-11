@@ -1744,6 +1744,9 @@ enum KernelFeatureFlag : uint32_t {
 
   /* Use denoising kernels and output denoising passes. */
   KERNEL_FEATURE_DENOISING = (1U << 29U),
+
+  /* Light tree. */
+  KERNEL_FEATURE_LIGHT_TREE = (1U << 30U),
 };
 
 /* Shader node feature mask, to specialize shader evaluation for kernels. */
