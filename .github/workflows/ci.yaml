@@ -11,8 +11,8 @@ name: CI
 
 on:
   push:
-    branches-ignore:
-      - 'gh-pages'
+    branches:
+      - "main"
     paths-ignore:
       - '**.md'
       - 'web/**'
