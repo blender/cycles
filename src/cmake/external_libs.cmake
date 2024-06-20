@@ -37,52 +37,38 @@ endif()
 ###########################################################################
 
 if(APPLE)
-  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin")
+  if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_x64")
   else()
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin_arm64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
   endif()
 
   # Always use system zlib
   find_package(ZLIB REQUIRED)
 elseif(WIN32)
-  if(CMAKE_CL_64)
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/win64_vc15")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_arm64")
   else()
-    message(FATAL_ERROR "Unsupported Visual Studio Version")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_x64")
   endif()
 else()
   # Path to a locally compiled libraries.
-  set(_cycles_lib_dir_NAME ${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
-  string(TOLOWER ${_cycles_lib_dir_NAME} _cycles_lib_dir_NAME)
-  set(_cycles_lib_dir_NATIVE_ABI ${CMAKE_SOURCE_DIR}/../lib/${_cycles_lib_dir_NAME})
-
-  # Path to precompiled libraries with known glibc 2.28 ABI.
-  if(WITH_CXX11_ABI)
-    set(_cycles_lib_dir_PRECOMPILED_ABI ${CMAKE_SOURCE_DIR}/../lib/linux_x86_64_glibc_228)
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_x64")
+  elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_arm64")
   else()
-    set(_cycles_lib_dir_PRECOMPILED_ABI ${CMAKE_SOURCE_DIR}/../lib/linux_centos7_x86_64)
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_${CMAKE_SYSTEM_PROCESSOR}")
   endif()
 
-  # Choose the best suitable libraries.
-  if(EXISTS ${_cycles_lib_dir_NATIVE_ABI})
-    set(_cycles_lib_dir ${_cycles_lib_dir_NATIVE_ABI})
-  elseif(EXISTS ${_cycles_lib_dir_PRECOMPILED_ABI})
-    set(_cycles_lib_dir ${_cycles_lib_dir_PRECOMPILED_ABI})
-
-    if(CMAKE_COMPILER_IS_GNUCC AND
-       CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
-      message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
-    endif()
+  if(CMAKE_COMPILER_IS_GNUCC AND
+     CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
+    message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
   endif()
 
   if(DEFINED _cycles_lib_dir)
     message(STATUS "Using precompiled libraries at ${_cycles_lib_dir}")
   endif()
-
-  # Avoid namespace pollustion.
-  unset(_cycles_lib_dir_NATIVE_ABI)
-  unset(_cycles_lib_dir_PRECOMPILED_ABI)
 endif()
 
 if(EXISTS ${_cycles_lib_dir})
@@ -182,7 +168,7 @@ if(WITH_USD)
   set_and_warn_library_found("USD" USD_FOUND WITH_USD)
 
   if(WIN32 )
-    set(PYTHON_VERSION 3.10)
+    set(PYTHON_VERSION 3.11)
     string(REPLACE "." "" PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
     set(PYTHON_INCLUDE_DIRS ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/include)
     set(PYTHON_LIBRARIES
@@ -460,8 +446,13 @@ if(MSVC AND EXISTS ${_cycles_lib_dir})
   if(NOT BOOST_VERSION)
     message(FATAL_ERROR "Unable to determine Boost version")
   endif()
-  set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
-  set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+    set(BOOST_POSTFIX "vc143-mt-a64-${BOOST_VERSION}")
+    set(BOOST_DEBUG_POSTFIX "vc143-mt-gyd-a64-${BOOST_VERSION}")
+  else()
+    set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
+    set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
+  endif()
   set(BOOST_LIBRARIES
     optimized ${Boost_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
     optimized ${Boost_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
@@ -668,20 +659,7 @@ endif()
 
 if(WITH_CYCLES_OPENIMAGEDENOISE)
   set(WITH_OPENIMAGEDENOISE ON)
-
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    set(OPENIMAGEDENOISE_INCLUDE_DIRS ${OPENIMAGEDENOISE_ROOT_DIR}/include)
-    set(OPENIMAGEDENOISE_LIBRARIES
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/OpenImageDenoise.lib
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/common.lib
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/dnnl.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/OpenImageDenoise_d.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/common_d.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/dnnl_d.lib
-    )
-  else()
-    find_package(OpenImageDenoise REQUIRED)
-  endif()
+  find_package(OpenImageDenoise REQUIRED)
 endif()
 
 ###########################################################################
@@ -756,6 +734,7 @@ if(WITH_USD)
   if(DEFINED _cycles_lib_dir)
     link_directories(${MATERIALX_ROOT_DIR}/lib)
   endif()
+  find_package(MaterialX REQUIRED)
 endif()
 
 ###########################################################################
