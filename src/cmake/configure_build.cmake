@@ -71,6 +71,10 @@ elseif(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:inline-")
   endif()
 
+  if(MSVC)
+    string(APPEND CMAKE_CXX_FLAGS " /wd4996")
+  endif()
+
   # Make Visual Studio Report __cplusplus version.
   string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
 
