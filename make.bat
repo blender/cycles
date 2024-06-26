@@ -19,7 +19,7 @@ if "%COMMAND%" == "release" (
 ) else if "%COMMAND%" == "clean" (
 	cd %BUILD_DIR% && cmake --build . --target install --config Clean
 ) else if "%COMMAND%" == "test" (
-	cd %BUILD_DIR% && ctest --config Release
+	cd %BUILD_DIR% && ctest -C Release --output-on-failure
 ) else if "%COMMAND%" == "update" (
 	%PYTHON% src/cmake/make_update.py
 ) else if "%COMMAND%" == "format" (

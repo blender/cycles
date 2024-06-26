@@ -131,6 +131,10 @@ if(WITH_CYCLES_STANDALONE)
   install(PROGRAMS
     $<TARGET_FILE:cycles>
     DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+  add_test(
+    NAME cycles_version
+    COMMAND ${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:cycles> --version)
 endif()
 
 if(WITH_CYCLES_PRECOMPUTE)

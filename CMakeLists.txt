@@ -215,6 +215,7 @@ include(CheckCXXCompilerFlag)
 include(detect_platform)
 include(external_libs)
 include(configure_build)
+include(CTest)
 
 ###########################################################################
 # Include directories.

@@ -42,7 +42,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 test:
-	cd $(BUILD_DIR) && ctest
+	cd $(BUILD_DIR) && ctest --output-on-failure
 
 update:
 	$(PYTHON) src/cmake/make_update.py
