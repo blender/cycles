@@ -67,7 +67,7 @@ set(SRC_HD_CYCLES
 )
 
 if(WITH_OPENVDB)
-  add_definitions(-DWITH_OPENVDB)
+  add_definitions(-DWITH_OPENVDB ${OPENVDB_DEFINITIONS})
   list(APPEND INC_SYS
     ${OPENVDB_INCLUDE_DIRS}
   )

@@ -110,18 +110,18 @@ if(WITH_CYCLES_STANDALONE)
 
   if(CYCLES_STANDALONE_REPOSITORY)
     cycles_install_libraries(cycles)
-  endif()
 
-  if(WITH_USD AND USD_LIBRARY_DIR)
-    install(DIRECTORY
-      ${USD_LIBRARY_DIR}/usd
-      DESTINATION ${CMAKE_INSTALL_PREFIX}
-    )
+    if(WITH_USD AND USD_LIBRARY_DIR)
+      install(DIRECTORY
+        ${USD_LIBRARY_DIR}/usd
+        DESTINATION ${CMAKE_INSTALL_PREFIX}
+      )
 
-    install(DIRECTORY
-      ${USD_LIBRARY_DIR}/../plugin/usd
-      DESTINATION ${CMAKE_INSTALL_PREFIX}
-    )
+      install(DIRECTORY
+        ${USD_LIBRARY_DIR}/../plugin/usd
+        DESTINATION ${CMAKE_INSTALL_PREFIX}
+      )
+    endif()
   endif()
 
   install(

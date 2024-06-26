@@ -2,12 +2,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0 */
 
-#include <iostream>
-
 #include "integrator/tile.h"
 
 #include "util/log.h"
 #include "util/math.h"
+
+#include <ostream>
 
 CCL_NAMESPACE_BEGIN
 
