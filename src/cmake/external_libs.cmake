@@ -152,7 +152,7 @@ macro(add_bundled_libraries library_dir)
     list(APPEND PLATFORM_BUNDLED_LIBRARY_DIRS ${_library_dir})
     if(WIN32)
       foreach(_bundled_lib ${_bundled_libs})
-        if((${bundled_lib} MATCHES "_d.dll$") OR (${bundled_lib} MATCHES "_debug.dll$"))
+        if((${_bundled_lib} MATCHES "_d.dll$") OR (${_bundled_lib} MATCHES "_debug.dll$"))
           list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG ${_bundled_lib})
         else()
           list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE ${_bundled_lib})
@@ -181,13 +181,17 @@ if(WITH_USD)
 
   set_and_warn_library_found("USD" USD_FOUND WITH_USD)
 
-  if(WIN32 )
-    set(PYTHON_VERSION 3.10)
+  if(WIN32)
+    set(PYTHON_VERSION 3.11)
     string(REPLACE "." "" PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
     set(PYTHON_INCLUDE_DIRS ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/include)
     set(PYTHON_LIBRARIES
       optimized ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}.lib
       debug ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}_d.lib)
+    link_directories(${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs)
+    if(NOT HOUDINI_ROOT AND NOT PXR_ROOT)
+      add_bundled_libraries(python/${PYTHON_VERSION_NO_DOTS}/bin)
+    endif()
   else()
     find_package(PythonLibsUnix REQUIRED)
   endif()
@@ -875,8 +879,15 @@ if(WITH_CYCLES_DEVICE_ONEAPI OR EMBREE_SYCL_SUPPORT)
     set(WITH_CYCLES_DEVICE_ONEAPI OFF)
   endif()
 
-  if(UNIX)
-    if(DEFINED SYCL_ROOT_DIR)
+  if(DEFINED SYCL_ROOT_DIR)
+    if(WIN32)
+      list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
+        ${SYCL_ROOT_DIR}/bin/sycl6.dll
+        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
+      list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
+        ${SYCL_ROOT_DIR}/bin/sycl6d.dll
+        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
+    else()
       file(GLOB _sycl_runtime_libraries
         ${SYCL_ROOT_DIR}/lib/libsycl.so
         ${SYCL_ROOT_DIR}/lib/libsycl.so.*
