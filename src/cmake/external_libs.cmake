@@ -891,12 +891,23 @@ if(WITH_CYCLES_DEVICE_ONEAPI OR EMBREE_SYCL_SUPPORT)
 
   if(DEFINED SYCL_ROOT_DIR)
     if(WIN32)
-      list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
-        ${SYCL_ROOT_DIR}/bin/sycl6.dll
-        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
-      list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
-        ${SYCL_ROOT_DIR}/bin/sycl6d.dll
-        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
+      if(EXISTS ${SYCL_ROOT_DIR}/bin/sycl7.dll)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
+          ${SYCL_ROOT_DIR}/bin/sycl7.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loader.dll)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
+          ${SYCL_ROOT_DIR}/bin/sycl7d.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loaderd.dll)
+      else()
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
+          ${SYCL_ROOT_DIR}/bin/sycl6.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
+          ${SYCL_ROOT_DIR}/bin/sycl6d.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll)
+      endif()
     else()
       file(GLOB _sycl_runtime_libraries
         ${SYCL_ROOT_DIR}/lib/libsycl.so
