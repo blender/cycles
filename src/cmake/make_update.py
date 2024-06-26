@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# "make update" for all platforms, updating svn libraries and Cycles
+# "make update" for all platforms, updating libraries and Cycles
 # git repository.
 #
 # For release branches, this will check out the appropriate branches of
@@ -13,6 +13,7 @@ import shutil
 import sys
 
 import make_utils
+from pathlib import Path
 from make_utils import call, check_output
 
 
@@ -26,83 +27,70 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-libraries", action="store_true")
     parser.add_argument("--no-cycles", action="store_true")
-    parser.add_argument("--svn-command", default="svn")
     parser.add_argument("--git-command", default="git")
+    parser.add_argument("--architecture", type=str,
+                        choices=("x86_64", "amd64", "arm64",))
     return parser.parse_args()
 
 
-def get_cycles_git_root():
-    return check_output([args.git_command, "rev-parse", "--show-toplevel"])
-
-
-# Setup for precompiled libraries and tests from svn.
-def svn_update(args):
-    svn_non_interactive = [args.svn_command, '--non-interactive']
-
-    lib_dirpath = os.path.join(get_cycles_git_root(), '..', 'lib')
-    svn_url = make_utils.svn_libraries_base_url()
-
-    # Checkout precompiled libraries
-    if sys.platform == 'darwin':
-        if platform.machine() == 'x86_64':
-            libs_platform = ["darwin"]
-        elif platform.machine() == 'arm64':
-            libs_platform = ["darwin_arm64"]
-        else:
-            libs_platform = []
-    elif sys.platform == 'win32' and platform.machine() == 'AMD64':
-        libs_platform = ["win64_vc15"]
-    elif sys.platform == 'linux' and platform.machine() == 'x86_64':
-        libs_platform = ["linux_x86_64_glibc_228", "linux_centos7_x86_64"]
+def get_effective_platform(args: argparse.Namespace) -> str:
+    # Get platform of the host, with standard Blender naming.
+    if sys.platform == "darwin":
+        platform = "macos"
+    elif sys.platform == "win32":
+        platform = "windows"
     else:
-        libs_platform = []
+        platform = sys.platform
 
-    for lib_platform in libs_platform:
-        lib_platform_dirpath = os.path.join(lib_dirpath, lib_platform)
+    assert (platform in ("linux", "macos", "windows"))
 
-        if not os.path.exists(lib_platform_dirpath):
-            print_stage("Checking out Precompiled Libraries")
+    return platform
 
-            if make_utils.command_missing(args.svn_command):
-                sys.stderr.write("svn not found, can't checkout libraries\n")
-                sys.exit(1)
 
-            svn_url_platform = svn_url + lib_platform
-            call(svn_non_interactive + ["checkout", svn_url_platform, lib_platform_dirpath])
+def get_effective_architecture(args: argparse.Namespace) -> str:
+    # Get architecture of the host, with standard Blender naming.
+    architecture: Optional[str] = args.architecture
+    if architecture:
+        assert isinstance(architecture, str)
+    elif "ARM64" in platform.version():
+        # Check platform.version to detect arm64 with x86_64 python binary.
+        architecture = "arm64"
+    else:
+        architecture = platform.machine().lower()
 
-    # Update precompiled libraries and tests
-    print_stage("Updating Precompiled Libraries")
+    # Normalize the architecture name.
+    if architecture in {"x86_64", "amd64"}:
+        architecture = "x64"
 
-    if os.path.isdir(lib_dirpath):
-        for dirname in os.listdir(lib_dirpath):
-            dirpath = os.path.join(lib_dirpath, dirname)
+    assert (architecture in {"x64", "arm64"})
+    assert isinstance(architecture, str)
 
-            if dirname == ".svn":
-                # Cleanup must be run from svn root directory if it exists.
-                if not make_utils.command_missing(args.svn_command):
-                    call(svn_non_interactive + ["cleanup", lib_dirpath])
-                continue
+    return architecture
 
-            svn_dirpath = os.path.join(dirpath, ".svn")
-            svn_root_dirpath = os.path.join(lib_dirpath, ".svn")
 
-            if (
-                    os.path.isdir(dirpath) and
-                    (os.path.exists(svn_dirpath) or os.path.exists(svn_root_dirpath))
-            ):
-                if make_utils.command_missing(args.svn_command):
-                    sys.stderr.write("svn not found, can't update libraries\n")
-                    sys.exit(1)
+def ensure_git_lfs(args: argparse.Namespace) -> None:
+    # Use `--skip-repo` to avoid creating git hooks.
+    # This is called from the `blender.git` checkout, so we don't need to install hooks there.
+    call((args.git_command, "lfs", "install", "--skip-repo"), exit_on_error=True)
 
-                # Cleanup to continue with interrupted downloads.
-                if os.path.exists(svn_dirpath):
-                    call(svn_non_interactive + ["cleanup", dirpath])
-                # Switch to appropriate branch and update.
-                call(svn_non_interactive + ["switch", svn_url + dirname, dirpath], exit_on_error=False)
-                call(svn_non_interactive + ["update", dirpath])
+
+def libraries_update(args: argparse.Namespace) -> None:
+    # Configure and update submodule for precompiled libraries
+    platform = get_effective_platform(args)
+    arch = get_effective_architecture(args)
+
+    print(f"Detected platform     : {platform}")
+    print(f"Detected architecture : {arch}")
+    print()
+
+    submodule_dir = Path(f"lib/{platform}_{arch}")
+
+    make_utils.git_enable_submodule(args.git_command, submodule_dir)
+    make_utils.git_update_submodule(args.git_command, submodule_dir)
+
 
 # Test if git repo can be updated.
-def git_update_skip(args, check_remote_exists=True):
+def git_update_skip(args: argparse.Namespace, check_remote_exists=True) -> str:
     if make_utils.command_missing(args.git_command):
         sys.stderr.write("git not found, can't update code\n")
         sys.exit(1)
@@ -143,14 +131,15 @@ if __name__ == "__main__":
     args = parse_arguments()
     cycles_skip_msg = ""
 
-    if not args.no_libraries:
-        svn_update(args)
     if not args.no_cycles:
         cycles_skip_msg = git_update_skip(args)
         if cycles_skip_msg:
             cycles_skip_msg = "Cycles repository skipped: " + cycles_skip_msg + "\n"
         else:
             cycles_update(args)
+
+    if not args.no_libraries:
+        libraries_update(args)
 
     # Report any skipped repositories at the end, so it's not as easy to miss.
     if cycles_skip_msg:

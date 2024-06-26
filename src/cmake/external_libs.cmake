@@ -37,55 +37,39 @@ endif()
 ###########################################################################
 
 if(APPLE)
-  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin")
+  if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_x64")
   else()
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/darwin_arm64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
   endif()
 
   # Always use system zlib
   find_package(ZLIB REQUIRED)
 elseif(WIN32)
-  if(CMAKE_CL_64)
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/../lib/win64_vc15")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_arm64")
   else()
-    message(FATAL_ERROR "Unsupported Visual Studio Version")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_x64")
   endif()
 else()
   # Path to a locally compiled libraries.
-  set(_cycles_lib_dir_NAME ${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
-  string(TOLOWER ${_cycles_lib_dir_NAME} _cycles_lib_dir_NAME)
-  set(_cycles_lib_dir_NATIVE_ABI ${CMAKE_SOURCE_DIR}/../lib/${_cycles_lib_dir_NAME})
-
-  # Path to precompiled libraries with known glibc 2.28 ABI.
-  if(WITH_CXX11_ABI)
-    set(_cycles_lib_dir_PRECOMPILED_ABI ${CMAKE_SOURCE_DIR}/../lib/linux_x86_64_glibc_228)
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_x64")
+  elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_arm64")
   else()
-    set(_cycles_lib_dir_PRECOMPILED_ABI ${CMAKE_SOURCE_DIR}/../lib/linux_centos7_x86_64)
+    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_${CMAKE_SYSTEM_PROCESSOR}")
   endif()
 
-  # Choose the best suitable libraries.
-  if(EXISTS ${_cycles_lib_dir_NATIVE_ABI})
-    set(_cycles_lib_dir ${_cycles_lib_dir_NATIVE_ABI})
-  elseif(EXISTS ${_cycles_lib_dir_PRECOMPILED_ABI})
-    set(_cycles_lib_dir ${_cycles_lib_dir_PRECOMPILED_ABI})
-
-    if(CMAKE_COMPILER_IS_GNUCC AND
-       CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
-      message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
-    endif()
+  if(CMAKE_COMPILER_IS_GNUCC AND
+     CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
+    message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
   endif()
-
-  if(DEFINED _cycles_lib_dir)
-    message(STATUS "Using precompiled libraries at ${_cycles_lib_dir}")
-  endif()
-
-  # Avoid namespace pollustion.
-  unset(_cycles_lib_dir_NATIVE_ABI)
-  unset(_cycles_lib_dir_PRECOMPILED_ABI)
 endif()
 
 if(EXISTS ${_cycles_lib_dir})
+  message(STATUS "Using precompiled libraries at ${_cycles_lib_dir}")
+
   _set_default(ALEMBIC_ROOT_DIR "${_cycles_lib_dir}/alembic")
   _set_default(Boost_ROOT "${_cycles_lib_dir}/boost")
   _set_default(EMBREE_ROOT_DIR "${_cycles_lib_dir}/embree")
@@ -93,8 +77,6 @@ if(EXISTS ${_cycles_lib_dir})
   _set_default(IMATH_ROOT_DIR "${_cycles_lib_dir}/imath")
   _set_default(GLEW_ROOT_DIR "${_cycles_lib_dir}/glew")
   _set_default(JPEG_ROOT "${_cycles_lib_dir}/jpeg")
-  _set_default(LLVM_ROOT_DIR "${_cycles_lib_dir}/llvm")
-  _set_default(CLANG_ROOT_DIR "${_cycles_lib_dir}/llvm")
   if(WIN32)
     _set_default(MATERIALX_ROOT_DIR "${_cycles_lib_dir}/MaterialX")
   else()
@@ -134,6 +116,8 @@ if(EXISTS ${_cycles_lib_dir})
   # Ignore system libraries
   set(CMAKE_IGNORE_PATH "${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES};${CMAKE_SYSTEM_INCLUDE_PATH};${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES};${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}")
 else()
+  message(STATUS "No precompiled libraries found at ${_cycles_lib_dir}")
+  message(STATUS "Attempting to use system libraries instead")
   unset(_cycles_lib_dir)
 endif()
 
@@ -310,35 +294,11 @@ else()
 endif()
 
 ###########################################################################
-# OpenShadingLanguage & LLVM
+# OpenShadingLanguage
 ###########################################################################
 
 if(WITH_CYCLES_OSL)
-	if(EXISTS ${_cycles_lib_dir})
-		set(LLVM_STATIC ON)
-	endif()
-
 	if(MSVC AND EXISTS ${_cycles_lib_dir})
-		# TODO(sergey): On Windows llvm-config doesn't give proper results for the
-		# library names, use hardcoded libraries for now.
-		file(GLOB _llvm_libs_release ${LLVM_ROOT_DIR}/lib/*.lib)
-		file(GLOB _llvm_libs_debug ${LLVM_ROOT_DIR}/debug/lib/*.lib)
-		set(_llvm_libs)
-		foreach(_llvm_lib_path ${_llvm_libs_release})
-			get_filename_component(_llvm_lib_name ${_llvm_lib_path} ABSOLUTE)
-			list(APPEND _llvm_libs optimized ${_llvm_lib_name})
-		endforeach()
-		foreach(_llvm_lib_path ${_llvm_libs_debug})
-			get_filename_component(_llvm_lib_name ${_llvm_lib_path} ABSOLUTE)
-			list(APPEND _llvm_libs debug ${_llvm_lib_name})
-		endforeach()
-		set(LLVM_LIBRARY ${_llvm_libs})
-		unset(_llvm_lib_name)
-		unset(_llvm_lib_path)
-		unset(_llvm_libs)
-		unset(_llvm_libs_debug)
-		unset(_llvm_libs_release)
-
 		set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/shaders)
 		if(NOT EXISTS "${OSL_SHADER_DIR}")
 			set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/share/OSL/shaders)
@@ -382,9 +342,13 @@ if(WITH_CYCLES_OSL)
 		       "\\1" OSL_LIBRARY_VERSION_PATCH ${OSL_LIBRARY_VERSION_PATCH})
 	else()
 		find_package(OSL REQUIRED)
-		find_package(LLVM REQUIRED)
-		find_package(Clang REQUIRED)
 	endif()
+endif()
+
+if(WIN32)
+  add_bundled_libraries(osl/bin)
+else()
+  add_bundled_libraries(osl/lib)
 endif()
 
 ###########################################################################
@@ -464,8 +428,13 @@ if(MSVC AND EXISTS ${_cycles_lib_dir})
   if(NOT BOOST_VERSION)
     message(FATAL_ERROR "Unable to determine Boost version")
   endif()
-  set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
-  set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+    set(BOOST_POSTFIX "vc143-mt-a64-${BOOST_VERSION}")
+    set(BOOST_DEBUG_POSTFIX "vc143-mt-gyd-a64-${BOOST_VERSION}")
+  else()
+    set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
+    set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
+  endif()
   set(BOOST_LIBRARIES
     optimized ${Boost_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
     optimized ${Boost_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
@@ -497,7 +466,7 @@ else()
   if(WITH_CYCLES_OSL)
     list(APPEND __boost_packages wave)
   endif()
-  if(WITH_USD AND (APPLE OR WITH_CXX11_ABI))
+  if(WITH_USD)
     list(APPEND __boost_packages python${PYTHON_VERSION_NO_DOTS})
   endif()
   find_package(Boost 1.48 COMPONENTS ${__boost_packages} REQUIRED)
@@ -672,20 +641,13 @@ endif()
 
 if(WITH_CYCLES_OPENIMAGEDENOISE)
   set(WITH_OPENIMAGEDENOISE ON)
+  find_package(OpenImageDenoise REQUIRED)
+endif()
 
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    set(OPENIMAGEDENOISE_INCLUDE_DIRS ${OPENIMAGEDENOISE_ROOT_DIR}/include)
-    set(OPENIMAGEDENOISE_LIBRARIES
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/OpenImageDenoise.lib
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/common.lib
-      optimized ${OPENIMAGEDENOISE_ROOT_DIR}/lib/dnnl.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/OpenImageDenoise_d.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/common_d.lib
-      debug ${OPENIMAGEDENOISE_ROOT_DIR}/lib/dnnl_d.lib
-    )
-  else()
-    find_package(OpenImageDenoise REQUIRED)
-  endif()
+if(WIN32)
+  add_bundled_libraries(openimagedenoise/bin)
+else()
+  add_bundled_libraries(openimagedenoise/lib)
 endif()
 
 ###########################################################################
@@ -756,9 +718,20 @@ else()
 endif()
 
 if(WITH_USD)
-  # USD linking needs to be able to find MaterialX libraries.
   if(DEFINED _cycles_lib_dir)
+    # USD linking needs to be able to find MaterialX libraries.
     link_directories(${MATERIALX_ROOT_DIR}/lib)
+
+    if(UNIX AND NOT APPLE)
+      find_package(MaterialX)
+      list(APPEND USD_LIBRARIES
+        MaterialXCore
+        MaterialXFormat
+        MaterialXRender
+        MaterialXGenGlsl
+        MaterialXGenMsl
+      )
+    endif()
   endif()
 endif()
 

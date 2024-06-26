@@ -64,7 +64,7 @@ jobs:
       - name: Restore Libraries
         uses: actions/cache/restore@v3
         with:
-          path: lib
+          path: cycles/.git/modules/lib
           key: libs-${{ matrix.os }}
 
       - name: Update
@@ -75,7 +75,7 @@ jobs:
         uses: actions/cache/save@v3
         if: always()
         with:
-          path: lib
+          path: cycles/.git/modules/lib
           key: libs-${{ matrix.os }}-${{ github.ref }}
 
       - name: Build
