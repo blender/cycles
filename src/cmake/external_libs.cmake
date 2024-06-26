@@ -918,6 +918,13 @@ if(WIN32)
   set(PLATFORM_ENV_BUILD_DIRS "${_library_paths}\;${PATH}")
   set(PLATFORM_ENV_BUILD "PATH=${PLATFORM_ENV_BUILD_DIRS}")
   unset(_library_paths)
+
+  # Bundle crt libraries
+  set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+  set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+  set(CMAKE_INSTALL_OPENMP_LIBRARIES FALSE)
+  include(InstallRequiredSystemLibraries)
+  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION . COMPONENT Libraries)
 elseif(APPLE)
   set(PLATFORM_LIB_INSTALL_DIR "lib")
   # For install step, set rpath relative to where shared libs will be copied.
