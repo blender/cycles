@@ -15,7 +15,6 @@
 #  include "session/buffers.h"
 #  include "util/array.h"
 #  include "util/log.h"
-#  include "util/openimagedenoise.h"
 
 #  include "kernel/device/cpu/compat.h"
 #  include "kernel/device/cpu/kernel.h"
@@ -55,9 +54,23 @@ static const char *oidn_device_type_to_string(const OIDNDeviceType type)
   }
   return "UNKNOWN";
 }
+#  endif
 
 bool OIDNDenoiserGPU::is_device_supported(const DeviceInfo &device)
 {
+#  if OIDN_VERSION >= 20300
+  if (device.type == DEVICE_MULTI) {
+    for (const DeviceInfo &multi_device : device.multi_devices) {
+      if (multi_device.type != DEVICE_CPU && multi_device.denoisers & DENOISER_OPENIMAGEDENOISE) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return device.denoisers & DENOISER_OPENIMAGEDENOISE;
+#  else
   if (device.type == DEVICE_MULTI) {
     for (const DeviceInfo &multi_device : device.multi_devices) {
       if (multi_device.type != DEVICE_CPU && is_device_supported(multi_device)) {
