@@ -36,7 +36,8 @@ else()
   set(PYTHON_ROOT_DIR "")
 endif()
 
-set(_PYTHON_VERSION_SUPPORTED 3.10)
+set(_PYTHON_VERSION_SUPPORTED 3.11)
+
 set(PYTHON_VERSION ${_PYTHON_VERSION_SUPPORTED} CACHE STRING "Python Version (major and minor only)")
 mark_as_advanced(PYTHON_VERSION)
 
@@ -255,10 +256,6 @@ if(PYTHONLIBSUNIX_FOUND)
   )
 endif()
 
-unset(_PYTHON_ABI_FLAGS)
-unset(_PYTHON_VERSION_SUPPORTED)
-unset(_python_SEARCH_DIRS)
-
 mark_as_advanced(
   PYTHON_INCLUDE_DIR
   PYTHON_INCLUDE_CONFIG_DIR
@@ -267,3 +264,7 @@ mark_as_advanced(
   PYTHON_SITE_PACKAGES
   PYTHON_EXECUTABLE
 )
+
+unset(_PYTHON_ABI_FLAGS)
+unset(_PYTHON_VERSION_SUPPORTED)
+unset(_python_SEARCH_DIRS)
