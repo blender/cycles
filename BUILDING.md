@@ -44,7 +44,7 @@ Test in usdview.
 
 ## Hydra Render Delegate for Houdini
 
-For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 19 or newer is required.
+For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 20 or newer is required.
 
     cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>"
     make
