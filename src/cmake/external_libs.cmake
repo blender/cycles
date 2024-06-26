@@ -99,6 +99,7 @@ if(EXISTS ${_cycles_lib_dir})
   _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
   _set_default(WEBP_ROOT_DIR "${_cycles_lib_dir}/webp")
   _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
+  _set_default(ZSTD_ROOT_DIR "${_cycles_lib_dir}/zstd")
   if(WIN32)
     set(LEVEL_ZERO_ROOT_DIR ${_cycles_lib_dir}/level_zero)
   else()
@@ -733,6 +734,17 @@ if(WITH_USD)
       )
     endif()
   endif()
+endif()
+
+###########################################################################
+# ZSTD
+###########################################################################
+
+if(WIN32 AND DEFINED _cycles_lib_dir)
+  set(ZSTD_INCLUDE_DIRS ${ZSTD_ROOT_DIR}/include)
+  set(ZSTD_LIBRARIES ${ZSTD_ROOT_DIR}/lib/zstd_static.lib)
+else()
+  find_package(Zstd REQUIRED)
 endif()
 
 ###########################################################################
