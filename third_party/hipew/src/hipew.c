@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2021 Blender Foundation
+ * Copyright 2011-2023 Blender Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,64 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-#ifdef _MSC_VER
-#  if _MSC_VER < 1900
-#    define snprintf _snprintf
-#  endif
-#  define popen _popen
-#  define pclose _pclose
-#  define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "util.h"
 
-#include <assert.h>
 #include <hipew.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#ifdef _WIN32
-#  define WIN32_LEAN_AND_MEAN
-#  define VC_EXTRALEAN
-#  include <windows.h>
-
-/* Utility macros. */
-
-typedef HMODULE DynamicLibrary;
-
-#  define dynamic_library_open(path) LoadLibraryA(path)
-#  define dynamic_library_close(lib) FreeLibrary(lib)
-#  define dynamic_library_find(lib, symbol) GetProcAddress(lib, symbol)
-#else
-#  include <dlfcn.h>
-
-typedef void *DynamicLibrary;
-
-#  define dynamic_library_open(path) dlopen(path, RTLD_NOW)
-#  define dynamic_library_close(lib) dlclose(lib)
-#  define dynamic_library_find(lib, symbol) dlsym(lib, symbol)
-#endif
-
-#define _LIBRARY_FIND_CHECKED(lib, name) \
-  name = (t##name *)dynamic_library_find(lib, #name); \
-  assert(name);
-
-#define _LIBRARY_FIND(lib, name) name = (t##name *)dynamic_library_find(lib, #name);
-
-#define HIP_LIBRARY_FIND_CHECKED(name) _LIBRARY_FIND_CHECKED(hip_lib, name)
-#define HIP_LIBRARY_FIND(name) _LIBRARY_FIND(hip_lib, name)
-
 static DynamicLibrary hip_lib;
+
+#define HIP_LIBRARY_FIND_CHECKED(name) \
+  name = (t##name *)dynamic_library_find(hip_lib, #name); \
+  assert(name);
+#define HIP_LIBRARY_FIND(name) \
+  name = (t##name *)dynamic_library_find(hip_lib, #name);
 
 /* Function definitions. */
 thipGetErrorName *hipGetErrorName;
+thipGetErrorString *hipGetErrorString;
+thipGetLastError *hipGetLastError;
 thipInit *hipInit;
 thipDriverGetVersion *hipDriverGetVersion;
+thipRuntimeGetVersion *hipRuntimeGetVersion;
 thipGetDevice *hipGetDevice;
 thipGetDeviceCount *hipGetDeviceCount;
 thipGetDeviceProperties *hipGetDeviceProperties;
-thipDeviceGet *hipDeviceGet;
+thipDeviceGet* hipDeviceGet;
 thipDeviceGetName *hipDeviceGetName;
 thipDeviceGetAttribute *hipDeviceGetAttribute;
+thipDeviceGetLimit *hipDeviceGetLimit;
+thipDeviceSetLimit *hipDeviceSetLimit;
 thipDeviceComputeCapability *hipDeviceComputeCapability;
 thipDevicePrimaryCtxRetain *hipDevicePrimaryCtxRetain;
 thipDevicePrimaryCtxRelease *hipDevicePrimaryCtxRelease;
@@ -106,11 +79,14 @@ thipFree *hipFree;
 thipMemGetAddressRange *hipMemGetAddressRange;
 thipHostMalloc *hipHostMalloc;
 thipHostFree *hipHostFree;
+thipHostRegister *hipHostRegister;
 thipHostGetDevicePointer *hipHostGetDevicePointer;
 thipHostGetFlags *hipHostGetFlags;
+thipHostUnregister *hipHostUnregister;
 thipMallocManaged *hipMallocManaged;
 thipDeviceGetByPCIBusId *hipDeviceGetByPCIBusId;
 thipDeviceGetPCIBusId *hipDeviceGetPCIBusId;
+thipMemcpy *hipMemcpy;
 thipMemcpyPeer *hipMemcpyPeer;
 thipMemcpyHtoD *hipMemcpyHtoD;
 thipMemcpyDtoH *hipMemcpyDtoH;
@@ -120,8 +96,10 @@ thipMemcpyParam2D *hipMemcpyParam2D;
 thipDrvMemcpy3D *hipDrvMemcpy3D;
 thipMemcpyHtoDAsync *hipMemcpyHtoDAsync;
 thipMemcpyDtoHAsync *hipMemcpyDtoHAsync;
+thipMemcpyDtoDAsync *hipMemcpyDtoDAsync;
 thipMemcpyParam2DAsync *hipMemcpyParam2DAsync;
 thipDrvMemcpy3DAsync *hipDrvMemcpy3DAsync;
+thipMemset *hipMemset;
 thipMemsetD8 *hipMemsetD8;
 thipMemsetD16 *hipMemsetD16;
 thipMemsetD32 *hipMemsetD32;
@@ -131,6 +109,8 @@ thipMemsetD32Async *hipMemsetD32Async;
 thipArrayCreate *hipArrayCreate;
 thipArrayDestroy *hipArrayDestroy;
 thipArray3DCreate *hipArray3DCreate;
+thipPointerGetAttributes* hipPointerGetAttributes;
+thipStreamCreate* hipStreamCreate;
 thipStreamCreateWithFlags *hipStreamCreateWithFlags;
 thipStreamCreateWithPriority *hipStreamCreateWithPriority;
 thipStreamGetPriority *hipStreamGetPriority;
@@ -150,8 +130,7 @@ thipFuncGetAttribute *hipFuncGetAttribute;
 thipFuncSetCacheConfig *hipFuncSetCacheConfig;
 thipModuleLaunchKernel *hipModuleLaunchKernel;
 thipDrvOccupancyMaxActiveBlocksPerMultiprocessor *hipDrvOccupancyMaxActiveBlocksPerMultiprocessor;
-thipDrvOccupancyMaxActiveBlocksPerMultiprocessorWithFlags
-    *hipDrvOccupancyMaxActiveBlocksPerMultiprocessorWithFlags;
+thipDrvOccupancyMaxActiveBlocksPerMultiprocessorWithFlags *hipDrvOccupancyMaxActiveBlocksPerMultiprocessorWithFlags;
 thipModuleOccupancyMaxPotentialBlockSize *hipModuleOccupancyMaxPotentialBlockSize;
 thipTexRefSetArray *hipTexRefSetArray;
 thipTexRefSetAddress *hipTexRefSetAddress;
@@ -177,34 +156,42 @@ thipGraphicsResourceGetMappedPointer *hipGraphicsResourceGetMappedPointer;
 
 thipGraphicsGLRegisterBuffer *hipGraphicsGLRegisterBuffer;
 thipGLGetDevices *hipGLGetDevices;
+thipImportExternalMemory *hipImportExternalMemory;
+thipExternalMemoryGetMappedBuffer *hipExternalMemoryGetMappedBuffer;
+thipDestroyExternalMemory *hipDestroyExternalMemory;
 
-thiprtcGetErrorString *hiprtcGetErrorString;
-thiprtcAddNameExpression *hiprtcAddNameExpression;
-thiprtcCompileProgram *hiprtcCompileProgram;
-thiprtcCreateProgram *hiprtcCreateProgram;
-thiprtcDestroyProgram *hiprtcDestroyProgram;
-thiprtcGetLoweredName *hiprtcGetLoweredName;
-thiprtcGetProgramLog *hiprtcGetProgramLog;
-thiprtcGetProgramLogSize *hiprtcGetProgramLogSize;
-thiprtcGetCode *hiprtcGetCode;
-thiprtcGetCodeSize *hiprtcGetCodeSize;
+thiprtcGetErrorString* hiprtcGetErrorString;
+thiprtcAddNameExpression* hiprtcAddNameExpression;
+thiprtcCompileProgram* hiprtcCompileProgram;
+thiprtcCreateProgram* hiprtcCreateProgram;
+thiprtcDestroyProgram* hiprtcDestroyProgram;
+thiprtcGetLoweredName* hiprtcGetLoweredName;
+thiprtcGetProgramLog* hiprtcGetProgramLog;
+thiprtcGetProgramLogSize* hiprtcGetProgramLogSize;
+thiprtcGetBitcode* hiprtcGetBitcode;
+thiprtcGetBitcodeSize* hiprtcGetBitcodeSize;
+thiprtcGetCode* hiprtcGetCode;
+thiprtcGetCodeSize* hiprtcGetCodeSize;
+thiprtcLinkCreate* hiprtcLinkCreate;
+thiprtcLinkAddFile* hiprtcLinkAddFile;
+thiprtcLinkAddData* hiprtcLinkAddData;
+thiprtcLinkComplete* hiprtcLinkComplete;
+thiprtcLinkDestroy* hiprtcLinkDestroy;
 
-static DynamicLibrary dynamic_library_open_find(const char **paths)
-{
+static DynamicLibrary dynamic_library_open_find(const char **paths) {
   int i = 0;
   while (paths[i] != NULL) {
-    DynamicLibrary lib = dynamic_library_open(paths[i]);
-    if (lib != NULL) {
-      return lib;
-    }
-    ++i;
+      DynamicLibrary lib = dynamic_library_open(paths[i]);
+      if (lib != NULL) {
+        return lib;
+      }
+      ++i;
   }
   return NULL;
 }
 
 /* Implementation function. */
-static void hipewHipExit(void)
-{
+static void hipewHipExit(void) {
   if (hip_lib != NULL) {
     /*  Ignore errors. */
     dynamic_library_close(hip_lib);
@@ -213,28 +200,25 @@ static void hipewHipExit(void)
 }
 
 #ifdef _WIN32
-static int hipewHasOldDriver(const char *hip_path)
-{
+static int hipewHasOldDriver(const char *hip_path) {
   DWORD verHandle = 0;
-  DWORD verSize = GetFileVersionInfoSize(hip_path, &verHandle);
+  DWORD verSize = GetFileVersionInfoSizeA(hip_path, &verHandle);
   int old_driver = 0;
   if (verSize != 0) {
     LPSTR verData = (LPSTR)malloc(verSize);
-    if (GetFileVersionInfo(hip_path, verHandle, verSize, verData)) {
+    if (GetFileVersionInfoA(hip_path, verHandle, verSize, verData)) {
       LPBYTE lpBuffer = NULL;
       UINT size = 0;
-      if (VerQueryValue(verData, "\\", (VOID FAR * FAR *)&lpBuffer, &size)) {
+      if (VerQueryValueA(verData, "\\", (VOID FAR * FAR *)&lpBuffer, &size)) {
         if (size) {
           VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
           /* Magic value from
-           * https://docs.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
-           */
+           * https://docs.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo */
           if (verInfo->dwSignature == 0xfeef04bd) {
             unsigned int fileVersionLS0 = (verInfo->dwFileVersionLS >> 16) & 0xffff;
             unsigned int fileversionLS1 = (verInfo->dwFileVersionLS >> 0) & 0xffff;
             /* Corresponds to versions older than AMD Radeon Pro 21.Q4. */
-            old_driver = ((fileVersionLS0 < 3354) ||
-                          (fileVersionLS0 == 3354 && fileversionLS1 < 13));
+            old_driver = ((fileVersionLS0 < 3354) || (fileVersionLS0 == 3354 && fileversionLS1 < 13));
           }
         }
       }
@@ -245,17 +229,24 @@ static int hipewHasOldDriver(const char *hip_path)
 }
 #endif
 
-static int hipewHipInit(void)
-{
+static int hipewHipInit(void) {
   /* Library paths. */
 #ifdef _WIN32
-  /* Expected in c:/windows/system or similar, no path needed. */
-  const char *hip_paths[] = {"amdhip64.dll", NULL};
+  /* Expected in C:/Windows/System32 or similar, no path needed. */
+  const char *hip_paths[] = {"amdhip64.dll", "amdhip64_6.dll", NULL};
+
 #elif defined(__APPLE__)
   /* Default installation path. */
   const char *hip_paths[] = {"", NULL};
 #else
-  const char *hip_paths[] = {"/opt/rocm/hip/lib/libamdhip64.so", NULL};
+  /* ROCm 6 changes paths from /opt/rocm/hip/lib to /opt/rocm/lib, so
+   * search for libraries there. It still includes .so.5. */
+  const char *hip_paths[] = {"libamdhip64.so.5",
+                             "/opt/rocm/lib/libamdhip64.so.5",
+                             "/opt/rocm/hip/lib/libamdhip64.so.5",
+                             "libamdhip64.so",
+                             "/opt/rocm/lib/libamdhip64.so",
+                             "/opt/rocm/hip/lib/libamdhip64.so", NULL};
 #endif
   static int initialized = 0;
   static int result = 0;
@@ -275,9 +266,9 @@ static int hipewHipInit(void)
 
 #ifdef _WIN32
   /* Test for driver version. */
-  if (hipewHasOldDriver(hip_paths[0])) {
-    result = HIPEW_ERROR_OLD_DRIVER;
-    return result;
+  if(hipewHasOldDriver(hip_paths[0])) {
+     result = HIPEW_ERROR_OLD_DRIVER;
+     return result;
   }
 #endif
 
@@ -291,14 +282,19 @@ static int hipewHipInit(void)
 
   /* Fetch all function pointers. */
   HIP_LIBRARY_FIND_CHECKED(hipGetErrorName);
+  HIP_LIBRARY_FIND_CHECKED(hipGetErrorString);
+  HIP_LIBRARY_FIND_CHECKED(hipGetLastError);
   HIP_LIBRARY_FIND_CHECKED(hipInit);
   HIP_LIBRARY_FIND_CHECKED(hipDriverGetVersion);
+  HIP_LIBRARY_FIND_CHECKED(hipRuntimeGetVersion);
   HIP_LIBRARY_FIND_CHECKED(hipGetDevice);
   HIP_LIBRARY_FIND_CHECKED(hipGetDeviceCount);
   HIP_LIBRARY_FIND_CHECKED(hipGetDeviceProperties);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceGet);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceGetName);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceGetAttribute);
+  HIP_LIBRARY_FIND(hipDeviceGetLimit);
+  HIP_LIBRARY_FIND(hipDeviceSetLimit);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceComputeCapability);
   HIP_LIBRARY_FIND_CHECKED(hipDevicePrimaryCtxRetain);
   HIP_LIBRARY_FIND_CHECKED(hipDevicePrimaryCtxRelease);
@@ -334,11 +330,14 @@ static int hipewHipInit(void)
   HIP_LIBRARY_FIND_CHECKED(hipMemGetAddressRange);
   HIP_LIBRARY_FIND_CHECKED(hipHostMalloc);
   HIP_LIBRARY_FIND_CHECKED(hipHostFree);
+  HIP_LIBRARY_FIND_CHECKED(hipHostRegister);
   HIP_LIBRARY_FIND_CHECKED(hipHostGetDevicePointer);
   HIP_LIBRARY_FIND_CHECKED(hipHostGetFlags);
+  HIP_LIBRARY_FIND_CHECKED(hipHostUnregister);
   HIP_LIBRARY_FIND_CHECKED(hipMallocManaged);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceGetByPCIBusId);
   HIP_LIBRARY_FIND_CHECKED(hipDeviceGetPCIBusId);
+  HIP_LIBRARY_FIND_CHECKED(hipMemcpy);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyPeer);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyHtoD);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyDtoH);
@@ -347,9 +346,11 @@ static int hipewHipInit(void)
   HIP_LIBRARY_FIND_CHECKED(hipDrvMemcpy3D);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyHtoDAsync);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyDtoHAsync);
+  HIP_LIBRARY_FIND_CHECKED(hipMemcpyDtoDAsync);
   HIP_LIBRARY_FIND_CHECKED(hipDrvMemcpy2DUnaligned);
   HIP_LIBRARY_FIND_CHECKED(hipMemcpyParam2DAsync);
   HIP_LIBRARY_FIND_CHECKED(hipDrvMemcpy3DAsync);
+  HIP_LIBRARY_FIND_CHECKED(hipMemset);
   HIP_LIBRARY_FIND_CHECKED(hipMemsetD8);
   HIP_LIBRARY_FIND_CHECKED(hipMemsetD16);
   HIP_LIBRARY_FIND_CHECKED(hipMemsetD32);
@@ -359,6 +360,8 @@ static int hipewHipInit(void)
   HIP_LIBRARY_FIND_CHECKED(hipArrayCreate);
   HIP_LIBRARY_FIND_CHECKED(hipArrayDestroy);
   HIP_LIBRARY_FIND_CHECKED(hipArray3DCreate);
+  HIP_LIBRARY_FIND_CHECKED(hipPointerGetAttributes);
+  HIP_LIBRARY_FIND_CHECKED(hipStreamCreate);
   HIP_LIBRARY_FIND_CHECKED(hipStreamCreateWithFlags);
   HIP_LIBRARY_FIND_CHECKED(hipStreamCreateWithPriority);
   HIP_LIBRARY_FIND_CHECKED(hipStreamGetPriority);
@@ -401,22 +404,38 @@ static int hipewHipInit(void)
   HIP_LIBRARY_FIND_CHECKED(hipGraphicsGLRegisterBuffer);
   HIP_LIBRARY_FIND_CHECKED(hipGLGetDevices);
 #endif
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetErrorString);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcAddNameExpression);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcCompileProgram);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcCreateProgram);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcDestroyProgram);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetLoweredName);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetProgramLog);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetProgramLogSize);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetCode);
-  HIP_LIBRARY_FIND_CHECKED(hiprtcGetCodeSize);
+  HIP_LIBRARY_FIND_CHECKED(hipImportExternalMemory);
+  HIP_LIBRARY_FIND_CHECKED(hipExternalMemoryGetMappedBuffer);
+  HIP_LIBRARY_FIND_CHECKED(hipDestroyExternalMemory);
+
   result = HIPEW_SUCCESS;
   return result;
 }
 
-int hipewInit(hipuint32_t flags)
-{
+hipMemoryType get_hip_memory_type(hipMemoryType mem_type, int runtime_version) {
+  /** Convert hipMemoryType for backwards compatibility with rocm5/6. 
+   * This can be removed when support for ROCm 5 is removed. */
+
+  /* If version is 5 we need to use the old enum vals (60000000 is start of ROCm 6) */
+  if (runtime_version > 60000000) {
+    return mem_type;
+  }
+
+  switch (mem_type) {
+    case hipMemoryTypeHost:
+      return hipMemoryTypeHost_v5;
+    case hipMemoryTypeDevice:
+      return hipMemoryTypeDevice_v5;
+    case hipMemoryTypeArray:
+      return hipMemoryTypeArray_v5;
+    case hipMemoryTypeUnified:
+      return hipMemoryTypeUnified_v5;
+    default:
+      return hipMemoryTypeUnregistered;  /* This should not happen. */
+  }
+}
+
+int hipewInit(hipuint32_t flags) {
   int result = HIPEW_SUCCESS;
 
   if (flags & HIPEW_INIT_HIP) {
@@ -429,116 +448,67 @@ int hipewInit(hipuint32_t flags)
   return result;
 }
 
-const char *hipewErrorString(hipError_t result)
-{
+
+const char *hipewErrorString(hipError_t result) {
   switch (result) {
-    case hipSuccess:
-      return "No errors";
-    case hipErrorInvalidValue:
-      return "Invalid value";
-    case hipErrorOutOfMemory:
-      return "Out of memory";
-    case hipErrorNotInitialized:
-      return "Driver not initialized";
-    case hipErrorDeinitialized:
-      return "Driver deinitialized";
-    case hipErrorProfilerDisabled:
-      return "Profiler disabled";
-    case hipErrorProfilerNotInitialized:
-      return "Profiler not initialized";
-    case hipErrorProfilerAlreadyStarted:
-      return "Profiler already started";
-    case hipErrorProfilerAlreadyStopped:
-      return "Profiler already stopped";
-    case hipErrorNoDevice:
-      return "No HIP-capable device available";
-    case hipErrorInvalidDevice:
-      return "Invalid device";
-    case hipErrorInvalidImage:
-      return "Invalid kernel image";
-    case hipErrorInvalidContext:
-      return "Invalid context";
-    case hipErrorContextAlreadyCurrent:
-      return "Context already current";
-    case hipErrorMapFailed:
-      return "Map failed";
-    case hipErrorUnmapFailed:
-      return "Unmap failed";
-    case hipErrorArrayIsMapped:
-      return "Array is mapped";
-    case hipErrorAlreadyMapped:
-      return "Already mapped";
-    case hipErrorNoBinaryForGpu:
-      return "No binary for GPU";
-    case hipErrorAlreadyAcquired:
-      return "Already acquired";
-    case hipErrorNotMapped:
-      return "Not mapped";
-    case hipErrorNotMappedAsArray:
-      return "Mapped resource not available for access as an array";
-    case hipErrorNotMappedAsPointer:
-      return "Mapped resource not available for access as a pointer";
-    case hipErrorECCNotCorrectable:
-      return "Uncorrectable ECC error detected";
-    case hipErrorUnsupportedLimit:
-      return "hipLimit_t not supported by device";
-    case hipErrorContextAlreadyInUse:
-      return "Context already in use";
-    case hipErrorPeerAccessUnsupported:
-      return "Peer access unsupported";
-    case hipErrorInvalidKernelFile:
-      return "Invalid ptx";
-    case hipErrorInvalidGraphicsContext:
-      return "Invalid graphics context";
-    case hipErrorInvalidSource:
-      return "Invalid source";
-    case hipErrorFileNotFound:
-      return "File not found";
-    case hipErrorSharedObjectSymbolNotFound:
-      return "Link to a shared object failed to resolve";
-    case hipErrorSharedObjectInitFailed:
-      return "Shared object initialization failed";
-    case hipErrorOperatingSystem:
-      return "Operating system";
-    case hipErrorInvalidHandle:
-      return "Invalid handle";
-    case hipErrorNotFound:
-      return "Not found";
-    case hipErrorNotReady:
-      return "HIP not ready";
-    case hipErrorIllegalAddress:
-      return "Illegal address";
-    case hipErrorLaunchOutOfResources:
-      return "Launch exceeded resources";
-    case hipErrorLaunchTimeOut:
-      return "Launch exceeded timeout";
-    case hipErrorPeerAccessAlreadyEnabled:
-      return "Peer access already enabled";
-    case hipErrorPeerAccessNotEnabled:
-      return "Peer access not enabled";
-    case hipErrorSetOnActiveProcess:
-      return "Primary context active";
-    case hipErrorAssert:
-      return "Assert";
-    case hipErrorHostMemoryAlreadyRegistered:
-      return "Host memory already registered";
-    case hipErrorHostMemoryNotRegistered:
-      return "Host memory not registered";
-    case hipErrorLaunchFailure:
-      return "Launch failed";
-    case hipErrorCooperativeLaunchTooLarge:
-      return "Cooperative launch too large";
-    case hipErrorNotSupported:
-      return "Not supported";
-    case hipErrorUnknown:
-      return "Unknown error";
-    default:
-      return "Unknown HIP error value";
+    case hipSuccess: return "No errors";
+    case hipErrorInvalidValue: return "Invalid value";
+    case hipErrorOutOfMemory: return "Out of memory";
+    case hipErrorNotInitialized: return "Driver not initialized";
+    case hipErrorDeinitialized: return "Driver deinitialized";
+    case hipErrorProfilerDisabled: return "Profiler disabled";
+    case hipErrorProfilerNotInitialized: return "Profiler not initialized";
+    case hipErrorProfilerAlreadyStarted: return "Profiler already started";
+    case hipErrorProfilerAlreadyStopped: return "Profiler already stopped";
+    case hipErrorNoDevice: return "No HIP-capable device available";
+    case hipErrorInvalidDevice: return "Invalid device";
+    case hipErrorInvalidImage: return "Invalid kernel image";
+    case hipErrorInvalidContext: return "Invalid context";
+    case hipErrorContextAlreadyCurrent: return "Context already current";
+    case hipErrorMapFailed: return "Map failed";
+    case hipErrorUnmapFailed: return "Unmap failed";
+    case hipErrorArrayIsMapped: return "Array is mapped";
+    case hipErrorAlreadyMapped: return "Already mapped";
+    case hipErrorNoBinaryForGpu: return "No binary for GPU";
+    case hipErrorAlreadyAcquired: return "Already acquired";
+    case hipErrorNotMapped: return "Not mapped";
+    case hipErrorNotMappedAsArray: return "Mapped resource not available for access as an array";
+    case hipErrorNotMappedAsPointer: return "Mapped resource not available for access as a pointer";
+    case hipErrorECCNotCorrectable: return "Uncorrectable ECC error detected";
+    case hipErrorUnsupportedLimit: return "hipLimit_t not supported by device";
+    case hipErrorContextAlreadyInUse: return "Context already in use";
+    case hipErrorPeerAccessUnsupported: return "Peer access unsupported";
+    case hipErrorInvalidKernelFile: return "Invalid ptx";
+    case hipErrorInvalidGraphicsContext: return "Invalid graphics context";
+    case hipErrorInvalidSource: return "Invalid source";
+    case hipErrorFileNotFound: return "File not found";
+    case hipErrorSharedObjectSymbolNotFound: return "Link to a shared object failed to resolve";
+    case hipErrorSharedObjectInitFailed: return "Shared object initialization failed";
+    case hipErrorOperatingSystem: return "Operating system";
+    case hipErrorInvalidHandle: return "Invalid handle";
+    case hipErrorNotFound: return "Not found";
+    case hipErrorNotReady: return "HIP not ready";
+    case hipErrorIllegalAddress: return "Illegal address";
+    case hipErrorLaunchOutOfResources: return "Launch exceeded resources";
+    case hipErrorLaunchTimeOut: return "Launch exceeded timeout";
+    case hipErrorPeerAccessAlreadyEnabled: return "Peer access already enabled";
+    case hipErrorPeerAccessNotEnabled: return "Peer access not enabled";
+    case hipErrorSetOnActiveProcess: return "Primary context active";
+    case hipErrorAssert: return "Assert";
+    case hipErrorHostMemoryAlreadyRegistered: return "Host memory already registered";
+    case hipErrorHostMemoryNotRegistered: return "Host memory not registered";
+    case hipErrorLaunchFailure: return "Launch failed";
+    case hipErrorCooperativeLaunchTooLarge: return "Cooperative launch too large";
+    case hipErrorNotSupported: return "Not supported";
+    case hipErrorUnknown: return "Unknown error";
+    default: return "Unknown HIP error value";
   }
 }
 
-static void path_join(const char *path1, const char *path2, int maxlen, char *result)
-{
+static void path_join(const char *path1,
+                      const char *path2,
+                      int maxlen,
+                      char *result) {
 #if defined(WIN32) || defined(_WIN32)
   const char separator = '\\';
 #else
@@ -553,8 +523,7 @@ static void path_join(const char *path1, const char *path2, int maxlen, char *re
   }
 }
 
-static int path_exists(const char *path)
-{
+static int path_exists(const char *path) {
   struct stat st;
   if (stat(path, &st)) {
     return 0;
@@ -562,39 +531,35 @@ static int path_exists(const char *path)
   return 1;
 }
 
-const char *hipewCompilerPath(void)
-{
-#ifdef _WIN32
-  const char *hipPath = getenv("HIP_ROCCLR_HOME");
-  const char *windowsCommand = "perl ";
-  const char *executable = "bin/hipcc";
+const char *hipewCompilerPath(void) {
+    #ifdef _WIN32
+    const char *hipPath = getenv("HIP_ROCCLR_HOME");
+    const char *windowsCommand = "perl ";
+    const char *executable = "bin/hipcc";
 
-  static char hipcc[65536];
-  static char finalCommand[65536];
-  if (hipPath) {
-    path_join(hipPath, executable, sizeof(hipcc), hipcc);
-    if (path_exists(hipcc)) {
-      snprintf(finalCommand, sizeof(hipcc), "%s %s", windowsCommand, hipcc);
-      return finalCommand;
+    static char hipcc[65536];
+    static char finalCommand[65536];
+    if(hipPath) {
+      path_join(hipPath, executable, sizeof(hipcc), hipcc);
+      if(path_exists(hipcc)) {
+        snprintf(finalCommand, sizeof(hipcc), "%s %s", windowsCommand, hipcc);
+        return finalCommand;
+      } else {
+        printf("Could not find hipcc. Make sure HIP_ROCCLR_HOME points to the directory holding /bin/hipcc");
+      }
     }
-    else {
-      printf(
-          "Could not find hipcc. Make sure HIP_ROCCLR_HOME points to the directory holding "
-          "/bin/hipcc");
-    }
-  }
-#else
-  const char *hipPath = "opt/rocm/hip/bin";
-  const char *executable = "hipcc";
+    #else
+    const char *hipPath =  "opt/rocm/hip/bin";
+    const char *executable = "hipcc";
 
-  static char hipcc[65536];
-  if (hipPath) {
-    path_join(hipPath, executable, sizeof(hipcc), hipcc);
-    if (path_exists(hipcc)) {
-      return hipcc;
+    static char hipcc[65536];
+    if(hipPath) {
+      path_join(hipPath, executable, sizeof(hipcc), hipcc);
+      if(path_exists(hipcc)){
+        return hipcc;
+      }
     }
-  }
-#endif
+    #endif
 
   {
 #ifdef _WIN32
@@ -616,9 +581,9 @@ const char *hipewCompilerPath(void)
   return NULL;
 }
 
-int hipewCompilerVersion(void)
-{
+int hipewCompilerVersion(void) {
   const char *path = hipewCompilerPath();
+  const char *marker = "Hip compilation tools, release ";
   FILE *pipe;
   char buf[128];
   char output[65536] = "\0";
