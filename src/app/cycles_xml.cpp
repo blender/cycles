@@ -443,10 +443,10 @@ static void xml_read_mesh(const XMLReadState &state, xml_node node)
 
   /* read vertices and polygons */
   vector<float3> P;
-  vector<float3> VN;  /* Vertex normals */
+  vector<float3> VN; /* Vertex normals */
   vector<float> UV;
   vector<float> T;  /* UV tangents */
-  vector<float> TS;  /* UV tangent signs */
+  vector<float> TS; /* UV tangent signs */
   vector<int> verts, nverts;
 
   xml_read_float3_array(P, node, "P");
@@ -507,7 +507,8 @@ static void xml_read_mesh(const XMLReadState &state, xml_node node)
 
     /* UV map */
     if (xml_read_float_array(UV, node, "UV") ||
-        xml_read_float_array(UV, node, Attribute::standard_name(ATTR_STD_UV))) {
+        xml_read_float_array(UV, node, Attribute::standard_name(ATTR_STD_UV)))
+    {
       Attribute *attr = mesh->attributes.add(ATTR_STD_UV);
       float2 *fdata = attr->data_float2();
 
@@ -607,7 +608,8 @@ static void xml_read_mesh(const XMLReadState &state, xml_node node)
 
     /* UV map */
     if (xml_read_float_array(UV, node, "UV") ||
-        xml_read_float_array(UV, node, Attribute::standard_name(ATTR_STD_UV))) {
+        xml_read_float_array(UV, node, Attribute::standard_name(ATTR_STD_UV)))
+    {
       Attribute *attr = mesh->subd_attributes.add(ATTR_STD_UV);
       float3 *fdata = attr->data_float3();
 
