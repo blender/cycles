@@ -27,11 +27,6 @@ if(HOUDINI_ROOT AND EXISTS ${HOUDINI_ROOT})
     REGEX "^#define HAPI_VERSION_HOUDINI_MAJOR[ \t].*$")
   string(REGEX MATCHALL "[0-9]+" HOUDINI_VERSION_MAJOR ${_houdini_version_major})
 
-  if (UNIX AND NOT APPLE AND (HOUDINI_VERSION_MAJOR LESS_EQUAL 19))
-    message(STATUS "Setting WITH_CXX11_ABI=OFF and using old libraries for Houdini ${HOUDINI_VERSION_MAJOR} compatibility")
-    set(WITH_CXX11_ABI OFF)
-  endif()
-
   # USD
   set(USD_LIBRARIES hd hgi hgiGL gf arch garch plug tf trace vt work sdf cameraUtil hf pxOsd usd usdImaging usdGeom)
 
