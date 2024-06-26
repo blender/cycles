@@ -23,7 +23,7 @@ static inline bool openimagedenoise_supported()
   /* OIDN 2.2 and up supports ARM64 on Windows and Linux. */
   return true;
 #  else
-  return system_cpu_support_sse41();
+  return system_cpu_support_sse42();
 #  endif
 #else
   return false;
