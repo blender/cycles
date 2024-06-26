@@ -94,6 +94,7 @@ if(EXISTS ${_cycles_lib_dir})
   _set_default(PNG_ROOT "${_cycles_lib_dir}/png")
   _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
   _set_default(PYTHON_ROOT_DIR "${_cycles_lib_dir}/python")
+  _set_default(SSE2NEON_ROOT_DIR "${_cycles_lib_dir}/sse2neon")
   _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
   _set_default(TIFF_ROOT "${_cycles_lib_dir}/tiff")
   _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
@@ -745,6 +746,28 @@ if(WIN32 AND DEFINED _cycles_lib_dir)
   set(ZSTD_LIBRARIES ${ZSTD_ROOT_DIR}/lib/zstd_static.lib)
 else()
   find_package(Zstd REQUIRED)
+endif()
+
+###########################################################################
+# SSE2NEON
+###########################################################################
+
+# Check for ARM Neon Support
+if(NOT DEFINED SUPPORT_NEON_BUILD)
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles(
+    "#include <arm_neon.h>
+     int main() {return vaddvq_s32(vdupq_n_s32(1));}"
+    SUPPORT_NEON_BUILD)
+endif()
+
+if(SUPPORT_NEON_BUILD)
+  if(WIN32 AND DEFINED _cycles_lib_dir)
+    set(SSE2NEON_INCLUDE_DIRS ${SSE2NEON_ROOT_DIR})
+    set(SSE2NEON_FOUND True)
+  else()
+    find_package(sse2neon)
+  endif()
 endif()
 
 ###########################################################################

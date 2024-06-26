@@ -80,12 +80,3 @@ elseif(MSVC)
 
   add_definitions(-D_USE_MATH_DEFINES)
 endif()
-
-# Check for ARM Neon Support
-if(NOT DEFINED SUPPORT_NEON_BUILD)
-  include(CheckCXXSourceCompiles)
-  check_cxx_source_compiles(
-    "#include <arm_neon.h>
-     int main() {return vaddvq_s32(vdupq_n_s32(1));}"
-    SUPPORT_NEON_BUILD)
-endif()
