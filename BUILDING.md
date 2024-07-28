@@ -7,7 +7,7 @@ Ensure the following software is installed and available in the PATH:
 - Git
 - Subversion
 - Python 3
-- CMake
+- CMake (at least 3.30)
 
 Quick build setup on Windows, macOS and Linux is as follows:
 
