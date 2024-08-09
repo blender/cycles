@@ -92,6 +92,9 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
 ###########################################################################
 # Options.
 
+# Use precompiled library dependencies
+option(WITH_LIBS_PRECOMPILED        "Use precompiled library dependencies" ON)
+
 # Library dependencies
 option(WITH_CYCLES_ALEMBIC          "Build with Alembic procedural support" ON)
 option(WITH_CYCLES_EMBREE           "Build with Embree support" ON)
