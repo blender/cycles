@@ -5,6 +5,7 @@
 
 import collections
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -19,25 +20,25 @@ IGNORE_HASHES = {
 }
 
 # Start revisions from both repositories.
-CYCLES_START_COMMIT = b"main"
-BLENDER_START_COMMIT = b"blender-v4.1-release"
+CYCLES_START_COMMIT = "main"
+BLENDER_START_COMMIT = "f701e57"
 
 # Prefix which is common for all the subjects.
-GIT_SUBJECT_COMMON_PREFIX = b"Subject: [PATCH] "
+GIT_SUBJECT_COMMON_PREFIX = "Subject: [PATCH] "
 
 # Marker which indicates begin of new file in the patch set.
-GIT_FILE_SECTION_MARKER = b"diff --git"
+GIT_FILE_SECTION_MARKER = "diff --git"
 
 # Marker of the end of the patch-set.
-GIT_PATCHSET_END_MARKER = b"-- "
+GIT_PATCHSET_END_MARKER = "-- "
 
 # Prefix of topic to be omitted
 SUBJECT_SKIP_PREFIX = (
-    b"Cycles: ",
-    b"cycles: ",
-    b"Cycles Standalone: ",
-    b"Cycles standalone: ",
-    b"cycles standalone: ",
+    "Cycles: ",
+    "cycles: ",
+    "Cycles Standalone: ",
+    "Cycles standalone: ",
+    "cycles standalone: ",
 )
 
 
@@ -52,22 +53,22 @@ def subject_strip(common_prefix, subject):
 
 
 def replace_file_prefix(path, prefix, replace_prefix):
-    tokens = path.split(b' ')
+    tokens = path.split(' ')
     prefix_len = len(prefix)
     for i, t in enumerate(tokens):
-        for x in (b"a/", b"b/"):
+        for x in ("a/", "b/"):
             if t.startswith(x + prefix):
                 tokens[i] = x + replace_prefix + t[prefix_len + 2:]
-    return b' '.join(tokens)
+    return ' '.join(tokens)
 
 
 def cleanup_patch(patch, accept_prefix, replace_prefix):
-    assert accept_prefix[0] != b'/'
-    assert replace_prefix[0] != b'/'
+    assert accept_prefix[0] != '/'
+    assert replace_prefix[0] != '/'
 
-    full_accept_prefix = GIT_FILE_SECTION_MARKER + b" a/" + accept_prefix
+    full_accept_prefix = GIT_FILE_SECTION_MARKER + " a/" + accept_prefix
 
-    with open(patch, "rb") as f:
+    with open(patch, "r") as f:
         content = f.readlines()
 
     clean_content = []
@@ -79,7 +80,7 @@ def cleanup_patch(patch, accept_prefix, replace_prefix):
             line = subject_strip(GIT_SUBJECT_COMMON_PREFIX, line)
 
             # Dots usually are omitted in the topic
-            line = line.replace(b".\n", b"\n")
+            line = line.replace(".\n", "\n")
         elif line.startswith(GIT_FILE_SECTION_MARKER):
             if not line.startswith(full_accept_prefix):
                 do_skip = True
@@ -88,13 +89,13 @@ def cleanup_patch(patch, accept_prefix, replace_prefix):
                 line = replace_file_prefix(line, accept_prefix, replace_prefix)
         elif line.startswith(GIT_PATCHSET_END_MARKER):
             do_skip = False
-        elif line.startswith(b"---") or line.startswith(b"+++"):
+        elif line.startswith("---") or line.startswith("+++"):
             line = replace_file_prefix(line, accept_prefix, replace_prefix)
 
         if not do_skip:
             clean_content.append(line)
 
-    with open(patch, "wb") as f:
+    with open(patch, "w") as f:
         f.writelines(clean_content)
 
 
@@ -103,22 +104,22 @@ def cleanup_patch(patch, accept_prefix, replace_prefix):
 # It'll actually include timestamp of the commit to the map key, so commits with
 # the same subject wouldn't conflict with each other.
 def commit_map_get(repository, path, start_commit):
-    command = (b"git",
-               b"--git-dir=" + os.path.join(repository, b'.git'),
-               b"--work-tree=" + repository,
-               b"log", b"--format=%H %at %s", b"--reverse",
-               start_commit + b'..HEAD',
-               b'--',
-               os.path.join(repository, path),
-               b':(exclude)' + os.path.join(repository, b'intern/cycles/blender'))
-    lines = subprocess.check_output(command).split(b"\n")
+    command = ("git",
+               "--git-dir=" + str(repository / '.git'),
+               "--work-tree=" + str(repository),
+               "log", "--format=%H %at %s", "--reverse",
+               start_commit + '..HEAD',
+               '--',
+               repository / path,
+               ':(exclude)' + str(repository / 'intern/cycles/blender'))
+    lines = subprocess.check_output(command, encoding='utf-8').split("\n")
     commit_map = collections.OrderedDict()
     for line in lines:
         if line:
-            commit_sha, stamped_subject = line.split(b' ', 1)
-            stamp, subject = stamped_subject.split(b' ', 1)
-            subject = subject_strip(b"", subject).rstrip(b".")
-            stamped_subject = stamp + b" " + subject
+            commit_sha, stamped_subject = line.split(' ', 1)
+            stamp, subject = stamped_subject.split(' ', 1)
+            subject = subject_strip("", subject).rstrip(".")
+            stamped_subject = stamp + " " + subject
 
             if commit_sha in IGNORE_HASHES:
                 continue
@@ -152,34 +153,34 @@ def transfer_commits(commit_hashes,
     patch_index = 1
     for commit_hash in commit_hashes:
         command = (
-            b"git",
-            b"--git-dir=" + os.path.join(from_repository, b'.git'),
-            b"--work-tree=" + from_repository,
-            b"format-patch", b"-1",
-            b"--start-number", bytes(str(patch_index), 'utf-8'),
-            b"-o", to_repository,
+            "git",
+            "--git-dir=" + str(from_repository / '.git'),
+            "--work-tree=" + str(from_repository),
+            "format-patch", "-1",
+            "--start-number", str(patch_index),
+            "-o", to_repository,
             commit_hash,
-            b'--',
-            b':(exclude)' + os.path.join(from_repository, b'intern/cycles/blender'),
+            '--',
+            ':(exclude)' + str(from_repository / 'intern/cycles/blender'),
         )
-        patch_file = subprocess.check_output(command).rstrip(b"\n")
+        patch_file = subprocess.check_output(command, encoding='utf-8').rstrip("\n")
         if dst_is_cycles:
-            cleanup_patch(patch_file, b"intern/cycles", b"src")
+            cleanup_patch(patch_file, "intern/cycles", "src")
         else:
-            cleanup_patch(patch_file, b"src", b"intern/cycles")
+            cleanup_patch(patch_file, "src", "intern/cycles")
         patch_index += 1
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: %s /path/to/cycles/ /path/to/blender/" % sys.argv[0])
+    if len(sys.argv) != 2:
+        print("Usage: %s /path/to/blender/" % sys.argv[0])
         return
 
-    cycles_repository = sys.argv[1].encode()
-    blender_repository = sys.argv[2].encode()
+    cycles_repository = pathlib.Path(os.path.abspath(__file__)).parent.parent
+    blender_repository = pathlib.Path(sys.argv[1])
 
-    cycles_map = commit_map_get(cycles_repository, b'', CYCLES_START_COMMIT)
-    blender_map = commit_map_get(blender_repository, b"intern/cycles", BLENDER_START_COMMIT)
+    cycles_map = commit_map_get(cycles_repository, '', CYCLES_START_COMMIT)
+    blender_map = commit_map_get(blender_repository, "intern/cycles", BLENDER_START_COMMIT)
     diff = commits_get_difference(cycles_map, blender_map)
 
     transfer_commits(diff[0], cycles_repository, blender_repository, False)
@@ -188,7 +189,7 @@ def main():
     print("Missing commits were saved to the blender and cycles repositories.")
     print("Check them and if they're all fine run:")
     print("")
-    print("  ~/tools/sync_git_am.py *.patch")
+    print("  ./tools/sync_git_am.py *.patch")
 
 
 if __name__ == '__main__':
