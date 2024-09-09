@@ -2,8 +2,8 @@
 
 To get in touch, use the following channels:
 
-* [Cycles forum](https://devtalk.blender.org/c/cycles) on devtalk.blender.org
-* [#render-cycles-module](https://blender.chat/channel/render-cycles-module) on blender.chat
+* [Contributing forum](https://devtalk.blender.org/c/contributing-to-blender/29) on devtalk.blender.org
+* [#module-render-cycles](https://chat.blender.org/#/room/#module-render-cycles:blender.org) on chat.blender.org
 
 Bug reports and patches are to be filed against the from [Cycles](https://projects.blender.org/blender/blender/wiki/Module:-Render-&-Cycles) project
 
@@ -17,47 +17,64 @@ Source code is available either as standalone repository or bundled with the Ble
 ### Documentation
 
 * [User Manual](https://docs.blender.org/manual/en/dev/render/cycles/introduction.html)
-* [Developer Docs](https://wiki.blender.org/wiki/Source/Render/Cycles)
+* [Developer Docs](https://developer.blender.org/docs/features/cycles/)
 
 ### Contributors
 
-Originally started under the Blender Foundation, the Cycles team has grown to include individual developers and developers from animation studios and other companies. As of September 2022:
+Originally started under the Blender Foundation, the Cycles team has grown to include individual developers and developers from animation studios and other companies. As of September 2024:
 
 * Aaron Carlisle
 * Adrian Newton
+* Alaska Young
+* Aldo Bleeker
 * Alex Fuller
 * Alex Strand
+* Alexander Brock
 * Alexander Gavrilov
 * Alexander Romanov
+* Amine Bensalem
 * Andrew Wiggin
 * Andrii Symkin
 * Ankit Meel
+* Anthony Roberts
 * Antonio Vazquez
 * Antony Riakiotakis
+* Aras Pranckevicius
+* Attila Áfra
 * Bartosz Moniewski
+* bartus
 * Bastien Montagne
+* Ben-7
 * Bob Mercier
+* Brad Smith
 * Brecht Van Lommel
 * Brian Savery
 * Campbell Barton
 * Carlo Andreacchio
 * Charles Flèche
 * Charlie Jolly
+* Chris Blackbourn
 * Chris Eveleigh
 * Christian Baars
 * Christian Rauch
 * Christophe Hery
 * Clément Foucault
 * Dalai Felinto
+* Damian Trebilco
 * Daniel Genrich
+* Daniel Salazar
 * Daniel Santana
+* David Murmann
 * Edward O'Callaghan
+* Erik Abrahamsson
 * Ethan-Hall
+* Fabian-Herb
 * Gaia Clary
 * Garry R. Osgood
 * George Kyriazis
 * Germano Cavalcante
 * Giovanni Remigi
+* Gon Solo
 * Greg Zaal
 * Guillaume Chereau
 * Guillermo S. Romero
@@ -66,6 +83,8 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Hallam Roberts
 * Hans Goudey
 * Harley Acheson
+* Hoshinova
+* howetuft
 * Hristo Gueorguiev
 * Imre Palik
 * Jacques Lucke
@@ -74,6 +93,7 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Jason Wilkins
 * Jeff Knox
 * Jeff Witthuhn
+* Jeffrey Liu
 * Jens Verwiebe
 * Jeroen Bakker
 * Jesse Yurkovich
@@ -86,16 +106,22 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Julian Eisel
 * Jürgen Herrmann
 * Karsten Schwenk
+* Kaspian Jakobsson
 * Kévin Dietrich
 * Kim Christensen
 * Konrad Kleine
 * L. E. Segovia
+* Leon Marz
 * Leon Zandman
+* Leszek Godlewski
 * Luca Rood
+* Lucas Tadeu
 * Luis Pereira
 * Lukas Stockner
 * Lukas Tönne
+* Luya Tshimbalanga
 * Mai Lavelle
+* Marco
 * Marcus von Appen
 * Martijn Berger
 * Martijn Versteegh
@@ -108,15 +134,17 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Miguel Pozo
 * Miika Hamalainen
 * Mike Erwin
-* Mike Farnsworth
 * Mikhail Matrosov
 * Milan Jaros
+* Morteza Mostajab
 * Nathan Letwory
 * Nathan Vegdahl
 * Nicholas Bishop
+* Nicolas Sourd
 * Nikhil Shringarpurey
 * Nikita Sirgienko
 * Olivier Maury
+* Omar Emara
 * OmarSquircleArt
 * Pablo Vazquez
 * Pascal Schoen
@@ -124,19 +152,26 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Patrick Mours
 * Peter Staples
 * Philipp Oeser
+* Phoenix Katsch
+* Pierre Pontier
+* Pierrick Bouvier
 * Piotr Barejko
+* Raul Fernandez
 * Ray Molenkamp
-* Ray molenkamp
 * Robert Guetzkow
+* Sahar A. Kashi
 * Sayak Biswas
 * Scott Wu
 * Sebastián Barschkis
 * Sebastian Herholz
+* Sebastian Herhoz
 * Sebastian Parborg
 * Sergej Reich
 * Sergey Sharybin
 * Shane Ambler
+* softyoda
 * Stefan Werner
+* Stephen Luce
 * Stuart Broadfoot
 * Sv. Lockal
 * Sybren A. Stüvel
@@ -146,11 +181,15 @@ Originally started under the Blender Foundation, the Cycles team has grown to in
 * Thomas Beck
 * Thomas Dinges
 * Thomas Laroche
+* Thomas Lindemeier
 * Tianhao Chai
 * Tim Stullich
 * Ton Roosendaal
 * Valdemar Lindberg
+* Valentin
+* Weizhen Huang
 * William Leeson
 * William Reynish
 * Xavier Hallade
 * Yevgeny Makarov
+* Yiming Wu

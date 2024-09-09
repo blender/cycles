@@ -50,7 +50,7 @@
 * Node based shaders and lights
 * Principled BSDF
 * Production tricks
-* Open Shading Language (CPU only)
+* Open Shading Language
 
 ### Volumes
 
@@ -69,6 +69,7 @@
 * Light portals
 * Manifold next event estimation
 * Path guiding
+* Light tree for many lights
 
 ### Textures
 
