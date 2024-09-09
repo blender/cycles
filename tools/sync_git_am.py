@@ -8,8 +8,12 @@ import pathlib
 import subprocess
 import sys
 
+
 def run(cmd):
-    return subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+    return subprocess.run(
+        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True
+    )
+
 
 for path in sys.argv[1:]:
     print("")
