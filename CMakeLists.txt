@@ -20,22 +20,34 @@ endif()
 cmake_minimum_required(VERSION 3.10)
 
 # So library linking is more sane.
-cmake_policy(SET CMP0003 NEW)
+if(POLICY CMP0003)
+  cmake_policy(SET CMP0003 NEW)
+endif()
 
 # So syntax problems are errors.
-cmake_policy(SET CMP0010 NEW)
+if(POLICY CMP0010)
+  cmake_policy(SET CMP0010 NEW)
+endif()
 
 # So BUILDINFO and BLENDERPATH strings are automatically quoted.
-cmake_policy(SET CMP0005 NEW)
+if(POLICY CMP0005)
+  cmake_policy(SET CMP0005 NEW)
+endif()
 
 # Input directories must have CMakeLists.txt
-cmake_policy(SET CMP0014 NEW)
+if(POLICY CMP0014)
+  cmake_policy(SET CMP0014 NEW)
+endif()
 
 # Compile definitions.
-cmake_policy(SET CMP0043 NEW)
+if(POLICY CMP0043)
+  cmake_policy(SET CMP0043 NEW)
+endif()
 
 # Use ROOT variables in find_package.
-cmake_policy(SET CMP0074 NEW)
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 if(POLICY CMP0144)
   cmake_policy(SET CMP0144 NEW)
 endif() 
