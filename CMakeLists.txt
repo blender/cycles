@@ -36,7 +36,9 @@ cmake_policy(SET CMP0043 NEW)
 
 # Use ROOT variables in find_package.
 cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0144 NEW)
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif() 
 
 # Avoid having empty buildtype.
 set(CMAKE_BUILD_TYPE_INIT "Release")
