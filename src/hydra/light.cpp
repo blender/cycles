@@ -202,7 +202,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
     BackgroundNode *bgNode = graph->create_node<BackgroundNode>();
     // Bake strength into shader graph, since only the shader is used for background lights
     bgNode->set_color(_light->get_strength());
-    graph->add(bgNode);
 
     graph->connect(bgNode->output("Background"), graph->output()->input("Surface"));
 
@@ -217,7 +216,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
       if (strVal == "Constant" || strVal == "Linear" || strVal == "Quadratic") {
         LightFalloffNode *lfoNode = graph->create_node<LightFalloffNode>();
         lfoNode->set_strength(1.f);
-        graph->add(lfoNode);
         graph->connect(lfoNode->output(strVal.c_str()), graph->output()->input("Surface"));
         outputNode = lfoNode;
       }
@@ -228,7 +226,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
     EmissionNode *emissionNode = graph->create_node<EmissionNode>();
     emissionNode->set_color(one_float3());
     emissionNode->set_strength(1.0f);
-    graph->add(emissionNode);
 
     graph->connect(emissionNode->output("Emission"), graph->output()->input("Surface"));
 
@@ -249,13 +246,11 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
       if (value.IsHolding<float>()) {
         BlackbodyNode *blackbodyNode = graph->create_node<BlackbodyNode>();
         blackbodyNode->set_temperature(value.UncheckedGet<float>());
-        graph->add(blackbodyNode);
 
         if (_lightType == HdPrimTypeTokens->domeLight) {
           VectorMathNode *mathNode = graph->create_node<VectorMathNode>();
           mathNode->set_math_type(NODE_VECTOR_MATH_MULTIPLY);
           mathNode->set_vector2(_light->get_strength());
-          graph->add(mathNode);
 
           graph->connect(blackbodyNode->output("Color"), mathNode->input("Vector1"));
           graph->connect(mathNode->output("Vector"), outputNode->input("Color"));
@@ -278,7 +273,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
       TextureCoordinateNode *coordNode = graph->create_node<TextureCoordinateNode>();
       coordNode->set_ob_tfm(_light->get_tfm());
       coordNode->set_use_transform(true);
-      graph->add(coordNode);
 
       IESLightNode *iesNode = graph->create_node<IESLightNode>();
       iesNode->set_filename(ustring(filename));
@@ -304,11 +298,9 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
         TextureCoordinateNode *coordNode = graph->create_node<TextureCoordinateNode>();
         coordNode->set_ob_tfm(tfm);
         coordNode->set_use_transform(true);
-        graph->add(coordNode);
 
         textureNode = graph->create_node<EnvironmentTextureNode>();
         static_cast<EnvironmentTextureNode *>(textureNode)->set_filename(ustring(filename));
-        graph->add(textureNode);
 
         graph->connect(coordNode->output("Object"), textureNode->input("Vector"));
 
@@ -316,11 +308,9 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
       }
       else {
         GeometryNode *coordNode = graph->create_node<GeometryNode>();
-        graph->add(coordNode);
 
         textureNode = graph->create_node<ImageTextureNode>();
         static_cast<ImageTextureNode *>(textureNode)->set_filename(ustring(filename));
-        graph->add(textureNode);
 
         graph->connect(coordNode->output("Parametric"), textureNode->input("Vector"));
       }
@@ -328,7 +318,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
       if (hasColorTemperature) {
         VectorMathNode *mathNode = graph->create_node<VectorMathNode>();
         mathNode->set_math_type(NODE_VECTOR_MATH_MULTIPLY);
-        graph->add(mathNode);
 
         graph->connect(textureNode->output("Color"), mathNode->input("Vector1"));
         ShaderInput *const outputNodeInput = outputNode->input("Color");
@@ -340,7 +329,6 @@ void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
         VectorMathNode *mathNode = graph->create_node<VectorMathNode>();
         mathNode->set_math_type(NODE_VECTOR_MATH_MULTIPLY);
         mathNode->set_vector2(_light->get_strength());
-        graph->add(mathNode);
 
         graph->connect(textureNode->output("Color"), mathNode->input("Vector1"));
         graph->connect(mathNode->output("Vector"), outputNode->input("Color"));
