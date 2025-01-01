@@ -16,8 +16,8 @@
 CCL_NAMESPACE_BEGIN
 
 /* Internal use only. */
-void util_guarded_mem_alloc(size_t n);
-void util_guarded_mem_free(size_t n);
+void util_guarded_mem_alloc(const size_t n);
+void util_guarded_mem_free(const size_t n);
 
 /* Guarded allocator for the use with STL. */
 template<typename T> class GuardedAllocator {
@@ -33,7 +33,7 @@ template<typename T> class GuardedAllocator {
   GuardedAllocator() = default;
   GuardedAllocator(const GuardedAllocator & /*unused*/) = default;
 
-  T *allocate(size_t n, const void *hint = nullptr)
+  T *allocate(const size_t n, const void *hint = nullptr)
   {
     (void)hint;
     size_t size = n * sizeof(T);
@@ -58,7 +58,7 @@ template<typename T> class GuardedAllocator {
     return mem;
   }
 
-  void deallocate(T *p, size_t n)
+  void deallocate(T *p, const size_t n)
   {
     util_guarded_mem_free(n * sizeof(T));
     if (p != nullptr) {
