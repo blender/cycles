@@ -5,7 +5,7 @@ Building Cycles
 
 Ensure the following software is installed and available in the PATH:
 - Git
-- Subversion
+- Git LFS
 - Python 3
 - CMake
 
