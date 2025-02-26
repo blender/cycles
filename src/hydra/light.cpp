@@ -19,6 +19,11 @@ HDCYCLES_NAMESPACE_OPEN_SCOPE
 
 extern Transform convert_transform(const GfMatrix4d &matrix);
 
+namespace HdCyclesLightTokens {
+static const pxr::TfToken treatAsPoint("treatAsPoint", pxr::TfToken::Immortal);
+static const pxr::TfToken falloff("falloff", pxr::TfToken::Immortal);
+}  // namespace HdCyclesLightTokens
+
 // clang-format off
 TF_DEFINE_PRIVATE_TOKENS(_tokens,
     (visibleInPrimaryRay)
