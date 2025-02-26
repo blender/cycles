@@ -66,11 +66,7 @@ Cycles uses the CMake build system. As an alternative to the `make` wrapper, CMa
 
 See the CMake configuration to enable and disable various features.
 
-The precompiled libraries are shared with Blender, and will be automatically downloaded from the Blender repository with `make update`. They can also be manually downloaded from:
-
-https://svn.blender.org/svnroot/bf-blender/trunk/lib/
-
-The precompiled libraries are expected to be in a `lib/<platform>` folder next to the `cycles/` source folder.
+The precompiled libraries are shared with Blender, and will be automatically downloaded from the Blender repository with `make update`. This will populate a submodule in the `lib/` folder, matching the platform.
 
 ## Dependencies
 
