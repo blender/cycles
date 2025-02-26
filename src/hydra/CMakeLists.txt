@@ -52,6 +52,7 @@ set(SRC_HD_CYCLES
   camera.cpp
   field.cpp
   file_reader.cpp
+  geometry.cpp
   instancer.cpp
   light.cpp
   material.cpp

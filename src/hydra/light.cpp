@@ -35,7 +35,7 @@ HdCyclesLight::HdCyclesLight(const SdfPath &sprimId, const TfToken &lightType)
 {
 }
 
-HdCyclesLight::~HdCyclesLight() {}
+HdCyclesLight::~HdCyclesLight() = default;
 
 HdDirtyBits HdCyclesLight::GetInitialDirtyBitsMask() const
 {
@@ -195,7 +195,7 @@ void HdCyclesLight::Sync(HdSceneDelegate *sceneDelegate,
 
 void HdCyclesLight::PopulateShaderGraph(HdSceneDelegate *sceneDelegate)
 {
-  auto graph = new ShaderGraph();
+  auto *graph = new ShaderGraph();
   ShaderNode *outputNode = nullptr;
 
   if (_lightType == HdPrimTypeTokens->domeLight) {
