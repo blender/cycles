@@ -34,10 +34,20 @@ find_path(HIPRT_INCLUDE_DIR
     include
 )
 
+set(HIPRT_VERSION)
+
+if(HIPRT_INCLUDE_DIR)
+  file(STRINGS "${HIPRT_INCLUDE_DIR}/hiprt/hiprt.h" _hiprt_version
+    REGEX "^#define HIPRT_VERSION_STR[ \t]\".*\"$")
+  string(REGEX MATCHALL "[0-9]+[.0-9]+" HIPRT_VERSION ${_hiprt_version})
+endif()
+
 unset(_hiprt_version)
+
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(HIPRT DEFAULT_MSG
-  HIPRT_INCLUDE_DIR)
+find_package_handle_standard_args(HIPRT
+  REQUIRED_VARS HIPRT_INCLUDE_DIR
+  FAIL_MESSAGE "HIP-RT or one of its dependencies not found")
 
 mark_as_advanced(
   HIPRT_INCLUDE_DIR
