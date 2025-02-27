@@ -41,6 +41,10 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} -std=c++17 -stdlib=libc++")
     add_definitions("-DMACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
   endif()
+
+  # Silence warnings with new linker.
+  list(APPEND CMAKE_EXE_LINKER_FLAGS "-Xlinker -no_warn_duplicate_libraries")
+  list(APPEND CMAKE_SHARED_LINKER_FLAGS "-Xlinker -no_warn_duplicate_libraries")
 elseif(MSVC)
   set(CMAKE_CXX_FLAGS "/nologo /J /Gd /EHsc /bigobj /MP /std:c++17" CACHE STRING "MSVC MD C++ flags " FORCE)
   set(CMAKE_C_FLAGS "/nologo /J /Gd /MP /bigobj" CACHE STRING "MSVC MD C++ flags " FORCE)

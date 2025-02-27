@@ -169,6 +169,9 @@ macro(add_bundled_libraries library_dir)
   endif()
 endmacro()
 
+# Don't use frameworks.
+set(CMAKE_FIND_FRAMEWORK NEVER)
+
 ###########################################################################
 # USD
 ###########################################################################
@@ -421,88 +424,90 @@ endif()
 # Boost
 ###########################################################################
 
-if(EXISTS ${_cycles_lib_dir})
-  if(MSVC)
-    set(Boost_USE_STATIC_RUNTIME OFF)
-    set(Boost_USE_MULTITHREADED ON)
-  else()
-    set(BOOST_LIBRARYDIR ${_cycles_lib_dir}/boost/lib)
-    set(Boost_NO_BOOST_CMAKE ON)
-    set(Boost_NO_SYSTEM_PATHS ON)
-  endif()
-endif()
-
-if(MSVC AND EXISTS ${_cycles_lib_dir})
-  set(BOOST_INCLUDE_DIR ${Boost_ROOT}/include)
-  set(BOOST_VERSION_HEADER ${BOOST_INCLUDE_DIR}/boost/version.hpp)
-  if(EXISTS ${BOOST_VERSION_HEADER})
-    file(STRINGS "${BOOST_VERSION_HEADER}" BOOST_LIB_VERSION REGEX "#define BOOST_LIB_VERSION ")
-    if(BOOST_LIB_VERSION MATCHES "#define BOOST_LIB_VERSION \"([0-9_]+)\"")
-      set(BOOST_VERSION "${CMAKE_MATCH_1}")
+if(_cycles_use_legacy_libs)
+  if(EXISTS ${_cycles_lib_dir})
+    if(MSVC)
+      set(Boost_USE_STATIC_RUNTIME OFF)
+      set(Boost_USE_MULTITHREADED ON)
+    else()
+      set(BOOST_LIBRARYDIR ${_cycles_lib_dir}/boost/lib)
+      set(Boost_NO_BOOST_CMAKE ON)
+      set(Boost_NO_SYSTEM_PATHS ON)
     endif()
   endif()
-  if(NOT BOOST_VERSION)
-    message(FATAL_ERROR "Unable to determine Boost version")
-  endif()
-  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
-    set(BOOST_POSTFIX "vc143-mt-a64-${BOOST_VERSION}")
-    set(BOOST_DEBUG_POSTFIX "vc143-mt-gyd-a64-${BOOST_VERSION}")
+
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(BOOST_INCLUDE_DIR ${Boost_ROOT}/include)
+    set(BOOST_VERSION_HEADER ${BOOST_INCLUDE_DIR}/boost/version.hpp)
+    if(EXISTS ${BOOST_VERSION_HEADER})
+      file(STRINGS "${BOOST_VERSION_HEADER}" BOOST_LIB_VERSION REGEX "#define BOOST_LIB_VERSION ")
+      if(BOOST_LIB_VERSION MATCHES "#define BOOST_LIB_VERSION \"([0-9_]+)\"")
+        set(BOOST_VERSION "${CMAKE_MATCH_1}")
+      endif()
+    endif()
+    if(NOT BOOST_VERSION)
+      message(FATAL_ERROR "Unable to determine Boost version")
+    endif()
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+      set(BOOST_POSTFIX "vc143-mt-a64-${BOOST_VERSION}")
+      set(BOOST_DEBUG_POSTFIX "vc143-mt-gyd-a64-${BOOST_VERSION}")
+    else()
+      set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
+      set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
+    endif()
+    set(BOOST_LIBRARIES
+      optimized ${Boost_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_filesystem-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_regex-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_system-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_thread-${BOOST_POSTFIX}
+      optimized ${Boost_ROOT}/lib/boost_chrono-${BOOST_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_date_time-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_iostreams-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_filesystem-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_regex-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_system-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_thread-${BOOST_DEBUG_POSTFIX}
+      debug ${Boost_ROOT}/lib/boost_chrono-${BOOST_DEBUG_POSTFIX}
+    )
+    if(WITH_CYCLES_OSL)
+      set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
+        optimized ${Boost_ROOT}/lib/boost_wave-${BOOST_POSTFIX}
+        debug ${Boost_ROOT}/lib/boost_wave-${BOOST_DEBUG_POSTFIX})
+    endif()
+    if(WITH_USD)
+      set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
+        optimized ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_POSTFIX}
+        debug ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_DEBUG_POSTFIX})
+    endif()
   else()
-    set(BOOST_POSTFIX "vc142-mt-x64-${BOOST_VERSION}.lib")
-    set(BOOST_DEBUG_POSTFIX "vc142-mt-gyd-x64-${BOOST_VERSION}.lib")
-  endif()
-  set(BOOST_LIBRARIES
-    optimized ${Boost_ROOT}/lib/boost_date_time-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_iostreams-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_filesystem-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_regex-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_system-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_thread-${BOOST_POSTFIX}
-    optimized ${Boost_ROOT}/lib/boost_chrono-${BOOST_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_date_time-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_iostreams-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_filesystem-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_regex-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_system-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_thread-${BOOST_DEBUG_POSTFIX}
-    debug ${Boost_ROOT}/lib/boost_chrono-${BOOST_DEBUG_POSTFIX}
-  )
-  if(WITH_CYCLES_OSL)
-    set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
-      optimized ${Boost_ROOT}/lib/boost_wave-${BOOST_POSTFIX}
-      debug ${Boost_ROOT}/lib/boost_wave-${BOOST_DEBUG_POSTFIX})
-  endif()
-  if(WITH_USD)
-    set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
-      optimized ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_POSTFIX}
-      debug ${Boost_ROOT}/lib/boost_python${PYTHON_VERSION_NO_DOTS}-${BOOST_DEBUG_POSTFIX})
-  endif()
-else()
-  set(__boost_packages iostreams filesystem regex system thread date_time)
-  if(WITH_CYCLES_OSL)
-    list(APPEND __boost_packages wave)
-  endif()
-  if(WITH_USD)
-    list(APPEND __boost_packages python${PYTHON_VERSION_NO_DOTS})
-  endif()
-  find_package(Boost 1.48 COMPONENTS ${__boost_packages} REQUIRED)
-  if(NOT Boost_FOUND)
-    # Try to find non-multithreaded if -mt not found, this flag
-    # doesn't matter for us, it has nothing to do with thread
-    # safety, but keep it to not disturb build setups.
-    set(Boost_USE_MULTITHREADED OFF)
-    find_package(Boost 1.48 COMPONENTS ${__boost_packages})
-  endif()
-  unset(__boost_packages)
+    set(__boost_packages iostreams filesystem regex system thread date_time)
+    if(WITH_CYCLES_OSL)
+      list(APPEND __boost_packages wave)
+    endif()
+    if(WITH_USD)
+      list(APPEND __boost_packages python${PYTHON_VERSION_NO_DOTS})
+    endif()
+    find_package(Boost 1.48 COMPONENTS ${__boost_packages} REQUIRED)
+    if(NOT Boost_FOUND)
+      # Try to find non-multithreaded if -mt not found, this flag
+      # doesn't matter for us, it has nothing to do with thread
+      # safety, but keep it to not disturb build setups.
+      set(Boost_USE_MULTITHREADED OFF)
+      find_package(Boost 1.48 COMPONENTS ${__boost_packages})
+    endif()
+    unset(__boost_packages)
 
-  set(BOOST_INCLUDE_DIR ${Boost_INCLUDE_DIRS})
-  set(BOOST_LIBRARIES ${Boost_LIBRARIES})
-  set(BOOST_LIBPATH ${Boost_LIBRARY_DIRS})
+    set(BOOST_INCLUDE_DIR ${Boost_INCLUDE_DIRS})
+    set(BOOST_LIBRARIES ${Boost_LIBRARIES})
+    set(BOOST_LIBPATH ${Boost_LIBRARY_DIRS})
+  endif()
+
+  set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB ${BOOST_DEFINITIONS}")
+
+  add_bundled_libraries(boost/lib)
 endif()
-
-set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB ${BOOST_DEFINITIONS}")
-
-add_bundled_libraries(boost/lib)
 
 ###########################################################################
 # Embree
@@ -632,10 +637,17 @@ endif()
 if(NOT USD_OVERRIDE_TBB)
   if(MSVC AND EXISTS ${_cycles_lib_dir})
     set(TBB_INCLUDE_DIRS ${TBB_ROOT_DIR}/include)
-    set(TBB_LIBRARIES
-      optimized ${TBB_ROOT_DIR}/lib/tbb.lib
-      debug ${TBB_ROOT_DIR}/lib/tbb_debug.lib
-    )
+    if(_cycles_use_legacy_libs)
+      set(TBB_LIBRARIES
+        optimized ${TBB_ROOT_DIR}/lib/tbb.lib
+        debug ${TBB_ROOT_DIR}/lib/tbb_debug.lib
+      )
+    else()
+      set(TBB_LIBRARIES
+        optimized ${TBB_ROOT_DIR}/lib/tbb12.lib
+        debug ${TBB_ROOT_DIR}/lib/tbb12_debug.lib
+      )
+    endif()
   else()
     find_package(TBB REQUIRED)
   endif()
@@ -867,20 +879,42 @@ if(WITH_CYCLES_DEVICE_ONEAPI OR EMBREE_SYCL_SUPPORT)
 
   if(DEFINED SYCL_ROOT_DIR)
     if(WIN32)
-      list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
-        ${SYCL_ROOT_DIR}/bin/sycl7.dll
-        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
-        ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loader.dll)
-      list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
-        ${SYCL_ROOT_DIR}/bin/sycl7d.dll
-        ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
-        ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loaderd.dll)
+      if(_cycles_use_legacy_libs)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
+          ${SYCL_ROOT_DIR}/bin/sycl7.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loader.dll)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
+          ${SYCL_ROOT_DIR}/bin/sycl7d.dll
+          ${SYCL_ROOT_DIR}/bin/pi_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/pi_win_proxy_loaderd.dll)
+      else()
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE
+          ${SYCL_ROOT_DIR}/bin/sycl8.dll
+          ${SYCL_ROOT_DIR}/bin/ur_adapter_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/ur_loader.dll
+          ${SYCL_ROOT_DIR}/bin/ur_win_proxy_loader.dll)
+        list(APPEND PLATFORM_BUNDLED_LIBRARIES_DEBUG
+          ${SYCL_ROOT_DIR}/bin/sycl8d.dll
+          ${SYCL_ROOT_DIR}/bin/ur_adapter_level_zero.dll
+          ${SYCL_ROOT_DIR}/bin/ur_loader.dll
+          ${SYCL_ROOT_DIR}/bin/ur_win_proxy_loaderd.dll)
+      endif()
     else()
-      file(GLOB _sycl_runtime_libraries
-        ${SYCL_ROOT_DIR}/lib/libsycl.so
-        ${SYCL_ROOT_DIR}/lib/libsycl.so.*
-        ${SYCL_ROOT_DIR}/lib/libpi_*.so
-      )
+      if(_cycles_use_legacy_libs)
+        file(GLOB _sycl_runtime_libraries
+          ${SYCL_ROOT_DIR}/lib/libsycl.so
+          ${SYCL_ROOT_DIR}/lib/libsycl.so.*
+          ${SYCL_ROOT_DIR}/lib/libpi_*.so
+        )
+      else()
+        file(GLOB _sycl_runtime_libraries
+          ${SYCL_ROOT_DIR}/lib/libsycl.so
+          ${SYCL_ROOT_DIR}/lib/libsycl.so.*
+          ${SYCL_ROOT_DIR}/lib/libur_*.so
+          ${SYCL_ROOT_DIR}/lib/libur_*.so.*
+        )
+      endif()
       list(FILTER _sycl_runtime_libraries EXCLUDE REGEX ".*\.py")
       list(REMOVE_ITEM _sycl_runtime_libraries "${SYCL_ROOT_DIR}/lib/libpi_opencl.so")
       list(APPEND PLATFORM_BUNDLED_LIBRARIES_RELEASE ${_sycl_runtime_libraries})
@@ -945,3 +979,7 @@ elseif(UNIX)
   set(PLATFORM_ENV_BUILD "LD_LIBRARY_PATH=\"${_library_paths}:${LD_LIBRARY_PATH}\"")
   unset(_library_paths)
 endif()
+
+
+# Restore default
+set(CMAKE_FIND_FRAMEWORK FIRST)
