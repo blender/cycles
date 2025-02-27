@@ -38,33 +38,43 @@ endif()
 
 if(APPLE)
   if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_x64")
+    set(_cycles_lib_platform "macos_x64")
   else()
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/macos_arm64")
+    set(_cycles_lib_platform "macos_arm64")
   endif()
 
   # Always use system zlib
   find_package(ZLIB REQUIRED)
 elseif(WIN32)
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_arm64")
+    set(_cycles_lib_platform "windows_arm64")
   else()
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/windows_x64")
+    set(_cycles_lib_platform "windows_x64")
   endif()
 else()
   # Path to a locally compiled libraries.
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_x64")
+    set(_cycles_lib_platform "linux_x64")
   elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_arm64")
+    set(_cycles_lib_platform "linux_arm64")
   else()
-    set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/linux_${CMAKE_SYSTEM_PROCESSOR}")
+    set(_cycles_lib_platform "linux_${CMAKE_SYSTEM_PROCESSOR}")
   endif()
 
   if(CMAKE_COMPILER_IS_GNUCC AND
-     CMAKE_C_COMPILER_VERSION VERSION_LESS 9.3)
-    message(FATAL_ERROR "GCC version must be at least 9.3 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
+     CMAKE_C_COMPILER_VERSION VERSION_LESS 11.2)
+    message(FATAL_ERROR "GCC version must be at least 11.2 for precompiled libraries, found ${CMAKE_C_COMPILER_VERSION}")
   endif()
+endif()
+
+set(_cycles_lib_dir "${CMAKE_SOURCE_DIR}/lib/${_cycles_lib_platform}")
+
+# Use legacy libraries for compatibility with Houdini or USD without oneTBB.
+set(_cycles_lib_dir_legacy "${CMAKE_SOURCE_DIR}/lib/legacy/${_cycles_lib_platform}")
+if((HOUDINI_ROOT AND HOUDINI_VERSION_MAJOR VERSION_LESS 21) OR WITH_LEGACY_LIBRARIES)
+  set(_cycles_use_legacy_libs ON)
+else()
+  set(_cycles_use_legacy_libs OFF)
 endif()
 
 if(EXISTS ${_cycles_lib_dir} AND WITH_LIBS_PRECOMPILED)

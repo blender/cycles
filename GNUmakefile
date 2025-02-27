@@ -47,5 +47,8 @@ test:
 update:
 	$(PYTHON) src/cmake/make_update.py
 
+update_legacy:
+	$(PYTHON) src/cmake/make_update.py --legacy
+
 format:
 	$(PYTHON) src/cmake/make_format.py

@@ -23,3 +23,28 @@
 	path = lib/windows_arm64
 	url = https://projects.blender.org/blender/lib-windows_arm64.git
 	branch = main
+[submodule "lib/legacy/linux_x64"]
+	update = none
+	path = lib/legacy/linux_x64
+	url = https://projects.blender.org/blender/lib-linux_x64.git
+	branch = blender-v4.3-release
+[submodule "lib/legacy/macos_arm64"]
+	update = none
+	path = lib/legacy/macos_arm64
+	url = https://projects.blender.org/blender/lib-macos_arm64.git
+	branch = blender-v4.3-release
+[submodule "lib/legacy/macos_x64"]
+	update = none
+	path = lib/legacy/macos_x64
+	url = https://projects.blender.org/blender/lib-macos_x64.git
+	branch = blender-v4.3-release
+[submodule "lib/legacy/windows_x64"]
+	update = none
+	path = lib/legacy/windows_x64
+	url = https://projects.blender.org/blender/lib-windows_x64.git
+	branch = blender-v4.3-release
+[submodule "lib/legacy/windows_arm64"]
+  update = none
+	path = lib/legacy/windows_arm64
+	url = https://projects.blender.org/blender/lib-windows_arm64.git
+	branch = blender-v4.3-release

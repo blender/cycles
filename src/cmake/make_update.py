@@ -27,6 +27,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-libraries", action="store_true")
     parser.add_argument("--no-cycles", action="store_true")
+    parser.add_argument("--legacy", action="store_true")
     parser.add_argument("--git-command", default="git")
     parser.add_argument("--architecture", type=str,
                         choices=("x86_64", "amd64", "arm64",))
@@ -83,7 +84,10 @@ def libraries_update(args: argparse.Namespace) -> None:
     print(f"Detected architecture : {arch}")
     print()
 
-    submodule_dir = Path(f"lib/{platform}_{arch}")
+    if args.legacy:
+        submodule_dir = Path(f"lib/legacy/{platform}_{arch}")
+    else:
+        submodule_dir = Path(f"lib/{platform}_{arch}")
 
     make_utils.git_enable_submodule(args.git_command, submodule_dir)
     make_utils.git_update_submodule(args.git_command, submodule_dir)

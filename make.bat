@@ -22,6 +22,8 @@ if "%COMMAND%" == "release" (
 	cd %BUILD_DIR% && ctest -C Release --output-on-failure
 ) else if "%COMMAND%" == "update" (
 	%PYTHON% src/cmake/make_update.py
+) else if "%COMMAND%" == "update_legacy" (
+	%PYTHON% src/cmake/make_update.py --legacy
 ) else if "%COMMAND%" == "format" (
 	%PYTHON% src/cmake/make_format.py
 ) else (

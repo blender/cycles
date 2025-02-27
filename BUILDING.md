@@ -1,7 +1,7 @@
 Building Cycles
 ===============
 
-## Quick Setup
+## Prerequisites
 
 Ensure the following software is installed and available in the PATH:
 - Git
@@ -9,15 +9,17 @@ Ensure the following software is installed and available in the PATH:
 - Python 3
 - CMake
 
-Quick build setup on Windows, macOS and Linux is as follows:
+### Standalone Build
+
+Get the source code:
 
     git clone https://projects.blender.org/blender/cycles.git
-
     cd cycles
+
+Download precompiled libraries and build:
+
     make update
     make
-
-This will download the Cycles source code, download precompiled libraries, configure CMake, and build.
 
 The resulting binary will be at:
 
@@ -25,7 +27,7 @@ The resulting binary will be at:
 
 ## Hydra Render Delegate with USD Repository
 
-This will make the render delegate work with usdview and other applications built using the USD repository. USD version 21.11 or newer is required.
+This will make the render delegate work with usdview and other applications built using the USD repository. USD version 24.03 or newer is required.
 
 USD includes a script to build itself and all required dependencies and then install the result a specified directory.
 
@@ -33,8 +35,21 @@ USD includes a script to build itself and all required dependencies and then ins
     cd USD
     python3 build_scripts/build_usd.py "<path to USD install>"
 
-Build Cycles pointing to this directory.
+Get the Cycles source code:
 
+    git clone https://projects.blender.org/blender/cycles.git
+    cd cycles
+
+By default older precompiled libraries need to be used, for compatibility with older VFX platforms and TBB.
+Download the libraries and build pointing to the USD directory like this.
+
+    make update_legacy
+    cmake -B ./build -DPXR_ROOT="<path to USD install>" -DWITH_LEGACY_LIBRARIES=ON
+    make
+
+When using a newer VFX platform and USD was built with `--onetbb`, do this instead:
+
+    make update
     cmake -B ./build -DPXR_ROOT="<path to USD install>"
     make
 
@@ -45,8 +60,17 @@ Test in usdview.
 ## Hydra Render Delegate for Houdini
 
 For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 20 or newer is required.
+Currently older libraries must be used for compatibility. Future Houdini versions will not need the legacy options.
 
-    cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>"
+Get the source code:
+
+    git clone https://projects.blender.org/blender/cycles.git
+    cd cycles
+
+Download precompiled libraries and build.
+
+    make update_legacy
+    cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>" -DWITH_LEGACY_LIBRARIES=ON
     make
 
 The path to Houdini depends on the operating system, typically:

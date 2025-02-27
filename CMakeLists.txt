@@ -122,9 +122,7 @@ option(WITH_CYCLES_NANOVDB          "Build with NanoVDB support" ON)
 option(WITH_CYCLES_OSL              "Build with OSL support" ON)
 option(WITH_CYCLES_USD              "Build with USD support" ON)
 
-if(UNIX AND NOT APPLE)
-  option(WITH_CXX11_ABI              "Build with glibc C++11 ABI. Turn off for compatibility with VFX platform 2022 and earlier." ON)
-endif()
+option(WITH_LEGACY_LIBRARIES        "Build with older VFX platform 2024 libraries, for compatibility with Houdini or USD" OFF)
 
 # Development Features
 option(WITH_CYCLES_DEBUG             "Build Cycles with options useful for debugging (e.g., MIS)" OFF)
