@@ -102,6 +102,8 @@ if(WITH_CYCLES_STANDALONE)
   target_link_libraries(cycles PRIVATE ${LIB})
 
   if(APPLE)
+    set_target_properties(cycles PROPERTIES BUILD_WITH_INSTALL_RPATH true)
+
     if(WITH_CYCLES_STANDALONE_GUI)
       # Frameworks used by SDL.
       string(CONCAT _cycles_sdl_frameworks
@@ -123,7 +125,7 @@ if(WITH_CYCLES_STANDALONE)
   endif()
 
   if(CYCLES_STANDALONE_REPOSITORY)
-    cycles_install_libraries(cycles)
+    cycles_install_libraries("")
 
     if(WITH_USD AND USD_LIBRARY_DIR)
       install(DIRECTORY

@@ -123,6 +123,11 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
   )
   set(HdCyclesPluginName hdCycles)
   add_library(${HdCyclesPluginName} SHARED ${SRC_HD_CYCLES_PLUGIN})
+  cycles_install_libraries("houdini/dso/usd_plugins/")
+
+  if(APPLE)
+    set_target_properties(${HdCyclesPluginName} PROPERTIES BUILD_WITH_INSTALL_RPATH true)
+  endif()
 
   set_target_properties(${HdCyclesPluginName}
     PROPERTIES PREFIX ""

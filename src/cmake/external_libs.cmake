@@ -920,10 +920,6 @@ elseif(APPLE)
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH "@loader_path/${PLATFORM_LIB_INSTALL_DIR}")
 
-  # For build step, set absolute path to lib folder as it runs before install.
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  list(APPEND CMAKE_BUILD_RPATH ${PLATFORM_BUNDLED_LIBRARY_DIRS})
-
   # Environment variables to run precompiled executables that needed libraries.
   list(JOIN PLATFORM_BUNDLED_LIBRARY_DIRS ":" _library_paths)
   set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths};${DYLD_LIBRARY_PATH}\"")
@@ -933,10 +929,6 @@ elseif(UNIX)
   # For install step, set rpath relative to where shared libs will be copied.
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/${PLATFORM_LIB_INSTALL_DIR})
-
-  # For build step, set absolute path to lib folder as it runs before install.
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  list(APPEND CMAKE_BUILD_RPATH $ORIGIN/${PLATFORM_LIB_INSTALL_DIR} ${CMAKE_INSTALL_PREFIX_WITH_CONFIG}/${PLATFORM_LIB_INSTALL_DIR})
 
   # Environment variables to run precompiled executables that needed libraries.
   list(JOIN PLATFORM_BUNDLED_LIBRARY_DIRS ":" _library_paths)

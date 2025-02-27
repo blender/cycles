@@ -189,16 +189,16 @@ macro(cycles_external_libraries_append libraries)
   endif()
 endmacro()
 
-macro(cycles_install_libraries target)
+macro(cycles_install_libraries target_dir)
   # Install shared libraries.
   install(
     FILES ${PLATFORM_BUNDLED_LIBRARIES_RELEASE}
-    DESTINATION ${PLATFORM_LIB_INSTALL_DIR}
+    DESTINATION "${target_dir}${PLATFORM_LIB_INSTALL_DIR}"
     CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
   )
   install(
     FILES ${PLATFORM_BUNDLED_LIBRARIES_DEBUG}
-    DESTINATION ${PLATFORM_LIB_INSTALL_DIR}
+    DESTINATION "${target_dir}${PLATFORM_LIB_INSTALL_DIR}"
     CONFIGURATIONS Debug
   )
 endmacro()
