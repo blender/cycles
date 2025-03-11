@@ -17,7 +17,7 @@ if "%COMMAND%" == "release" (
 ) else if "%COMMAND%" == "debug" (
 	cmake -B %BUILD_DIR% && cd %BUILD_DIR% && cmake --build . --target install --config Debug
 ) else if "%COMMAND%" == "clean" (
-	cd %BUILD_DIR% && cmake --build . --target install --config Clean
+	cd %BUILD_DIR% && cmake --build . --target clean
 ) else if "%COMMAND%" == "test" (
 	cd %BUILD_DIR% && ctest -C Release --output-on-failure
 ) else if "%COMMAND%" == "update" (
