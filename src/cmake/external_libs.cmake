@@ -533,11 +533,19 @@ if(WITH_CYCLES_EMBREE)
     )
 
     if(EMBREE_SYCL_SUPPORT)
-      set(EMBREE_LIBRARIES
-        ${EMBREE_LIBRARIES}
-        optimized ${EMBREE_ROOT_DIR}/lib/embree4_sycl.lib
-        debug ${EMBREE_ROOT_DIR}/lib/embree4_sycl_d.lib
-      )
+      # MSVC debug version of embree may have been compiled without SYCL support.
+      if(EXISTS ${EMBREE_ROOT_DIR}/lib/embree4_sycl_d.lib)
+        set(EMBREE_LIBRARIES
+          ${EMBREE_LIBRARIES}
+          optimized ${EMBREE_ROOT_DIR}/lib/embree4_sycl.lib
+          debug ${EMBREE_ROOT_DIR}/lib/embree4_sycl_d.lib
+        )
+      else()
+        set(EMBREE_LIBRARIES
+          ${EMBREE_LIBRARIES}
+          optimized ${EMBREE_ROOT_DIR}/lib/embree4_sycl.lib
+        )
+      endif()
     endif()
   else()
     find_package(Embree 3.8.0 REQUIRED)
