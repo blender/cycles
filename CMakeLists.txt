@@ -55,6 +55,9 @@ endif()
 # Avoid having empty buildtype.
 set(CMAKE_BUILD_TYPE_INIT "Release")
 
+# Generate compile commands for easy clangd setup.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile commands for clangd")
+
 ###########################################################################
 # Initialize project.
 
@@ -74,7 +77,7 @@ include(macros)
 ###########################################################################
 # Global settings.
 
-set(CMAKE_INSTALL_MESSAGE LAZY)
+set(CMAKE_INSTALL_MESSAGE LAZY CACHE STRING "Install message verbosity")
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/install" CACHE PATH "Installation path" FORCE)
