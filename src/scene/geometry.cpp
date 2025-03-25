@@ -734,6 +734,11 @@ void GeometryManager::device_update(Device *device,
           if (mesh->has_true_displacement()) {
             true_displacement_used = true;
           }
+
+          /* Apply generated attribute if needed or remove if not needed */
+          mesh->update_generated(scene);
+          /* Apply tangents for generated and UVs (if any need them) or remove if not needed */
+          mesh->update_tangents(scene);
         }
         else if (geom->is_hair()) {
           Hair *hair = static_cast<Hair *>(geom);

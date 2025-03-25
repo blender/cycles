@@ -1,11 +1,7 @@
-/* SPDX-License-Identifier: Apache-2.0
+/* SPDX-FileCopyrightText: 2011 Morten S. Mikkelsen
+ * SPDX-FileCopyrightText: 2022 Blender Authors
  *
- * Original C code:
- * Copyright 2011 by Morten S. Mikkelsen.
- *
- * C++ rewrite:
- * Copyright 2022 Blender Foundation
- */
+ * SPDX-License-Identifier: Apache-2.0 */
 
 /** \file
  * \ingroup mikktspace
@@ -13,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <unordered_map>
 
 #ifdef WITH_TBB
 #  include <tbb/parallel_for.h>
@@ -277,8 +274,9 @@ template<typename Mesh> class Mikktspace {
     nrTSpaces = 0;
     for (uint f = 0; f < nrFaces; f++) {
       const uint verts = mesh.GetNumVerticesOfFace(f);
-      if (verts != 3 && verts != 4)
+      if (verts != 3 && verts != 4) {
         continue;
+      }
 
       uint tA = uint(triangles.size());
       triangles.emplace_back(f, nrTSpaces);
@@ -298,8 +296,9 @@ template<typename Mesh> class Mikktspace {
         float distSQ_02 = (mesh.GetTexCoord(f, 2) - mesh.GetTexCoord(f, 0)).length_squared();
         float distSQ_13 = (mesh.GetTexCoord(f, 3) - mesh.GetTexCoord(f, 1)).length_squared();
         bool quadDiagIs_02;
-        if (distSQ_02 != distSQ_13)
+        if (distSQ_02 != distSQ_13) {
           quadDiagIs_02 = (distSQ_02 < distSQ_13);
+        }
         else {
           distSQ_02 = (mesh.GetPosition(f, 2) - mesh.GetPosition(f, 0)).length_squared();
           distSQ_13 = (mesh.GetPosition(f, 3) - mesh.GetPosition(f, 1)).length_squared();
@@ -322,7 +321,7 @@ template<typename Mesh> class Mikktspace {
 
   struct VertexHash {
     Mikktspace<Mesh> *mikk;
-    inline uint operator()(const uint &k) const
+    uint operator()(const uint &k) const
     {
       return hash_float3x3(mikk->getPosition(k), mikk->getNormal(k), mikk->getTexCoord(k));
     }
@@ -330,7 +329,7 @@ template<typename Mesh> class Mikktspace {
 
   struct VertexEqual {
     Mikktspace<Mesh> *mikk;
-    inline bool operator()(const uint &kA, const uint &kB) const
+    bool operator()(const uint &kA, const uint &kB) const
     {
       return mikk->getTexCoord(kA) == mikk->getTexCoord(kB) &&
              mikk->getNormal(kA) == mikk->getNormal(kB) &&
@@ -459,12 +458,15 @@ template<typename Mesh> class Mikktspace {
       uint vertFlag = (1u << triangles[t].faceVertex[0]) | (1u << triangles[t].faceVertex[1]) |
                       (1u << triangles[t].faceVertex[2]);
       uint missingFaceVertex = 0;
-      if ((vertFlag & 2) == 0)
+      if ((vertFlag & 2) == 0) {
         missingFaceVertex = 1;
-      else if ((vertFlag & 4) == 0)
+      }
+      else if ((vertFlag & 4) == 0) {
         missingFaceVertex = 2;
-      else if ((vertFlag & 8) == 0)
+      }
+      else if ((vertFlag & 8) == 0) {
         missingFaceVertex = 3;
+      }
 
       uint faceIdx = triangles[t].faceIdx;
       float3 dstP = mesh.GetPosition(faceIdx, missingFaceVertex);
@@ -536,12 +538,14 @@ template<typename Mesh> class Mikktspace {
         const float lenOs2 = vOs.length_squared();
         const float lenOt2 = vOt.length_squared();
         const float fS = triangle.orientPreserving ? 1.0f : (-1.0f);
-        if (not_zero(lenOs2))
+        if (not_zero(lenOs2)) {
           triangle.tangent = vOs * (fS / sqrtf(lenOs2));
+        }
 
         // if this is a good triangle
-        if (not_zero(lenOs2) && not_zero(lenOt2))
+        if (not_zero(lenOs2) && not_zero(lenOt2)) {
           triangle.groupWithAny = false;
+        }
       }
     });
 
@@ -559,10 +563,12 @@ template<typename Mesh> class Mikktspace {
         // if this happens the quad has extremely bad mapping!!
         if (triangleA.orientPreserving != triangleB.orientPreserving) {
           bool chooseOrientFirstTri = false;
-          if (triangleB.groupWithAny)
+          if (triangleB.groupWithAny) {
             chooseOrientFirstTri = true;
-          else if (calcTexArea(t) >= calcTexArea(t + 1))
+          }
+          else if (calcTexArea(t) >= calcTexArea(t + 1)) {
             chooseOrientFirstTri = true;
+          }
 
           // force match
           const uint t0 = chooseOrientFirstTri ? t : (t + 1);
@@ -614,8 +620,9 @@ template<typename Mesh> class Mikktspace {
           unpack_index(tB, iB, b.data);
           Mikktspace<Mesh>::Triangle &triB = mikk->triangles[tB];
 
-          if (b.key != a.key)
+          if (b.key != a.key) {
             break;
+          }
 
           if (triB.neighbor[iB] != UNSET_ENTRY) {
             continue;
@@ -684,30 +691,36 @@ template<typename Mesh> class Mikktspace {
     // track down vertex
     const uint vertRep = group.vertexRepresentative;
     uint i = 3;
-    if (triangle.vertices[0] == vertRep)
+    if (triangle.vertices[0] == vertRep) {
       i = 0;
-    else if (triangle.vertices[1] == vertRep)
+    }
+    else if (triangle.vertices[1] == vertRep) {
       i = 1;
-    else if (triangle.vertices[2] == vertRep)
+    }
+    else if (triangle.vertices[2] == vertRep) {
       i = 2;
+    }
     assert(i < 3);
 
     // early out
-    if (triangle.group[i] != UNSET_ENTRY)
+    if (triangle.group[i] != UNSET_ENTRY) {
       return;
+    }
 
     if (triangle.groupWithAny) {
       // first to group with a group-with-anything triangle
       // determines its orientation.
       // This is the only existing order dependency in the code!!
       if (triangle.group[0] == UNSET_ENTRY && triangle.group[1] == UNSET_ENTRY &&
-          triangle.group[2] == UNSET_ENTRY) {
+          triangle.group[2] == UNSET_ENTRY)
+      {
         triangle.orientPreserving = group.orientPreserving;
       }
     }
 
-    if (triangle.orientPreserving != group.orientPreserving)
+    if (triangle.orientPreserving != group.orientPreserving) {
       return;
+    }
 
     triangle.group[i] = groupId;
 
@@ -756,7 +769,7 @@ template<typename Mesh> class Mikktspace {
       return;
     }
 
-    /* Todo: Vectorize?
+    /* TODO: Vectorize?
      * Also: Could add special case for flat shading, when all normals are equal half of the fCos
      * projections and two of the three tangent projections are unnecessary. */
     std::array<float3, 3> n, p;

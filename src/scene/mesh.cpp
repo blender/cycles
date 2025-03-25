@@ -19,7 +19,188 @@
 #include "util/log.h"
 #include "util/set.h"
 
+#include "mikktspace.hh"
+
 CCL_NAMESPACE_BEGIN
+
+/* Tangent Space */
+
+template<bool is_subd> struct MikkMeshWrapper {
+  MikkMeshWrapper(const Mesh *mesh,
+                  const float3 *normal,
+                  const float2 *uv,
+                  float3 *tangent,
+                  float *tangent_sign)
+      : mesh(mesh), normal(normal), uv(uv), tangent(tangent), tangent_sign(tangent_sign)
+  {
+  }
+
+  int GetNumFaces()
+  {
+    if constexpr (is_subd) {
+      return mesh->get_num_subd_faces();
+    }
+    else {
+      return mesh->num_triangles();
+    }
+  }
+
+  int GetNumVerticesOfFace(const int face_num)
+  {
+    if constexpr (is_subd) {
+      return mesh->get_subd_num_corners()[face_num];
+    }
+    else {
+      return 3;
+    }
+  }
+
+  int CornerIndex(const int face_num, const int vert_num)
+  {
+    if constexpr (is_subd) {
+      const Mesh::SubdFace &face = mesh->get_subd_face(face_num);
+      return face.start_corner + vert_num;
+    }
+    else {
+      return face_num * 3 + vert_num;
+    }
+  }
+
+  int VertexIndex(const int face_num, const int vert_num)
+  {
+    const int corner = CornerIndex(face_num, vert_num);
+    if constexpr (is_subd) {
+      return mesh->get_subd_face_corners()[corner];
+    }
+    else {
+      return mesh->get_triangles()[corner];
+    }
+  }
+
+  mikk::float3 GetPosition(const int face_num, const int vert_num)
+  {
+    const float3 vP = mesh->get_verts()[VertexIndex(face_num, vert_num)];
+    return mikk::float3(vP.x, vP.y, vP.z);
+  }
+
+  mikk::float3 GetTexCoord(const int face_num, const int vert_num)
+  {
+    /* TODO: Check whether introducing a template boolean in order to
+     * turn this into a constexpr is worth it. */
+    if (uv != nullptr) {
+      const int corner_index = CornerIndex(face_num, vert_num);
+      const float2 tfuv = uv[corner_index];
+      return mikk::float3(tfuv.x, tfuv.y, 1.0f);
+    }
+    /* revert to vertex position */
+    const int vertex_index = VertexIndex(face_num, vert_num);
+    const float2 uv = map_to_sphere((mesh->get_verts()[vertex_index]));
+    return mikk::float3(uv.x, uv.y, 1.0f);
+  }
+
+  mikk::float3 GetNormal(const int face_num, const int vert_num)
+  {
+    float3 vN;
+    if constexpr (is_subd) {
+      const Mesh::SubdFace &face = mesh->get_subd_face(face_num);
+      if (face.smooth) {
+        const int vertex_index = VertexIndex(face_num, vert_num);
+        vN = normal[vertex_index];
+      }
+      else {
+        vN = face.normal(mesh);
+      }
+    }
+    else {
+      if (mesh->get_smooth()[face_num]) {
+        const int vertex_index = VertexIndex(face_num, vert_num);
+        vN = normal[vertex_index];
+      }
+      else {
+        const Mesh::Triangle tri = mesh->get_triangle(face_num);
+        vN = tri.compute_normal(mesh->get_verts().data());
+      }
+    }
+    return mikk::float3(vN.x, vN.y, vN.z);
+  }
+
+  void SetTangentSpace(const int face_num, const int vert_num, mikk::float3 T, bool orientation)
+  {
+    const int corner_index = CornerIndex(face_num, vert_num);
+    tangent[corner_index] = make_float3(T.x, T.y, T.z);
+    if (tangent_sign != nullptr) {
+      tangent_sign[corner_index] = orientation ? 1.0f : -1.0f;
+    }
+  }
+
+  const Mesh *mesh;
+
+  const float3 *normal;
+  const float2 *uv;
+
+  float3 *tangent;
+  float *tangent_sign;
+};
+
+static void mikk_compute_tangents(
+    const char *layer_name, Mesh *mesh, bool need_sign, bool active_render)
+{
+  /* Need a layer_name */
+  if (layer_name == nullptr) {
+    return;
+  }
+  /* Create tangent attributes. */
+  const bool is_subd = mesh->get_num_subd_faces();
+  AttributeSet &attributes = is_subd ? mesh->subd_attributes : mesh->attributes;
+
+  Attribute *attr_vN = attributes.find(ATTR_STD_VERTEX_NORMAL);
+  if (attr_vN == nullptr) {
+    /* no normals */
+    return;
+  }
+  float3 *normal = attr_vN->data_float3();
+
+  Attribute *attr_uv = attributes.find(ustring(layer_name));
+  if (attr_uv == nullptr) {
+    /* no such UV */
+    return;
+  }
+  float2 *uv = attr_uv->data_float2();
+
+  Attribute *attr;
+  ustring name = ustring((string(layer_name) + ".tangent").c_str());
+  if (active_render) {
+    attr = attributes.add(ATTR_STD_UV_TANGENT, name);
+  }
+  else {
+    attr = attributes.add(name, TypeVector, ATTR_ELEMENT_CORNER);
+  }
+  float3 *tangent = attr->data_float3();
+  /* Create bitangent sign attribute. */
+  float *tangent_sign = nullptr;
+  if (need_sign) {
+    ustring name_sign = ustring((string(layer_name) + ".tangent_sign").c_str());
+    Attribute *attr_sign;
+    if (active_render) {
+      attr_sign = attributes.add(ATTR_STD_UV_TANGENT_SIGN, name_sign);
+    }
+    else {
+      attr_sign = attributes.add(name_sign, TypeFloat, ATTR_ELEMENT_CORNER);
+    }
+    tangent_sign = attr_sign->data_float();
+  }
+
+  if (is_subd) {
+    MikkMeshWrapper<true> userdata(mesh, normal, uv, tangent, tangent_sign);
+    /* Compute tangents. */
+    mikk::Mikktspace(userdata).genTangSpace();
+  }
+  else {
+    MikkMeshWrapper<false> userdata(mesh, normal, uv, tangent, tangent_sign);
+    /* Compute tangents. */
+    mikk::Mikktspace(userdata).genTangSpace();
+  }
+}
 
 /* Triangle */
 
@@ -621,6 +802,96 @@ void Mesh::add_undisplaced()
 
   if (size) {
     std::copy_n(verts.data(), size, data);
+  }
+}
+
+void Mesh::update_generated(Scene *scene)
+{
+  if (!num_triangles()) {
+    return;
+  }
+
+  AttributeSet &attrs = num_subd_faces ? subd_attributes : attributes;
+
+  /* apply generated attributes if needed or missing */
+  if (need_attribute(scene, ATTR_STD_GENERATED) && !attrs.find(ATTR_STD_GENERATED)) {
+    const size_t verts_size = verts.size();
+    Attribute *attr_generated = attrs.add(ATTR_STD_GENERATED);
+    float3 *generated = attr_generated->data_float3();
+    for (size_t i = 0; i < verts_size; ++i) {
+      generated[i] = verts[i];
+    }
+  }
+}
+
+void Mesh::update_tangents(Scene *scene)
+{
+  if (!num_triangles()) {
+    return;
+  }
+
+  if (!num_subd_faces && !attributes.find(ATTR_STD_VERTEX_NORMAL)) {
+    /* no normals */
+    return;
+  }
+
+  AttributeSet &attrs = num_subd_faces ? subd_attributes : attributes;
+
+  ccl::set<ustring> uv_maps;
+  const bool std_uv = attrs.find(ATTR_STD_UV);
+  const bool std_uv_tangent = attrs.find(ATTR_STD_UV_TANGENT);
+  for (Attribute &attr : attrs.attributes) {
+    if (attr.std == ATTR_STD_UV) {
+      continue;
+    }
+    if (attr.type == TypeFloat2) {
+      uv_maps.emplace(attr.name);
+    }
+  }
+
+  bool temp_normals = false;
+
+  /* standard UVs */
+  if (std_uv && need_attribute(scene, ATTR_STD_UV_TANGENT) && !std_uv_tangent) {
+    /* Catmull-Clark does not make use of input normals, however we need them to
+     * generate tangents so we temporarily create them here. */
+    if (num_subd_faces && !subd_attributes.find(ATTR_STD_VERTEX_NORMAL)) {
+      add_vertex_normals();
+      temp_normals = true;
+    }
+    mikk_compute_tangents(
+      Attribute::standard_name(ATTR_STD_UV),
+      this,
+      true, /* sign */
+      true /* active_render */
+    );
+  }
+
+  /* now generate for any other UVs requested */
+  for (const ustring &uv_name : uv_maps) {
+    const ustring tangent_name = ustring((string(uv_name) + ".tangent").c_str());
+
+    if (need_attribute(scene, tangent_name) && !attrs.find(tangent_name)) {
+
+      /* Catmull-Clark does not make use of input normals, however we need them to
+      * generate tangents so we temporarily create them here. */
+      if (num_subd_faces && !subd_attributes.find(ATTR_STD_VERTEX_NORMAL)) {
+        add_vertex_normals();
+        temp_normals = true;
+      }
+      
+      mikk_compute_tangents(
+        uv_name.c_str(),
+        this,
+        true, /* sign */
+        false /* active_render */
+      );
+    }
+  }
+
+  /* Delete temporary normals we used to generate tangents. */
+  if (temp_normals) {
+    attrs.remove(ATTR_STD_VERTEX_NORMAL);
   }
 }
 
