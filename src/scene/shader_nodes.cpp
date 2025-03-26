@@ -7482,7 +7482,8 @@ void OSLNode::attributes(Shader *shader, AttributeRequestSet *attributes)
   if (shader->has_surface_link()) {
     for (const ShaderInput *in : inputs) {
       if (!in->link && (in->flags() & SocketType::LINK_TANGENT ||
-          in->flags() & SocketType::LINK_TEXTURE_GENERATED)) {
+                        in->flags() & SocketType::LINK_TEXTURE_GENERATED))
+      {
         attributes->add(ATTR_STD_GENERATED);
         break;
       }
