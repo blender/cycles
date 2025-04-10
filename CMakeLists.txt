@@ -91,7 +91,7 @@ else()
   string(REPLACE "\${BUILD_TYPE}" "" CMAKE_INSTALL_PREFIX_WITH_CONFIG ${CMAKE_INSTALL_PREFIX})
 endif()
 
-# Some stuff is different when building stabdalone Cycles from inside
+# Some stuff is different when building standalone Cycles from inside
 # Blender source code and when building it from it's own repository.
 set(CYCLES_STANDALONE_REPOSITORY TRUE)
 
