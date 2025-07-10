@@ -1,7 +1,5 @@
 add_subdirectory(cuew)
-if(NOT APPLE)
-  add_subdirectory(hipew)
-endif()
+add_subdirectory(hipew)
 add_subdirectory(sky)
 if(UNIX AND NOT APPLE)
   add_subdirectory(libc_compat)
