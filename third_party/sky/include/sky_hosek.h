@@ -1,32 +1,6 @@
-/*
-This source is published under the following 3-clause BSD license.
-
-Copyright (c) 2012 - 2013, Lukas Hosek and Alexander Wilkie
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * None of the names of the contributors may be used to endorse or promote
-      products derived from this software without specific prior written
-      permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+/* SPDX-FileCopyrightText: 2012-2013 Lukas Hosek and Alexander Wilkie. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause */
 
 /* ============================================================================
 
@@ -52,7 +26,7 @@ Version history:
 
 1.4a  February 22nd, 2013
       Removed unnecessary and counter-intuitive solar radius parameters
-      from the interface of the colourspace sky dome initialisation functions.
+      from the interface of the colourspace sky dome initialization functions.
 
 1.4   February 11th, 2013
       Fixed a bug which caused the relative brightness of the solar disc
@@ -103,7 +77,7 @@ Usage information:
 ==================
 
 
-Model initialisation
+Model initialization
 --------------------
 
 A separate ArHosekSkyModelState has to be maintained for each spectral
@@ -112,7 +86,7 @@ bands, you would need something like
 
     ArHosekSkyModelState  * skymodel_state[num_channels];
 
-You then have to allocate and initialise these states. In the following code
+You then have to allocate and initialize these states. In the following code
 snippet, we assume that 'albedo' is defined as
 
     double  albedo[num_channels];
@@ -128,12 +102,12 @@ is given in radians.
                   solarElevation
                 );
 
-Note that starting with version 1.3, there is also a second initialisation
+Note that starting with version 1.3, there is also a second initialization
 function which generates skydome states for different solar emission spectra
 and solar radii: 'arhosekskymodelstate_alienworld_alloc_init()'.
 
 See the notes about the "Alien World" functionality provided further down for a
-discussion of the usefulness and limits of that second initalisation function.
+discussion of the usefulness and limits of that second initialization function.
 Sky model states that have been initialized with either function behave in a
 completely identical fashion during use and cleanup.
 
@@ -228,7 +202,7 @@ actually not altered at all in this release. All we did was to add some support
 functionality for doing this more easily with the existing data and functions,
 and to add some explanations.
 
-Just use 'arhosekskymodelstate_alienworld_alloc_init()' to initialise the sky
+Just use 'arhosekskymodelstate_alienworld_alloc_init()' to initialize the sky
 model states (you will have to provide values for star temperature and solar
 intensity compared to the terrestrial sun), and do everything else as you
 did before.
@@ -263,7 +237,7 @@ CAVEAT #3: you have to provide a value for the solar intensity of the star
            fairly different in size from it, to still provide a reasonable and
            inhabitable amount of irradiance. Red stars will need to be much
            larger than our sun, while white or blue stars will have to be
-           comparatively tiny. The initialisation function handles this and
+           comparatively tiny. The initialization function handles this and
            computes a plausible solar radius for a given emission spectrum. In
            terms of absolute radiometric values, you should probably not stray
            all too far from a solar intensity value of 1.0.
@@ -298,14 +272,13 @@ HINT #1:   if you want to model the sky of an earth-like planet that orbits
            previous paragraph.
 */
 
-#ifndef __SKY_MODEL_H__
-#define __SKY_MODEL_H__
+/** \file
+ * \ingroup intern_sky_modal
+ */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#pragma once
 
-typedef double SKY_ArHosekSkyModelConfiguration[9];
+using SKY_ArHosekSkyModelConfiguration = double[9];
 
 //   Spectral version of the model
 
@@ -335,7 +308,7 @@ typedef double SKY_ArHosekSkyModelConfiguration[9];
 
 ---------------------------------------------------------------------------- */
 
-typedef struct SKY_ArHosekSkyModelState {
+struct SKY_ArHosekSkyModelState {
   SKY_ArHosekSkyModelConfiguration configs[11];
   double radiances[11];
   double turbidity;
@@ -344,14 +317,14 @@ typedef struct SKY_ArHosekSkyModelState {
   double emission_correction_factor_sun[11];
   double albedo;
   double elevation;
-} SKY_ArHosekSkyModelState;
+};
 
 /* ----------------------------------------------------------------------------
 
     arhosekskymodelstate_alloc_init() function
     ------------------------------------------
 
-    Initialises an ArHosekSkyModelState struct for a terrestrial setting.
+    Initializes an #ArHosekSkyModelState struct for a terrestrial setting.
 
 ---------------------------------------------------------------------------- */
 
@@ -364,11 +337,11 @@ SKY_ArHosekSkyModelState *SKY_arhosekskymodelstate_alloc_init(const double solar
     arhosekskymodelstate_alienworld_alloc_init() function
     -----------------------------------------------------
 
-    Initialises an ArHosekSkyModelState struct for an "alien world" setting
+    Initializes an ArHosekSkyModelState struct for an "alien world" setting
     with a sun of a surface temperature given in 'kelvin'. The parameter
     'solar_intensity' controls the overall brightness of the sky, relative
     to the solar irradiance on Earth. A value of 1.0 yields a sky dome that
-    is, on average over the wavelenghts covered in the model (!), as bright
+    is, on average over the wavelengths covered in the model (!), as bright
     as the terrestrial sky in radiometric terms.
 
     Which means that the solar radius has to be adjusted, since the
@@ -425,31 +398,3 @@ double SKY_arhosekskymodel_solar_radiance(SKY_ArHosekSkyModelState *state,
                                           double theta,
                                           double gamma,
                                           double wavelength);
-
-/* Nishita improved sky model */
-
-void SKY_nishita_skymodel_precompute_texture(float *pixels,
-                                             int stride,
-                                             int start_y,
-                                             int end_y,
-                                             int width,
-                                             int height,
-                                             float sun_elevation,
-                                             float altitude,
-                                             float air_density,
-                                             float dust_density,
-                                             float ozone_density);
-
-void SKY_nishita_skymodel_precompute_sun(float sun_elevation,
-                                         float angular_diameter,
-                                         float altitude,
-                                         float air_density,
-                                         float dust_density,
-                                         float *r_pixel_bottom,
-                                         float *r_pixel_top);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __SKY_MODEL_H__
