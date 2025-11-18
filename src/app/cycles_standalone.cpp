@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0 */
 
 #include <cstdio>
+#include <iostream>
 
 #include "device/device.h"
 #include "scene/camera.h"
@@ -373,6 +374,104 @@ static void parse_string(OIIO::cspan<const char *> argv, std::string *s)
   *s = argv[1];
 }
 
+std::string value_to_string(const void *value, SocketType::Type type)
+{
+  switch (type) {
+    case SocketType::BOOLEAN: {
+      const bool v = *(const bool *)value;
+      return v ? "true" : "false";
+    }
+    case SocketType::FLOAT: {
+      const float v = *(const float *)value;
+      return std::to_string(v);
+    }
+    case SocketType::INT: {
+      const int v = *(const int *)value;
+      return std::to_string(v);
+    }
+    case SocketType::UINT: {
+      const unsigned int v = *(const unsigned int *)value;
+      return std::to_string(v);
+    }
+    case SocketType::UINT64: {
+      const uint64_t v = *(const uint64_t *)value;
+      return std::to_string(v);
+    }
+    case SocketType::COLOR: {
+      const float3 v = *(const float3 *)value;
+      return string_printf("[%.6f, %.6f, %.6f]", v.x, v.y, v.z);
+    }
+    case SocketType::VECTOR: {
+      const float3 v = *(const float3 *)value;
+      return string_printf("[%.6f, %.6f, %.6f]", v.x, v.y, v.z);
+    }
+    case SocketType::POINT: {
+      const float3 v = *(const float3 *)value;
+      return string_printf("[%.6f, %.6f, %.6f]", v.x, v.y, v.z);
+    }
+    case SocketType::NORMAL: {
+      const float3 v = *(const float3 *)value;
+      return string_printf("[%.6f, %.6f, %.6f]", v.x, v.y, v.z);
+    }
+    case SocketType::POINT2: {
+      const float2 v = *(const float2 *)value;
+      return string_printf("[%.6f, %.6f]", v.x, v.y);
+    }
+    case SocketType::STRING: {
+      return std::string((const char *)value);
+    }
+    case SocketType::ENUM: {
+      const int v = *(const int *)value;
+      return std::to_string(v);
+    }
+    default:
+      return "UNSUPPORTED_TYPE";
+  }
+}
+
+static void print_socket_yaml(std::ostream &stream, const SocketType &socket, const string &indent)
+{
+  stream << indent << "- name: " << socket.name << "\n";
+  stream << indent << "  ui_name: " << socket.ui_name << "\n";
+  stream << indent << "  type: " << SocketType::type_name(socket.type) << "\n";
+  stream << indent << "  linkable: " << ((socket.flags & SocketType::LINKABLE) ? "true" : "false") << "\n";
+  stream << indent << "  animatable: " << ((socket.flags & SocketType::ANIMATABLE) ? "true" : "false") << "\n";
+  stream << indent << "  internal: " << ((socket.flags & SocketType::INTERNAL) ? "true" : "false") << "\n";
+
+  if (socket.default_value != nullptr) {
+    stream << indent << "  default_value: ";
+    stream << value_to_string(socket.default_value, socket.type) << "\n";
+  }
+}
+
+static void list_all_node_types_yaml(std::ostream &stream)
+{
+  const auto &types = NodeType::types();
+  stream << "# List of all " << types.size() << " Cycles node types" << std::endl;
+
+  for (const auto &type_pair : types) {
+    const NodeType *type = &type_pair.second;
+
+    stream << "- name: " << type->name << std::endl;
+    stream << "  type: " << (type->type == NodeType::SHADER ? "shader" : "none") << std::endl;
+
+    if (!type->inputs.empty()) {
+      stream << "  inputs:" << std::endl;
+      for (const SocketType &input : type->inputs) {
+        print_socket_yaml(stream, input, "    ");
+      }
+    }
+
+    if (!type->outputs.empty()) {
+      stream << "  outputs:" << std::endl;
+      for (const SocketType &output : type->outputs) {
+        print_socket_yaml(stream, output, "    ");
+      }
+    }
+  }
+
+}
+
 static void options_parse(const int argc, const char **argv)
 {
   options.width = 1024;
@@ -408,6 +507,7 @@ static void options_parse(const int argc, const char **argv)
   bool debug = false;
   bool version = false;
   int verbosity = 1;
+  string nodes_yaml_path;
 
   ap.usage("cycles [options] file.xml");
   ap.arg("filename").hidden().action([&](auto argv) { options.filepath = argv[0]; });
@@ -441,6 +541,9 @@ static void options_parse(const int argc, const char **argv)
     parse_int(argv, &options.session_params.tile_size);
   });
   ap.arg("--list-devices", &list).help("List information about all available devices");
+  ap.arg("--list-nodes %s:NODES_YAML_PATH").help("Output YAML file listing all available node types").action([&](auto argv) {
+    parse_string(argv, &nodes_yaml_path); 
+  });
   ap.arg("--profile", &profile).help("Enable profile logging");
 #ifdef WITH_CYCLES_LOGGING
   ap.arg("--debug", &debug).help("Enable debug logging");
@@ -473,6 +576,15 @@ static void options_parse(const int argc, const char **argv)
              (info.display_device) ? " (display)" : "");
     }
 
+    exit(EXIT_SUCCESS);
+  }
+  else if (!nodes_yaml_path.empty()) {
+    std::ofstream yaml_file(nodes_yaml_path);
+    if (!yaml_file) {
+      fprintf(stderr, "Failed to open file for writing: %s\n", nodes_yaml_path.c_str());
+      exit(EXIT_FAILURE);
+    }
+    list_all_node_types_yaml(yaml_file);
     exit(EXIT_SUCCESS);
   }
   else if (version) {
