@@ -23,16 +23,19 @@ OIIOOutputDriver::OIIOOutputDriver(const string_view filepath,
 
 OIIOOutputDriver::~OIIOOutputDriver() = default;
 
+bool OIIOOutputDriver::update_render_tile(const Tile &tile)
+{
+  write_render_tile(tile);
+  return true;
+}
+
 void OIIOOutputDriver::write_render_tile(const Tile &tile)
 {
-  /* Only write the full buffer, no intermediate tiles. */
-  if (!(tile.size == tile.full_size)) {
-    return;
-  }
+  static int counter = 0;
+  string filepath = string_printf("%d_%s", counter++, filepath_.c_str());
+  log_(string_printf("Writing image %s", filepath.c_str()));
 
-  log_(string_printf("Writing image %s", filepath_.c_str()));
-
-  unique_ptr<ImageOutput> image_output(ImageOutput::create(filepath_));
+  unique_ptr<ImageOutput> image_output(ImageOutput::create(filepath));
   if (image_output == nullptr) {
     log_("Failed to create image file");
     return;
@@ -42,7 +45,7 @@ void OIIOOutputDriver::write_render_tile(const Tile &tile)
   const int height = tile.size.y;
 
   const ImageSpec spec(width, height, 4, TypeDesc::FLOAT);
-  if (!image_output->open(filepath_, spec)) {
+  if (!image_output->open(filepath, spec)) {
     log_("Failed to create image file");
     return;
   }

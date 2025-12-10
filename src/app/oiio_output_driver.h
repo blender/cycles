@@ -18,6 +18,7 @@ class OIIOOutputDriver : public OutputDriver {
   ~OIIOOutputDriver() override;
 
   void write_render_tile(const Tile &tile) override;
+  bool update_render_tile(const Tile &tile) override;
 
  protected:
   string filepath_;
