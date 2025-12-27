@@ -67,6 +67,7 @@ static void window_display_text(int /*x*/, int /*y*/, const char *text)
 
   if (text != last_text) {
     printf("%s\n", text);
+    fflush(stdout);
     last_text = text;
   }
 #endif
