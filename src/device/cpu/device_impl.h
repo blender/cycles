@@ -52,7 +52,7 @@ class CPUDevice : public Device {
 #  endif
   RTCDevice embree_device;
 #endif
-#ifdef WITH_PATH_GUIDING
+#if defined(WITH_PATH_GUIDING)
   mutable unique_ptr<openpgl::cpp::Device> guiding_device;
 #endif
 
