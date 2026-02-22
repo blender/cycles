@@ -141,6 +141,7 @@ class Session {
   void reset(const SessionParams &session_params, const BufferParams &buffer_params);
 
   void set_pause(bool pause);
+  void set_navigating(bool navigating);
 
   void set_samples(const int samples);
   void set_time_limit(const double time_limit);

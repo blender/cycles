@@ -655,6 +655,11 @@ void Session::set_pause(bool pause)
   }
 }
 
+void Session::set_navigating(bool navigating)
+{
+  eviction_manager_.set_navigating(navigating);
+}
+
 void Session::set_output_driver(unique_ptr<OutputDriver> driver)
 {
   path_trace_->set_output_driver(std::move(driver));
