@@ -124,9 +124,18 @@ struct KernelImageUDIM {
 /* Tile access state, written by the kernel and read back by the host.
  * - NONE: Tile has not been accessed since the last clear.
  * - REQUESTED: Kernel hit a cache miss on this tile, it needs to be loaded.
+ * - USED: Tile was accessed since the last clear.
+ *
+ * Almost all tiles will progress from REQUESTED to USED, but with dependent
+ * texture lookups it is possible a requested tile does not actually get used
+ * because the request was based on a tile that was not yet loaded and used
+ * the average color instead.
+ *
+ * This is a bitflag so we can OR these states from multiple devices.
  */
 #define KERNEL_TILE_ACCESS_NONE 0
 #define KERNEL_TILE_ACCESS_REQUESTED (1 << 0)
+#define KERNEL_TILE_ACCESS_USED (1 << 1)
 
 /* Kernel data structure for image textures.
  *

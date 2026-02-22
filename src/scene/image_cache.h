@@ -11,6 +11,8 @@
 #include "util/set.h"
 #include "util/unique_ptr_vector.h"
 
+#include <span>
+
 CCL_NAMESPACE_BEGIN
 
 class DeviceQueue;
@@ -107,6 +109,12 @@ class ImageCache {
                           const KernelImageTexture &tex,
                           const ImageMetaData &metadata,
                           ImageTileStats &tile_stats);
+
+  void evict_unused(const Device &device,
+                    DeviceScene &dscene,
+                    std::span<KernelImageTexture> image_textures,
+                    const uint8_t *access_state);
+
   size_t memory_size(DeviceScene &dscene) const;
 
   /* Free image cache device data. */
@@ -153,7 +161,8 @@ class ImageCache {
                                  int miplevel,
                                  int x,
                                  int y,
-                                 const bool for_cpu_cache_miss);
+                                 const bool for_cpu_cache_miss,
+                                 const size_t bit_index);
 };
 
 CCL_NAMESPACE_END

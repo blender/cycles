@@ -14,6 +14,7 @@
 #include "scene/stats.h"
 
 #include "util/colorspace.h"
+#include "util/debug.h"
 #include "util/log.h"
 #include "util/progress.h"
 #include "util/task.h"
@@ -720,6 +721,35 @@ void ImageManager::device_free(Scene *scene)
   image_cache.device_free(scene->dscene);
   scene->dscene.image_textures.free();
   scene->dscene.image_texture_udims.free();
+}
+
+void ImageManager::evict_unused(Device *device, Scene *scene)
+{
+  if (!DebugFlags().texture_cache.use_eviction) {
+    return;
+  }
+
+  DeviceScene &dscene = scene->dscene;
+  device_vector<uint8_t> &tile_access = dscene.image_texture_tile_access_state;
+
+  if (tile_access.size() == 0) {
+    return;
+  }
+
+  /* Read back tile access state from all devices and OR together. */
+  device->mem_or_from_device(tile_access);
+
+  image_cache.evict_unused(*device,
+                           dscene,
+                           {dscene.image_textures.data(), dscene.image_textures.size()},
+                           tile_access.data());
+
+  /* Reset access state on both host and device, so no more tiles are marked as used.
+   * Any tile not marked as used before the next eviction cycle will be evicted. */
+  memset(tile_access.data(), KERNEL_TILE_ACCESS_NONE, tile_access.size() * sizeof(uint8_t));
+  tile_access.zero_to_device();
+  tile_access.clear_modified();
+  device_copy_image_textures(device, scene);
 }
 
 void ImageManager::collect_statistics(RenderStats *stats, Scene *scene)

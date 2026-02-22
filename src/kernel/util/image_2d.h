@@ -173,6 +173,13 @@ kernel_image_tile_map(KernelGlobals kg,
 #endif
   }
 
+  /* Mark tile as used for cache eviction tracking. Read before writing as we
+   * expect most of the time this was already written. */
+  if (kernel_data_array(image_texture_tile_access_state)[access_index] != KERNEL_TILE_ACCESS_USED)
+  {
+    kernel_data_array(image_texture_tile_access_state)[access_index] = KERNEL_TILE_ACCESS_USED;
+  }
+
   /* Remap coordinates into tiled image space. */
   const int offset = kernel_tile_descriptor_offset(tile_descriptor);
   xy += make_float2(KERNEL_IMAGE_TEX_PADDING - (tile_x << tile_size_shift) +
