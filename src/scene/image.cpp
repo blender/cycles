@@ -785,6 +785,14 @@ void ImageManager::collect_statistics(RenderStats *stats, Scene *scene)
   stats->image.overhead_size = dscene.image_textures.memory_size() +
                                dscene.image_texture_udims.memory_size() +
                                image_cache.memory_size(dscene);
+
+  /* Map image cache stats to eviction statistics. */
+  const ImageCacheStats &cache_stats = image_cache.get_stats();
+  stats->image.eviction.tiles_loaded = cache_stats.total_loaded;
+  stats->image.eviction.tiles_evicted = cache_stats.total_evicted;
+  stats->image.eviction.tiles_reloaded = cache_stats.total_reloaded;
+  stats->image.eviction.peak_loaded = cache_stats.peak_loaded;
+  stats->image.tiled_images_peak_size = size_t(cache_stats.peak_tiled_bytes);
 }
 
 void ImageManager::tag_update()

@@ -21,6 +21,49 @@ class ImageLoader;
 class ImageMetaData;
 struct ImageTileStats;
 
+/* Eviction statistics tracking for ImageCache. All public methods are
+ * thread-safe; an internal mutex protects the counters and the evicted mask
+ * so callers can invoke these from parallel tile loaders without holding any
+ * other lock. */
+struct ImageCacheStats {
+  /* Per-tile-descriptor flag set when a tile is evicted, to detect reloads. */
+  vector<uint8_t> evicted_mask;
+
+  /* Current state. */
+  int64_t current_loaded = 0;
+  int64_t current_tiled_bytes = 0;
+
+  /* Cumulative counters. */
+  int64_t total_loaded = 0;
+  int64_t total_evicted = 0;
+  int64_t total_reloaded = 0;
+
+  int64_t peak_loaded = 0;
+  int64_t peak_tiled_bytes = 0;
+
+  /* Reset all counters and the evicted mask. */
+  void reset();
+
+  /* Ensure the evicted mask can hold at least `size` entries. */
+  void resize(const size_t size);
+
+  /* Clear the evicted mask for a tile descriptor range. */
+  void clear_range(const size_t begin, const size_t end);
+
+  /* Record successful tile load. */
+  void load_tile(const size_t bit_index);
+
+  /* Record a tile eviction. */
+  void evict_tile(const size_t bit_index);
+
+  /* Record tiled memory allocation and free. */
+  void add_tiled_bytes(const size_t bytes);
+  void remove_tiled_bytes(const size_t bytes);
+
+ private:
+  thread_mutex mutex_;
+};
+
 class ImageCache {
   struct DeviceImageKey {
     ImageDataType type;
@@ -110,6 +153,11 @@ class ImageCache {
                           const ImageMetaData &metadata,
                           ImageTileStats &tile_stats);
 
+  const ImageCacheStats &get_stats() const
+  {
+    return stats;
+  }
+
   void evict_unused(const Device &device,
                     DeviceScene &dscene,
                     std::span<KernelImageTexture> image_textures,
@@ -163,6 +211,8 @@ class ImageCache {
                                  int y,
                                  const bool for_cpu_cache_miss,
                                  const size_t bit_index);
+
+  ImageCacheStats stats;
 };
 
 CCL_NAMESPACE_END

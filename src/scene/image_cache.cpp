@@ -25,6 +25,72 @@
 
 CCL_NAMESPACE_BEGIN
 
+/* ImageCacheStats. */
+
+void ImageCacheStats::reset()
+{
+  thread_scoped_lock lock(mutex_);
+  evicted_mask.clear();
+  current_loaded = 0;
+  current_tiled_bytes = 0;
+  total_loaded = 0;
+  total_evicted = 0;
+  total_reloaded = 0;
+  peak_loaded = 0;
+  peak_tiled_bytes = 0;
+}
+
+void ImageCacheStats::resize(const size_t size)
+{
+  thread_scoped_lock lock(mutex_);
+  if (size > evicted_mask.size()) {
+    evicted_mask.resize(size, 0);
+  }
+}
+
+void ImageCacheStats::clear_range(const size_t begin, const size_t end)
+{
+  thread_scoped_lock lock(mutex_);
+  const size_t clipped_end = std::min(end, evicted_mask.size());
+  for (size_t i = begin; i < clipped_end; i++) {
+    evicted_mask[i] = 0;
+  }
+}
+
+void ImageCacheStats::load_tile(const size_t bit_index)
+{
+  thread_scoped_lock lock(mutex_);
+  total_loaded++;
+  current_loaded++;
+  peak_loaded = std::max(peak_loaded, current_loaded);
+
+  if (bit_index < evicted_mask.size() && evicted_mask[bit_index] != 0) {
+    evicted_mask[bit_index] = 0;
+    total_reloaded++;
+  }
+}
+
+void ImageCacheStats::evict_tile(const size_t bit_index)
+{
+  thread_scoped_lock lock(mutex_);
+  evicted_mask[bit_index] = 1;
+  total_evicted++;
+  current_loaded--;
+}
+
+void ImageCacheStats::add_tiled_bytes(const size_t bytes)
+{
+  thread_scoped_lock lock(mutex_);
+  current_tiled_bytes += bytes;
+  peak_tiled_bytes = std::max(peak_tiled_bytes, current_tiled_bytes);
+}
+
+void ImageCacheStats::remove_tiled_bytes(const size_t bytes)
+{
+  thread_scoped_lock lock(mutex_);
+  current_tiled_bytes -= bytes;
+}
+
 /* ImageCache::DeviceImage */
 
 ImageCache::DeviceImageKey ImageCache::DeviceImage::key() const
@@ -49,6 +115,9 @@ void ImageCache::device_free(DeviceScene &dscene)
   images_first_free.clear();
   dscene.image_texture_tile_descriptors.free();
   dscene.image_texture_tile_access_state.free();
+
+  /* Reset eviction statistics. */
+  stats.reset();
 }
 
 /* Full image management. */
@@ -109,6 +178,10 @@ void ImageCache::free_tiled_image(DeviceScene &dscene, const KernelImageTexture 
       free_tile(descriptors[i]);
     }
   }
+
+  /* Clear eviction statistics bits for this image's tile descriptor range. */
+  const size_t begin = size_t(tex.tile_descriptor_offset) + size_t(tex.tile_levels);
+  stats.clear_range(begin, begin + size_t(tex.tile_num));
 }
 template<TypeDesc::BASETYPE FileFormat, typename StorageType>
 device_image *ImageCache::load_full(Device &device,
@@ -324,6 +397,8 @@ device_image &ImageCache::alloc_tile(Device &device,
     img->alloc(tile_size_padded * TILE_IMAGE_MAX_TILES, tile_size_padded);
     tile_offset = 0;
 
+    stats.add_tiled_bytes(img->memory_size());
+
     images_first_free[key] = std::min(size_t(image_info_id), images_first_free[key]);
   }
 
@@ -386,6 +461,7 @@ void ImageCache::free_tile(const KernelTileDescriptor tile)
 
   if (img->occupancy == 0) {
     /* All tiles free, remove the device image entirely. */
+    stats.remove_tiled_bytes(img->memory_size());
     deferred_updates.erase(images[image_info_id]);
     deferred_gpu_updates.erase(images[image_info_id]);
     images.replace(image_info_id, nullptr);
@@ -455,6 +531,8 @@ void ImageCache::load_image_tiled(DeviceScene &dscene,
              tile_descriptors.size() - old_size);
     }
 
+    stats.resize(tile_descriptors.size());
+
     KernelTileDescriptor *descr_data = tile_descriptors.data() + tile_descriptor_offset;
 
     for (int i = 0; i < levels.size(); i++) {
@@ -480,7 +558,7 @@ KernelTileDescriptor ImageCache::load_tile(Device &device,
                                            const int x,
                                            const int y,
                                            const bool for_cpu_cache_miss,
-                                           const size_t /*bit_index*/)
+                                           const size_t bit_index)
 {
   const int width = metadata.width >> miplevel;
   const int height = metadata.height >> miplevel;
@@ -523,6 +601,10 @@ KernelTileDescriptor ImageCache::load_tile(Device &device,
   else {
     LOG_WARNING << "Failed to load image tile: " << loader.name() << ", mip level " << miplevel
                 << " (" << x << " " << y << ")";
+  }
+
+  if (ok) {
+    stats.load_tile(bit_index);
   }
 
   return (ok) ? tile_descriptor : KERNEL_TILE_LOAD_FAILED;
@@ -737,6 +819,7 @@ void ImageCache::evict_unused(const Device &device,
     free_tile(descriptor);
     descriptor = KERNEL_TILE_LOAD_NONE;
     num_evicted++;
+    stats.evict_tile(global_idx);
   };
 
   for (size_t img_idx = 0; img_idx < image_textures.size(); img_idx++) {
