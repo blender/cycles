@@ -454,7 +454,7 @@ ccl_device
           bsdf->N = N;
 
           /* setup bsdf */
-          if (diffuse_roughness < CLOSURE_WEIGHT_CUTOFF) {
+          if (diffuse_roughness_is_almost_zero(diffuse_roughness)) {
             sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
           }
           else {
@@ -489,7 +489,7 @@ ccl_device
 
         const float roughness = stack_load(stack, bsdf_data.roughness);
 
-        if (roughness < 1e-5f) {
+        if (diffuse_roughness_is_almost_zero(roughness)) {
           sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
         }
         else {

@@ -577,10 +577,16 @@ ccl_device_inline float bsdf_aniso_D(const float alpha_x, const float alpha_y, f
   return M_1_PI_F / (alpha2 * sqr(len_squared(H)));
 }
 
-/* Do not set `SD_BSDF_HAS_EVAL` flag if the squared roughness is below a certain threshold. */
+/* Below certain roughness threshold we can treat closures as perfectly specular. */
+ccl_device_forceinline bool roughness_is_almost_specular(const float alpha_x, const float alpha_y)
+{
+  return (alpha_x * alpha_y) <= 2e-10f;
+}
+
+/* A specular BSDF has no eval. */
 ccl_device_forceinline int bsdf_microfacet_eval_flag(const ccl_private MicrofacetBsdf *bsdf)
 {
-  return (bsdf->alpha_x * bsdf->alpha_y > BSDF_ROUGHNESS_SQ_THRESH) ? SD_BSDF_HAS_EVAL : 0;
+  return roughness_is_almost_specular(bsdf->alpha_x, bsdf->alpha_y) ? 0 : SD_BSDF_HAS_EVAL;
 }
 
 template<MicrofacetType m_type>
@@ -699,7 +705,7 @@ ccl_device int bsdf_microfacet_sample(KernelGlobals kg,
   const float m_inv_eta = safe_divide(1.0f, bsdf->ior);
   const float alpha_x = bsdf->alpha_x;
   const float alpha_y = bsdf->alpha_y;
-  bool m_singular = !bsdf_microfacet_eval_flag(bsdf);
+  bool m_singular = roughness_is_almost_specular(alpha_x, alpha_y);
 
   /* Half vector. */
   float3 H;

@@ -26,6 +26,12 @@ static_assert(sizeof(ShaderClosure) >= sizeof(OrenNayarBsdf), "OrenNayarBsdf is 
  * energy-preserving multi-scattering term based on the OpenPBR specification
  * (https://academysoftwarefoundation.github.io/OpenPBR). */
 
+/* Above certain roughness threshold we switch to Oren Nayar model. */
+ccl_device_forceinline bool diffuse_roughness_is_almost_zero(const float alpha)
+{
+  return alpha < 1e-5f;
+}
+
 ccl_device_inline float bsdf_oren_nayar_G(const float cosTheta)
 {
   if (cosTheta < 1e-6f) {
