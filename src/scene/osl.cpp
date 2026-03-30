@@ -234,7 +234,18 @@ void OSLManager::device_update_post(Device *device,
      * load images for the GPU. */
     OSLRenderServices::image_manager = scene->image_manager.get();
 
-    foreach_shading_system([](OSL::ShadingSystem *ss) { ss->optimize_all_groups(); });
+    foreach_shading_system([](OSL::ShadingSystem *ss) {
+    /* Workaround #156348: depending on the system-wide libgcc version, EH frames registered and
+     * deregistered during OSL JIT might leave the process in a bad state. There is a bug report
+     * about it in the gcc: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=119151
+     *
+     * Note that it is the runtime libgcc version that matters, as it is linked dynamically. */
+#  if defined(_WIN32) || defined(__APPLE__)
+      ss->optimize_all_groups();
+#  else
+      ss->optimize_all_groups(1);
+#  endif
+    });
 
     OSLRenderServices::image_manager = nullptr;
   }
