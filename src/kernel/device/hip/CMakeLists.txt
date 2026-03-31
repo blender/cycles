@@ -34,7 +34,7 @@ if(WITH_CYCLES_HIP_BINARIES AND WITH_CYCLES_DEVICE_HIP)
   set(hip_fatbins "")
 
   # Modifies in parent scope:
-  # - `hip_fatbins`: appended with compressed fatbin output.
+  # - `hip_fatbins`: appended with compressed `fatbin` output.
   function(CYCLES_HIP_KERNEL_ADD arch name flags sources experimental)
     set(format "fatbin")
     set(hip_file ${name}_${arch}.${format})

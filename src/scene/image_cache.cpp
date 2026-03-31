@@ -339,7 +339,7 @@ device_image &ImageCache::alloc_tile(Device &device,
     }
   }
   else {
-    /* For GPU cache miss, we defer to copy all tiles packed in ths same image together. */
+    /* For GPU cache miss, we defer to copy all tiles packed in the same image together. */
     deferred_updates.insert(img);
   }
 

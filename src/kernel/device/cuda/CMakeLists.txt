@@ -97,7 +97,7 @@ if(WITH_CYCLES_CUDA_BINARIES)
   set(cuda_cubins "")
 
   # Modifies in parent scope:
-  # - `cuda_cubins`: appended with compressed cubin/ptx output.
+  # - `cuda_cubins`: appended with compressed `cubin/ptx` output.
   function(CYCLES_CUDA_KERNEL_ADD arch prev_arch name flags sources experimental)
     if(${arch} MATCHES "compute_.*")
       set(format "ptx")

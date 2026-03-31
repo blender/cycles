@@ -42,7 +42,7 @@ class ImageCache {
   /* TODO: doesn't this mutex need to be shared with image manager? */
   thread_mutex device_mutex;
 
-  /* A device image may either contail a full resolution image, or a set of tiles
+  /* A device image may either contain a full resolution image, or a set of tiles
    * from one or images packed together. */
   struct DeviceImage : public device_image {
     using device_image::device_image;

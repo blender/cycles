@@ -235,8 +235,8 @@ void OSLManager::device_update_post(Device *device,
     OSLRenderServices::image_manager = scene->image_manager.get();
 
     foreach_shading_system([](OSL::ShadingSystem *ss) {
-    /* Workaround #156348: depending on the system-wide libgcc version, EH frames registered and
-     * deregistered during OSL JIT might leave the process in a bad state. There is a bug report
+    /* Workaround #156348: depending on the system-wide `libgcc` version, EH frames registered and
+     * de-registered during OSL JIT might leave the process in a bad state. There is a bug report
      * about it in the gcc: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=119151
      *
      * Note that it is the runtime libgcc version that matters, as it is linked dynamically. */
