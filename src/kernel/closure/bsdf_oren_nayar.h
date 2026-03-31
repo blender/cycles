@@ -10,13 +10,17 @@
 
 CCL_NAMESPACE_BEGIN
 
-struct OrenNayarBsdf {
-  SHADER_CLOSURE_BASE;
-
+struct OrenNayarParam {
   float roughness;
   float a;
   float b;
   Spectrum multiscatter_term;
+};
+
+struct OrenNayarBsdf {
+  SHADER_CLOSURE_BASE;
+
+  OrenNayarParam param;
 };
 
 static_assert(sizeof(ShaderClosure) >= sizeof(OrenNayarBsdf), "OrenNayarBsdf is too large!");
@@ -44,14 +48,14 @@ ccl_device_inline float bsdf_oren_nayar_G(const float cosTheta)
          2.0f / 3.0f * (sinTheta / cosTheta) * (1.0f - sqr(sinTheta) * sinTheta);
 }
 
-ccl_device Spectrum bsdf_oren_nayar_get_intensity(const ccl_private ShaderClosure *sc,
+ccl_device Spectrum bsdf_oren_nayar_get_intensity(const ccl_private OrenNayarBsdf *bsdf,
                                                   const float3 n,
                                                   const float3 v,
                                                   const float3 l)
 {
-  const ccl_private OrenNayarBsdf *bsdf = (const ccl_private OrenNayarBsdf *)sc;
+  const OrenNayarParam param = bsdf->param;
   const float nl = max(dot(n, l), 0.0f);
-  if (bsdf->b <= 0.0f) {
+  if (param.b <= 0.0f) {
     return make_spectrum(nl * M_1_PI_F);
   }
   const float nv = max(dot(n, v), 0.0f);
@@ -61,33 +65,42 @@ ccl_device Spectrum bsdf_oren_nayar_get_intensity(const ccl_private ShaderClosur
     t /= max(nl, nv) + FLT_MIN;
   }
 
-  const float single_scatter = bsdf->a + bsdf->b * t;
+  const float single_scatter = param.a + param.b * t;
 
-  const float El = bsdf->a * M_PI_F + bsdf->b * bsdf_oren_nayar_G(nl);
-  const Spectrum multi_scatter = bsdf->multiscatter_term * (1.0f - El);
+  const float El = param.a * M_PI_F + param.b * bsdf_oren_nayar_G(nl);
+  const Spectrum multi_scatter = param.multiscatter_term * (1.0f - El);
 
   return nl * (make_spectrum(single_scatter) + multi_scatter);
 }
 
-ccl_device int bsdf_oren_nayar_setup(const ccl_private ShaderData *sd,
-                                     ccl_private OrenNayarBsdf *bsdf,
-                                     const Spectrum color)
+ccl_device_inline OrenNayarParam bsdf_oren_nayar_param(const Spectrum color,
+                                                       const float nv,
+                                                       const float roughness)
 {
-  bsdf->type = CLOSURE_BSDF_OREN_NAYAR_ID;
-
-  const float sigma = saturatef(bsdf->roughness);
-  bsdf->a = 1.0f / (M_PI_F + sigma * (M_PI_2_F - 2.0f / 3.0f));
-  bsdf->b = sigma * bsdf->a;
+  const float sigma = saturatef(roughness);
+  const float a = 1.0f / (M_PI_F + sigma * (M_PI_2_F - 2.0f / 3.0f));
+  const float b = sigma * a;
 
   /* Compute energy compensation term (except for (1.0f - El) factor since it depends on wo). */
   const Spectrum albedo = saturate(color);
-  const float Eavg = bsdf->a * M_PI_F + ((M_2PI_F - 5.6f) / 3.0f) * bsdf->b;
+  const float Eavg = a * M_PI_F + ((M_2PI_F - 5.6f) / 3.0f) * b;
   const Spectrum Ems = M_1_PI_F * sqr(albedo) * (Eavg / (1.0f - Eavg)) /
                        (one_spectrum() - albedo * (1.0f - Eavg));
-  const float nv = max(dot(bsdf->N, sd->wi), 0.0f);
-  const float Ev = bsdf->a * M_PI_F + bsdf->b * bsdf_oren_nayar_G(nv);
-  bsdf->multiscatter_term = Ems * (1.0f - Ev);
+  const float Ev = a * M_PI_F + b * bsdf_oren_nayar_G(max(nv, 0.0f));
 
+  return {/*.roughness = */ roughness,
+          /*.a = */ a,
+          /*.b = */ b,
+          /*.multiscatter_term = */ Ems * (1.0f - Ev)};
+}
+
+ccl_device int bsdf_oren_nayar_setup(const ccl_private ShaderData *sd,
+                                     ccl_private OrenNayarBsdf *bsdf,
+                                     const float roughness,
+                                     const Spectrum color)
+{
+  bsdf->type = CLOSURE_BSDF_OREN_NAYAR_ID;
+  bsdf->param = bsdf_oren_nayar_param(color, dot(bsdf->N, sd->wi), roughness);
   return SD_BSDF | SD_BSDF_HAS_EVAL;
 }
 
@@ -100,7 +113,7 @@ ccl_device Spectrum bsdf_oren_nayar_eval(const ccl_private ShaderClosure *sc,
   const float cosNO = dot(bsdf->N, wo);
   if (cosNO > 0.0f) {
     *pdf = cosNO * M_1_PI_F;
-    return bsdf_oren_nayar_get_intensity(sc, bsdf->N, wi, wo);
+    return bsdf_oren_nayar_get_intensity(bsdf, bsdf->N, wi, wo);
   }
   *pdf = 0.0f;
   return zero_spectrum();
@@ -119,7 +132,7 @@ ccl_device int bsdf_oren_nayar_sample(const ccl_private ShaderClosure *sc,
   sample_cos_hemisphere(bsdf->N, rand, wo, pdf);
 
   if (dot(Ng, *wo) > 0.0f) {
-    *eval = bsdf_oren_nayar_get_intensity(sc, bsdf->N, wi, *wo);
+    *eval = bsdf_oren_nayar_get_intensity(bsdf, bsdf->N, wi, *wo);
   }
   else {
     *pdf = 0.0f;

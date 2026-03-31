@@ -458,8 +458,8 @@ ccl_device
             sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
           }
           else {
-            bsdf->roughness = diffuse_roughness;
-            sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, rgb_to_spectrum(base_color));
+            sd->flag |= bsdf_oren_nayar_setup(
+                sd, bsdf, diffuse_roughness, rgb_to_spectrum(base_color));
           }
         }
       }
@@ -493,9 +493,8 @@ ccl_device
           sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
         }
         else {
-          bsdf->roughness = roughness;
           const Spectrum color = saturate(rgb_to_spectrum(stack_load(stack, bsdf_data.color)));
-          sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, color);
+          sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, roughness, color);
         }
       }
       break;

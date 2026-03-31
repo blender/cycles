@@ -117,9 +117,7 @@ ccl_device void osl_closure_oren_nayar_setup(KernelGlobals kg,
   }
 
   bsdf->N = safe_normalize_fallback(closure->N, sd->N);
-  bsdf->roughness = closure->roughness;
-
-  sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, rgb_to_spectrum(weight));
+  sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, closure->roughness, rgb_to_spectrum(weight));
 }
 
 ccl_device void osl_closure_oren_nayar_diffuse_bsdf_setup(
@@ -141,9 +139,8 @@ ccl_device void osl_closure_oren_nayar_diffuse_bsdf_setup(
   }
 
   bsdf->N = safe_normalize_fallback(closure->N, sd->N);
-  bsdf->roughness = closure->roughness;
-
-  sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, rgb_to_spectrum(closure->albedo));
+  sd->flag |= bsdf_oren_nayar_setup(
+      sd, bsdf, closure->roughness, rgb_to_spectrum(closure->albedo));
 }
 
 ccl_device void osl_closure_burley_diffuse_bsdf_setup(
