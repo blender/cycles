@@ -6,6 +6,7 @@
 
 #include "kernel/types.h"
 
+#include "kernel/closure/alloc.h"
 #include "kernel/sample/mapping.h"
 
 CCL_NAMESPACE_BEGIN
@@ -94,14 +95,20 @@ ccl_device_inline OrenNayarParam bsdf_oren_nayar_param(const Spectrum color,
           /*.multiscatter_term = */ Ems * (1.0f - Ev)};
 }
 
-ccl_device int bsdf_oren_nayar_setup(const ccl_private ShaderData *sd,
-                                     ccl_private OrenNayarBsdf *bsdf,
-                                     const float roughness,
-                                     const Spectrum color)
+ccl_device void bsdf_oren_nayar_setup(ccl_private ShaderData *sd,
+                                      const float3 N,
+                                      const Spectrum weight,
+                                      const float roughness,
+                                      const Spectrum color)
 {
-  bsdf->type = CLOSURE_BSDF_OREN_NAYAR_ID;
-  bsdf->param = bsdf_oren_nayar_param(color, dot(bsdf->N, sd->wi), roughness);
-  return SD_BSDF | SD_BSDF_HAS_EVAL;
+  ccl_private OrenNayarBsdf *bsdf = (ccl_private OrenNayarBsdf *)bsdf_alloc(
+      sd, sizeof(OrenNayarBsdf), weight);
+  if (bsdf) {
+    bsdf->N = N;
+    bsdf->type = CLOSURE_BSDF_OREN_NAYAR_ID;
+    bsdf->param = bsdf_oren_nayar_param(color, dot(bsdf->N, sd->wi), roughness);
+    sd->flag |= SD_BSDF | SD_BSDF_HAS_EVAL;
+  }
 }
 
 ccl_device Spectrum bsdf_oren_nayar_eval(const ccl_private ShaderClosure *sc,

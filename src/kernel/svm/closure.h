@@ -446,21 +446,14 @@ ccl_device
 #endif
 
         const float diffuse_roughness = saturatef(stack_load(stack, data.diffuse_roughness));
-        ccl_private OrenNayarBsdf *bsdf = (ccl_private OrenNayarBsdf *)bsdf_alloc(
-            sd,
-            sizeof(OrenNayarBsdf),
-            rgb_to_spectrum(base_color) * (1.0f - subsurface_weight) * weight);
-        if (bsdf) {
-          bsdf->N = N;
-
-          /* setup bsdf */
-          if (diffuse_roughness_is_almost_zero(diffuse_roughness)) {
-            sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
-          }
-          else {
-            sd->flag |= bsdf_oren_nayar_setup(
-                sd, bsdf, diffuse_roughness, rgb_to_spectrum(base_color));
-          }
+        const Spectrum diffuse_weight = rgb_to_spectrum(base_color) * (1.0f - subsurface_weight) *
+                                        weight;
+        if (diffuse_roughness_is_almost_zero(diffuse_roughness)) {
+          bsdf_diffuse_setup(sd, N, diffuse_weight);
+        }
+        else {
+          bsdf_oren_nayar_setup(
+              sd, N, diffuse_weight, diffuse_roughness, rgb_to_spectrum(base_color));
         }
       }
       else {
@@ -481,21 +474,13 @@ ccl_device
       N = safe_normalize_fallback(N, sd->N);
 
       const Spectrum weight = closure_weight * mix_weight;
-      ccl_private OrenNayarBsdf *bsdf = (ccl_private OrenNayarBsdf *)bsdf_alloc(
-          sd, sizeof(OrenNayarBsdf), weight);
-
-      if (bsdf) {
-        bsdf->N = N;
-
-        const float roughness = stack_load(stack, bsdf_data.roughness);
-
-        if (diffuse_roughness_is_almost_zero(roughness)) {
-          sd->flag |= bsdf_diffuse_setup((ccl_private DiffuseBsdf *)bsdf);
-        }
-        else {
-          const Spectrum color = saturate(rgb_to_spectrum(stack_load(stack, bsdf_data.color)));
-          sd->flag |= bsdf_oren_nayar_setup(sd, bsdf, roughness, color);
-        }
+      const float roughness = stack_load(stack, bsdf_data.roughness);
+      if (diffuse_roughness_is_almost_zero(roughness)) {
+        bsdf_diffuse_setup(sd, N, weight);
+      }
+      else {
+        const Spectrum color = saturate(rgb_to_spectrum(stack_load(stack, bsdf_data.color)));
+        bsdf_oren_nayar_setup(sd, N, weight, roughness, color);
       }
       break;
     }
@@ -506,13 +491,9 @@ ccl_device
       N = safe_normalize_fallback(N, sd->N);
 
       const Spectrum weight = closure_weight * mix_weight;
-      ccl_private DiffuseBsdf *bsdf = (ccl_private DiffuseBsdf *)bsdf_alloc(
-          sd, sizeof(DiffuseBsdf), weight);
-
-      if (bsdf) {
-        bsdf->N = maybe_ensure_valid_specular_reflection(sd, N);
-        sd->flag |= bsdf_translucent_setup(bsdf);
-      }
+      /* FIXME(weizhen): `maybe_ensure_valid_specular_reflection` should only be applied to glossy
+       * closures, applying to translucent closure seems to be a mistake. */
+      bsdf_translucent_setup(sd, maybe_ensure_valid_specular_reflection(sd, N), weight);
       break;
     }
     case CLOSURE_BSDF_TRANSPARENT_ID: {
