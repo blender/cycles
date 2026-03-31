@@ -125,10 +125,6 @@ class Denoiser {
  protected:
   Denoiser(Device *denoiser_device, const DenoiseParams &params);
 
-  /* Get device type mask which is used to filter available devices when new device needs to be
-   * created. */
-  virtual uint get_device_type_mask() const = 0;
-
   Device *denoiser_device_;
   bool denoise_kernels_are_loaded_;
   DenoiseParams params_;

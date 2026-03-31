@@ -27,8 +27,6 @@ class OIDNDenoiserGPU : public DenoiserGPU {
     ASYNC,
   };
 
-  uint get_device_type_mask() const override;
-
   /* Create OIDN denoiser descriptor if needed.
    * Will do nothing if the current OIDN descriptor is usable for the given parameters.
    * If the OIDN denoiser descriptor did re-allocate here it is left unconfigured. */

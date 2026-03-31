@@ -173,17 +173,16 @@ DenoiserGPU::DenoiseContext::DenoiseContext(Device *device,
       buffer_params(buffer_params),
       denoised_buffer_params(denoised_buffer_params),
       guiding_buffer(device, "denoiser guiding passes buffer", true),
-      use_guiding_passes(params.use_pass_albedo || params.use_pass_normal ||
-                         params.temporally_stable),
+      use_guiding_passes(params.passes != DENOISER_PASS_NONE),
       num_samples(num_samples)
 {
   pass_motion = buffer_params.get_pass_offset(PASS_MOTION);
   pass_sample_count = buffer_params.get_pass_offset(PASS_SAMPLE_COUNT);
 
-  if (params.use_pass_albedo) {
+  if (params.passes & DENOISER_PASS_ALBEDO) {
     pass_denoising_albedo = buffer_params.get_pass_offset(PASS_DENOISING_ALBEDO);
   }
-  if (params.use_pass_normal) {
+  if (params.passes & DENOISER_PASS_NORMAL) {
     pass_denoising_normal = buffer_params.get_pass_offset(PASS_DENOISING_NORMAL);
   }
 
@@ -209,15 +208,15 @@ DenoiserGPU::DenoiseContext::DenoiseContext(Device *device,
     }
     else {
       guiding_params.pass_stride = 0;
-      if (params.use_pass_albedo) {
+      if (params.passes & DENOISER_PASS_ALBEDO) {
         guiding_params.pass_albedo = guiding_params.pass_stride;
         guiding_params.pass_stride += 3;
       }
-      if (params.use_pass_normal) {
+      if (params.passes & DENOISER_PASS_NORMAL) {
         guiding_params.pass_normal = guiding_params.pass_stride;
         guiding_params.pass_stride += 3;
       }
-      if (params.temporally_stable) {
+      if (params.passes & DENOISER_PASS_MOTION) {
         guiding_params.pass_flow = guiding_params.pass_stride;
         guiding_params.pass_stride += 2;
       }

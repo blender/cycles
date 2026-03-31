@@ -36,7 +36,6 @@ class OIDNDenoiser : public Denoiser {
 #endif
 
  protected:
-  uint get_device_type_mask() const override;
   /* We only perform one denoising at a time, since OpenImageDenoise itself is multithreaded.
    * Use this mutex whenever images are passed to the OIDN and needs to be denoised. */
   static thread_mutex mutex_;

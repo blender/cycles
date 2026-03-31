@@ -666,11 +666,23 @@ string RenderScheduler::full_report() const
     result += "  Start Sample: " + to_string(denoiser_params_.start_sample) + "\n";
 
     string passes = "Color";
-    if (denoiser_params_.use_pass_albedo) {
+    if (denoiser_params_.passes & DENOISER_PASS_ALBEDO) {
       passes += ", Albedo";
     }
-    if (denoiser_params_.use_pass_normal) {
+    if (denoiser_params_.passes & DENOISER_PASS_SPECULAR_ALBEDO) {
+      passes += ", Specular Albedo";
+    }
+    if (denoiser_params_.passes & DENOISER_PASS_NORMAL) {
       passes += ", Normal";
+    }
+    if (denoiser_params_.passes & DENOISER_PASS_ROUGHNESS) {
+      passes += ", Roughness";
+    }
+    if (denoiser_params_.passes & DENOISER_PASS_DEPTH) {
+      passes += ", Depth";
+    }
+    if (denoiser_params_.passes & DENOISER_PASS_MOTION) {
+      passes += ", Motion";
     }
 
     result += "  Passes: " + passes + "\n";

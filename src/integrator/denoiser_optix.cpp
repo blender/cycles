@@ -29,11 +29,6 @@ OptiXDenoiser::~OptiXDenoiser()
   }
 }
 
-uint OptiXDenoiser::get_device_type_mask() const
-{
-  return DEVICE_MASK_OPTIX;
-}
-
 bool OptiXDenoiser::is_device_supported(const DeviceInfo &device)
 {
   if (device.type == DEVICE_OPTIX) {
@@ -60,12 +55,16 @@ bool OptiXDenoiser::denoise_buffer(const BufferParams &buffer_params,
 
 bool OptiXDenoiser::denoise_create_if_needed(DenoiseContext &context)
 {
+  const bool use_pass_albedo = (context.denoise_params.passes & DENOISER_PASS_ALBEDO) != 0;
+  const bool use_pass_normal = (context.denoise_params.passes & DENOISER_PASS_NORMAL) != 0;
+  const bool use_pass_motion = context.denoise_params.temporally_stable &&
+                               (context.denoise_params.passes & DENOISER_PASS_MOTION) != 0;
   const bool use_upscale_model = context.denoise_params.upscale_factor == 2.0f;
 
   const bool recreate_denoiser = (optix_denoiser_ == nullptr) ||
-                                 (use_pass_albedo_ != context.denoise_params.use_pass_albedo) ||
-                                 (use_pass_normal_ != context.denoise_params.use_pass_normal) ||
-                                 (use_pass_motion_ != context.denoise_params.temporally_stable) ||
+                                 (use_pass_albedo_ != use_pass_albedo) ||
+                                 (use_pass_normal_ != use_pass_normal) ||
+                                 (use_pass_motion_ != use_pass_motion) ||
                                  (use_upscale_model_ != use_upscale_model);
   if (!recreate_denoiser) {
     return true;
@@ -78,11 +77,11 @@ bool OptiXDenoiser::denoise_create_if_needed(DenoiseContext &context)
 
   /* Create OptiX denoiser handle on demand when it is first used. */
   OptixDenoiserOptions denoiser_options = {};
-  denoiser_options.guideAlbedo = context.denoise_params.use_pass_albedo;
-  denoiser_options.guideNormal = context.denoise_params.use_pass_normal;
+  denoiser_options.guideAlbedo = use_pass_albedo;
+  denoiser_options.guideNormal = use_pass_normal;
 
   OptixDenoiserModelKind model = OPTIX_DENOISER_MODEL_KIND_AOV;
-  if (context.denoise_params.temporally_stable) {
+  if (use_pass_motion) {
     if (use_upscale_model) {
       model = OPTIX_DENOISER_MODEL_KIND_TEMPORAL_UPSCALE2X;
     }
@@ -108,9 +107,9 @@ bool OptiXDenoiser::denoise_create_if_needed(DenoiseContext &context)
   }
 
   /* OptiX denoiser handle was created with the requested number of input passes. */
-  use_pass_albedo_ = context.denoise_params.use_pass_albedo;
-  use_pass_normal_ = context.denoise_params.use_pass_normal;
-  use_pass_motion_ = context.denoise_params.temporally_stable;
+  use_pass_albedo_ = use_pass_albedo;
+  use_pass_normal_ = use_pass_normal;
+  use_pass_motion_ = use_pass_motion;
   use_upscale_model_ = use_upscale_model;
 
   /* OptiX denoiser has been created, but it needs configuration. */
@@ -190,7 +189,7 @@ bool OptiXDenoiser::denoise_run(const DenoiseContext &context, const DenoisePass
   }
 
   /* Previous output. */
-  if (context.denoise_params.temporally_stable && context.prev_output.offset != PASS_UNUSED) {
+  if (use_pass_motion_ && context.prev_output.offset != PASS_UNUSED) {
     const int64_t pass_stride_in_bytes = context.prev_output.pass_stride * sizeof(float);
 
     prev_output_layer.data = context.prev_output.device_pointer +
@@ -207,7 +206,7 @@ bool OptiXDenoiser::denoise_run(const DenoiseContext &context, const DenoisePass
   const int64_t pixel_stride_in_bytes = context.guiding_params.pass_stride * sizeof(float);
   const int64_t row_stride_in_bytes = context.guiding_params.stride * pixel_stride_in_bytes;
 
-  if (context.denoise_params.use_pass_albedo) {
+  if (use_pass_albedo_) {
     albedo_layer.data = d_guiding_buffer + context.guiding_params.pass_albedo * sizeof(float);
     albedo_layer.width = context.buffer_params.width;
     albedo_layer.height = context.buffer_params.height;
@@ -216,7 +215,7 @@ bool OptiXDenoiser::denoise_run(const DenoiseContext &context, const DenoisePass
     albedo_layer.format = OPTIX_PIXEL_FORMAT_FLOAT3;
   }
 
-  if (context.denoise_params.use_pass_normal) {
+  if (use_pass_normal_) {
     normal_layer.data = d_guiding_buffer + context.guiding_params.pass_normal * sizeof(float);
     normal_layer.width = context.buffer_params.width;
     normal_layer.height = context.buffer_params.height;
@@ -225,7 +224,7 @@ bool OptiXDenoiser::denoise_run(const DenoiseContext &context, const DenoisePass
     normal_layer.format = OPTIX_PIXEL_FORMAT_FLOAT3;
   }
 
-  if (context.denoise_params.temporally_stable) {
+  if (use_pass_motion_) {
     flow_layer.data = d_guiding_buffer + context.guiding_params.pass_flow * sizeof(float);
     flow_layer.width = context.buffer_params.width;
     flow_layer.height = context.buffer_params.height;

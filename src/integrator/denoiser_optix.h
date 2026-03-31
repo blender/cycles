@@ -26,9 +26,6 @@ class OptiXDenoiser : public DenoiserGPU {
 
   static bool is_device_supported(const DeviceInfo &device);
 
- protected:
-  virtual uint get_device_type_mask() const override;
-
  private:
   /* Set fake albedo pixels in the albedo guiding pass storage.
    * After this point only passes which do not need albedo for denoising can be processed. */

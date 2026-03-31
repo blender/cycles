@@ -22,6 +22,18 @@ const char *denoiserTypeToHumanReadable(DenoiserType type);
 
 using DenoiserTypeMask = int;
 
+enum DenoiserPass {
+  DENOISER_PASS_NONE = 0,
+  DENOISER_PASS_ALBEDO = 1 << 0,
+  DENOISER_PASS_SPECULAR_ALBEDO = 1 << 1,
+  DENOISER_PASS_NORMAL = 1 << 2,
+  DENOISER_PASS_ROUGHNESS = 1 << 3,
+  DENOISER_PASS_DEPTH = 1 << 4,
+  DENOISER_PASS_MOTION = 1 << 5,
+};
+
+using DenoiserPassMask = int;
+
 enum DenoiserPrefilter {
   /* Best quality of the result without extra processing time, but requires guiding passes to be
    * noise-free. */
@@ -62,11 +74,7 @@ class DenoiseParams : public Node {
   int start_sample = 0;
 
   /* Auxiliary passes. */
-  bool use_pass_albedo = true;
-  bool use_pass_specular_albedo = false;
-  bool use_pass_normal = true;
-  bool use_pass_roughness = false;
-  bool use_pass_depth = false;
+  DenoiserPassMask passes = DENOISER_PASS_ALBEDO | DENOISER_PASS_NORMAL;
 
   /* Configure the denoiser to use motion vectors, previous image and a temporally stable model. */
   bool temporally_stable = false;
