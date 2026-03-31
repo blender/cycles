@@ -139,8 +139,9 @@ ccl_device
       float3 N = stack_load_float3_default(stack, data.normal_offset, sd->N);
       N = safe_normalize_fallback(N, sd->N);
 
-      const float3 base_color = max(stack_load(stack, data.base_color), zero_float3());
-      const float3 clamped_base_color = min(base_color, one_float3());
+      const Spectrum base_color = rgb_to_spectrum(
+          max(stack_load(stack, data.base_color), zero_float3()));
+      const Spectrum clamped_base_color = min(base_color, one_spectrum());
       const float ior = fmaxf(stack_load(stack, data.ior), 1e-5f);
       const float roughness = saturatef(stack_load(stack, data.roughness));
       const float alpha = saturatef(stack_load(stack, data.alpha));
@@ -307,7 +308,7 @@ ccl_device
               bsdf->alpha_x = alpha_x;
               bsdf->alpha_y = alpha_y;
 
-              fresnel->f0 = rgb_to_spectrum(clamped_base_color);
+              fresnel->f0 = clamped_base_color;
               const Spectrum f82 = min(specular_tint, one_spectrum());
 
               fresnel->thin_film.thickness = thinfilm_thickness;
@@ -346,9 +347,8 @@ ccl_device
               fresnel->f90 = one_spectrum();
               fresnel->exponent = -ior;
               fresnel->reflection_tint = reflective_caustics ? one_spectrum() : zero_spectrum();
-              fresnel->transmission_tint = refractive_caustics ?
-                                               sqrt(rgb_to_spectrum(clamped_base_color)) :
-                                               zero_spectrum();
+              fresnel->transmission_tint = refractive_caustics ? sqrt(clamped_base_color) :
+                                                                 zero_spectrum();
               fresnel->thin_film.thickness = thinfilm_thickness;
               fresnel->thin_film.ior = (sd->flag & SD_BACKFACING) ? thinfilm_ior / ior :
                                                                     thinfilm_ior;
@@ -417,16 +417,16 @@ ccl_device
 #ifdef __SUBSURFACE__
         const float subsurface_weight = saturatef(stack_load(stack, data.subsurface_weight));
         if (subsurface_weight > CLOSURE_WEIGHT_CUTOFF) {
+          const Spectrum closure_weight = clamped_base_color * subsurface_weight * weight;
           const ClosureType subsurface_method = data.subsurface_method;
-          ccl_private Bssrdf *bssrdf = bssrdf_alloc(
-              sd, rgb_to_spectrum(clamped_base_color) * subsurface_weight * weight);
+          ccl_private Bssrdf *bssrdf = bssrdf_alloc(sd, closure_weight);
           if (bssrdf) {
             const float3 subsurface_radius = stack_load(stack, data.subsurface_radius);
             const float subsurface_scale = stack_load(stack, data.subsurface_scale);
 
             bssrdf->radius = rgb_to_spectrum(
                 max(subsurface_radius * subsurface_scale, zero_float3()));
-            bssrdf->albedo = rgb_to_spectrum(clamped_base_color);
+            bssrdf->albedo = clamped_base_color;
             bssrdf->N = maybe_ensure_valid_specular_reflection(sd, N);
             bssrdf->alpha = sqr(roughness);
             /* IOR is clamped to [1.01..3.8] inside bssrdf_setup */
@@ -446,14 +446,12 @@ ccl_device
 #endif
 
         const float diffuse_roughness = saturatef(stack_load(stack, data.diffuse_roughness));
-        const Spectrum diffuse_weight = rgb_to_spectrum(base_color) * (1.0f - subsurface_weight) *
-                                        weight;
+        const Spectrum diffuse_weight = base_color * (1.0f - subsurface_weight) * weight;
         if (diffuse_roughness_is_almost_zero(diffuse_roughness)) {
           bsdf_diffuse_setup(sd, N, diffuse_weight);
         }
         else {
-          bsdf_oren_nayar_setup(
-              sd, N, diffuse_weight, diffuse_roughness, rgb_to_spectrum(base_color));
+          bsdf_oren_nayar_setup(sd, N, diffuse_weight, diffuse_roughness, base_color);
         }
       }
       else {
