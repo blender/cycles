@@ -213,6 +213,10 @@ void PathTraceWorkCPU::copy_to_display(PathTraceDisplay *display,
     return;
   }
 
+  const BufferParams &effective_buffer_params = (pass_mode == PassMode::DENOISED) ?
+                                                    effective_denoised_buffer_params_ :
+                                                    effective_buffer_params_;
+
   const PassAccessorCPU pass_accessor(pass_access_info, kfilm.exposure, num_samples);
 
   PassAccessor::Destination destination = get_display_destination_template(display, pass_mode);
@@ -220,7 +224,7 @@ void PathTraceWorkCPU::copy_to_display(PathTraceDisplay *display,
 
   tbb::task_arena local_arena = local_tbb_arena_create(device_);
   local_arena.execute([&]() {
-    pass_accessor.get_render_tile_pixels(buffers_.get(), effective_buffer_params_, destination);
+    pass_accessor.get_render_tile_pixels(buffers_.get(), effective_buffer_params, destination);
   });
 
   display->unmap_texture_buffer();

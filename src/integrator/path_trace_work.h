@@ -43,9 +43,10 @@ class PathTraceWork {
   RenderBuffers *get_render_buffers();
 
   /* Set effective parameters of the big tile and the work itself. */
-  void set_effective_buffer_params(const BufferParams &effective_full_params,
-                                   const BufferParams &effective_big_tile_params,
-                                   const BufferParams &effective_buffer_params);
+  void set_effective_buffer_params(const BufferParams &effective_big_tile_params,
+                                   const BufferParams &effective_buffer_params,
+                                   const BufferParams &effective_denoised_big_tile_params,
+                                   const BufferParams &effective_denoised_buffer_params);
 
   /* Check whether the big tile is being worked on by multiple path trace works. */
   bool has_multiple_works() const;
@@ -187,12 +188,13 @@ class PathTraceWork {
    * It also defines possible subset of a big tile in the case of multi-device rendering. */
   unique_ptr<RenderBuffers> buffers_;
 
-  /* Effective parameters of the full, big tile, and current work render buffer.
+  /* Effective parameters of the big tile, and current work render buffer.
    * The latter might be different from `buffers_->params` when there is a resolution divider
    * involved. */
-  BufferParams effective_full_params_;
   BufferParams effective_big_tile_params_;
   BufferParams effective_buffer_params_;
+  BufferParams effective_denoised_big_tile_params_;
+  BufferParams effective_denoised_buffer_params_;
 
   const bool *cancel_requested_flag_ = nullptr;
 };

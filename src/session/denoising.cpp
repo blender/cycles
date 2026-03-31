@@ -271,7 +271,7 @@ bool DenoiseTask::exec()
     }
 
     /* Run task on device. */
-    denoiser->denoiser->denoise_buffer(buffers.params, &buffers, 1, true);
+    denoiser->denoiser->denoise_buffer(buffers.params, buffers.params, &buffers, 1, true);
 
     /* Copy denoised pixels from device. */
     buffers.buffer.copy_from_device();

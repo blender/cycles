@@ -82,6 +82,7 @@ NODE_DEFINE(DenoiseParams)
 
   SOCKET_ENUM(prefilter, "Prefilter", *prefilter_enum, DENOISER_PREFILTER_FAST);
   SOCKET_ENUM(quality, "Quality", *quality_enum, DENOISER_QUALITY_HIGH);
+  SOCKET_FLOAT(upscale_factor, "Upscale Factor", 1.0f);
 
   return type;
 }

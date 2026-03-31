@@ -90,8 +90,9 @@ class Denoiser {
    * Returns true when all passes are denoised. Will return false if there is a denoiser error (for
    * example, caused by misconfigured denoiser) or when user requested to cancel rendering. */
   virtual bool denoise_buffer(const BufferParams &buffer_params,
+                              const BufferParams &denoised_buffer_params,
                               RenderBuffers *render_buffers,
-                              const int num_samples,
+                              int num_samples,
                               bool allow_inplace_modification) = 0;
 
   /* Get a device which is used to perform actual denoising.

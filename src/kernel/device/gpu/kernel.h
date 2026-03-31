@@ -1173,13 +1173,18 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
                              const int height,
                              const int offset,
                              const int stride,
+                             const int render_full_x,
+                             const int render_full_y,
+                             const int render_offset,
+                             const int render_stride,
                              const int pass_stride,
                              const int num_samples,
                              const int pass_noisy,
                              const int pass_denoised,
                              const int pass_sample_count,
                              const int num_components,
-                             const int use_compositing)
+                             const int use_compositing,
+                             const float upscale_factor)
 {
   const int work_index = ccl_gpu_global_id_x();
   const int y = work_index / width;
@@ -1189,7 +1194,8 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
     return;
   }
 
-  const uint64_t render_pixel_index = offset + (x + full_x) + (y + full_y) * stride;
+  const uint64_t render_pixel_index = render_offset + (int(x / upscale_factor) + render_full_x) +
+                                      (int(y / upscale_factor) + render_full_y) * render_stride;
   ccl_global float *buffer = render_buffer + render_pixel_index * pass_stride;
 
   float pixel_scale;
@@ -1200,11 +1206,15 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
     pixel_scale = __float_as_uint(buffer[pass_sample_count]);
   }
 
-  ccl_global float *denoised_pixel = buffer + pass_denoised;
+  const uint64_t denoised_pixel_index = offset + (x + full_x) + (y + full_y) * stride;
+  ccl_global float *denoised_pixel = render_buffer + denoised_pixel_index * pass_stride +
+                                     pass_denoised;
 
-  denoised_pixel[0] *= pixel_scale;
-  denoised_pixel[1] *= pixel_scale;
-  denoised_pixel[2] *= pixel_scale;
+  if (pass_sample_count == PASS_UNUSED || upscale_factor == 1.0f) {
+    denoised_pixel[0] *= pixel_scale;
+    denoised_pixel[1] *= pixel_scale;
+    denoised_pixel[2] *= pixel_scale;
+  }
 
   if (num_components == 3) {
     /* Pass without alpha channel. */
@@ -1215,6 +1225,10 @@ ccl_gpu_kernel(GPU_KERNEL_BLOCK_NUM_THREADS, GPU_KERNEL_MAX_REGISTERS)
      * simplifies logic and avoids extra memory allocation. */
     const ccl_global float *noisy_pixel = buffer + pass_noisy;
     denoised_pixel[3] = noisy_pixel[3];
+
+    if (pass_sample_count != PASS_UNUSED && upscale_factor != 1.0f) {
+      denoised_pixel[3] /= pixel_scale;
+    }
   }
   else {
     /* Assigning to zero since this is a default alpha value for 3-component passes, and it

@@ -107,6 +107,7 @@ class Integrator : public Node {
   NODE_SOCKET_API(DenoiserPrefilter, denoiser_prefilter);
   NODE_SOCKET_API(bool, denoise_use_gpu);
   NODE_SOCKET_API(DenoiserQuality, denoiser_quality);
+  NODE_SOCKET_API(float, denoiser_upscale_factor);
 
   enum : uint32_t {
     AO_PASS_MODIFIED = (1 << 0),

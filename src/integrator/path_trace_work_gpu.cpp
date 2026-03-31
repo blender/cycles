@@ -1036,17 +1036,24 @@ void PathTraceWorkGPU::copy_to_display_naive(PathTraceDisplay *display,
                                              PassMode pass_mode,
                                              const int num_samples)
 {
-  const int full_x = effective_buffer_params_.full_x;
-  const int full_y = effective_buffer_params_.full_y;
-  const int width = effective_buffer_params_.window_width;
-  const int height = effective_buffer_params_.window_height;
+  const BufferParams &effective_big_tile_params = (pass_mode == PassMode::DENOISED) ?
+                                                      effective_denoised_big_tile_params_ :
+                                                      effective_big_tile_params_;
+  const BufferParams &effective_buffer_params = (pass_mode == PassMode::DENOISED) ?
+                                                    effective_denoised_buffer_params_ :
+                                                    effective_buffer_params_;
+
+  const int full_x = effective_buffer_params.full_x;
+  const int full_y = effective_buffer_params.full_y;
+  const int width = effective_buffer_params.window_width;
+  const int height = effective_buffer_params.window_height;
   const int final_width = buffers_->params.window_width;
   const int final_height = buffers_->params.window_height;
 
-  const int texture_x = full_x - effective_big_tile_params_.full_x +
-                        effective_buffer_params_.window_x - effective_big_tile_params_.window_x;
-  const int texture_y = full_y - effective_big_tile_params_.full_y +
-                        effective_buffer_params_.window_y - effective_big_tile_params_.window_y;
+  const int texture_x = full_x - effective_big_tile_params.full_x +
+                        effective_buffer_params.window_x - effective_big_tile_params.window_x;
+  const int texture_y = full_y - effective_big_tile_params.full_y +
+                        effective_buffer_params.window_y - effective_big_tile_params.window_y;
 
   /* Re-allocate display memory if needed, and make sure the device pointer is allocated.
    *
@@ -1120,9 +1127,13 @@ void PathTraceWorkGPU::get_render_tile_film_pixels(const PassAccessor::Destinati
     return;
   }
 
+  const BufferParams &effective_buffer_params = (pass_mode == PassMode::DENOISED) ?
+                                                    effective_denoised_buffer_params_ :
+                                                    effective_buffer_params_;
+
   const PassAccessorGPU pass_accessor(queue_.get(), pass_access_info, kfilm.exposure, num_samples);
 
-  pass_accessor.get_render_tile_pixels(buffers_.get(), effective_buffer_params_, destination);
+  pass_accessor.get_render_tile_pixels(buffers_.get(), effective_buffer_params, destination);
 }
 
 int PathTraceWorkGPU::adaptive_sampling_converge_filter_count_active(const float threshold,
