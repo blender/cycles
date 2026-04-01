@@ -186,13 +186,132 @@ static void store_vertex_normals(const Mesh *mesh,
           continue;
         }
 
-        float3 N = normalize(vN_float[vert]);
+        float3 N = safe_normalize(vN_float[vert]);
         if (flip) {
           N = -N;
         }
         vN[vert] = packed_normal(N);
         done[vert] = true;
       }
+    }
+  }
+}
+
+/* Apply vertex normal delta from displacement to a set of corner normals.
+ * For flat shaded triangles, use the new face normal directly. */
+static void apply_corner_normal_delta(const Mesh *mesh,
+                                      const float3 *verts_data,
+                                      const vector<float3> &post_vN,
+                                      const float3 *pre_vN,
+                                      const vector<bool> &tri_recompute,
+                                      const bool flip,
+                                      packed_normal *cN)
+{
+  const bool *smooth = mesh->get_smooth().data();
+
+  for (size_t i = 0; i < mesh->num_triangles(); i++) {
+    if (!tri_recompute[i]) {
+      continue;
+    }
+    const Mesh::Triangle triangle = mesh->get_triangle(i);
+    if (smooth && smooth[i]) {
+      for (size_t j = 0; j < 3; j++) {
+        const int vert = triangle.v[j];
+        float3 post = safe_normalize(post_vN[vert]);
+        if (flip) {
+          post = -post;
+        }
+        const float3 delta = post - pre_vN[vert];
+        cN[i * 3 + j] = packed_normal(safe_normalize(cN[i * 3 + j].decode() + delta));
+      }
+    }
+    else {
+      float3 post_fN = triangle.compute_normal(verts_data);
+      if (flip) {
+        post_fN = -post_fN;
+      }
+      for (size_t j = 0; j < 3; j++) {
+        cN[i * 3 + j] = packed_normal(post_fN);
+      }
+    }
+  }
+}
+
+/* Save pre-displacement vertex normals so we can compute the delta after
+ * displacement and apply it to corner normals. Also saves per motion step. */
+static void save_pre_displacement_normals(const Mesh *mesh,
+                                          array<float3> &pre_displace_vN,
+                                          vector<array<float3>> &pre_displace_motion_vN)
+{
+  const size_t num_verts = mesh->get_verts().size();
+  const size_t num_triangles = mesh->num_triangles();
+  const bool flip = mesh->transform_negative_scaled;
+  const vector<bool> all_tris(num_triangles, true);
+
+  auto compute_normals = [&](const float3 *verts_data) {
+    array<float3> result;
+    result.resize(num_verts, zero_float3());
+    vector<float3> vN(num_verts, zero_float3());
+    compute_vertex_normals(mesh, verts_data, all_tris, vN);
+    for (size_t i = 0; i < num_verts; i++) {
+      float3 N = safe_normalize(vN[i]);
+      if (flip) {
+        N = -N;
+      }
+      result[i] = N;
+    }
+    return result;
+  };
+
+  pre_displace_vN = compute_normals(mesh->get_verts().data());
+
+  const Attribute *attr_mP = mesh->attributes.find(ATTR_STD_MOTION_VERTEX_POSITION);
+  const Attribute *attr_mcN = mesh->attributes.find(ATTR_STD_MOTION_CORNER_NORMAL);
+  if (mesh->has_motion_blur() && attr_mP && attr_mcN) {
+    const int num_steps = mesh->get_motion_steps() - 1;
+    pre_displace_motion_vN.resize(num_steps);
+    for (int step = 0; step < num_steps; step++) {
+      const float3 *mP = attr_mP->data_float3() + step * num_verts;
+      pre_displace_motion_vN[step] = compute_normals(mP);
+    }
+  }
+}
+
+/* Update corner normals after displacement, including motion blur steps. */
+static void recompute_displaced_corner_normals(Mesh *mesh,
+                                               const vector<float3> &vN_float,
+                                               const array<float3> &pre_displace_vN,
+                                               const vector<array<float3>> &pre_displace_motion_vN,
+                                               const vector<bool> &tri_recompute,
+                                               const bool flip)
+{
+  /* Static corner normals. */
+  Attribute *attr_cN = mesh->attributes.find(ATTR_STD_CORNER_NORMAL);
+  apply_corner_normal_delta(mesh,
+                            mesh->get_verts().data(),
+                            vN_float,
+                            pre_displace_vN.data(),
+                            tri_recompute,
+                            flip,
+                            attr_cN->data_normal_for_write());
+
+  /* Motion corner normals. */
+  Attribute *attr_mP = mesh->attributes.find(ATTR_STD_MOTION_VERTEX_POSITION);
+  Attribute *attr_mcN = mesh->attributes.find(ATTR_STD_MOTION_CORNER_NORMAL);
+
+  if (mesh->has_motion_blur() && attr_mP && attr_mcN) {
+    const size_t num_verts = mesh->get_verts().size();
+    const size_t num_corners = mesh->num_triangles() * 3;
+
+    for (int step = 0; step < mesh->get_motion_steps() - 1; step++) {
+      const float3 *mP = attr_mP->data_float3() + step * num_verts;
+      packed_normal *mcN = attr_mcN->data_normal_for_write() + step * num_corners;
+
+      vector<float3> mN_float(num_verts, zero_float3());
+      compute_vertex_normals(mesh, mP, tri_recompute, mN_float);
+
+      apply_corner_normal_delta(
+          mesh, mP, mN_float, pre_displace_motion_vN[step].data(), tri_recompute, flip, mcN);
     }
   }
 }
@@ -239,18 +358,21 @@ bool GeometryManager::displace(Device *device, Scene *scene, Mesh *mesh, Progres
     return false;
   }
 
-  /* Corner normals can't be preserved through displacement, replace with vertex normals. */
+  /* Corner normals for sharp edges and faces should be preserved, but we can not
+   * individually dispace corners as the mesh would break apart. Instead we
+   * compute the delta between vertex normals before and after displacement and
+   * apply the delta to corner normals. */
   bool need_recompute_vertex_normals = false;
   bool need_recompute_all_vertex_normals = false;
 
-  if (mesh->attributes.find(ATTR_STD_CORNER_NORMAL) ||
-      mesh->attributes.find(ATTR_STD_MOTION_CORNER_NORMAL))
-  {
-    mesh->attributes.remove(ATTR_STD_CORNER_NORMAL);
-    mesh->attributes.remove(ATTR_STD_MOTION_CORNER_NORMAL);
+  const bool has_corner_normals = mesh->attributes.find(ATTR_STD_CORNER_NORMAL) != nullptr;
+  array<float3> pre_displace_vN;
+  vector<array<float3>> pre_displace_motion_vN;
+
+  if (has_corner_normals) {
     need_recompute_vertex_normals = true;
     need_recompute_all_vertex_normals = true;
-    mesh->add_vertex_normals();
+    save_pre_displacement_normals(mesh, pre_displace_vN, pre_displace_motion_vN);
   }
 
   /* Add undisplaced attributes right before doing displacement. */
@@ -314,7 +436,14 @@ bool GeometryManager::displace(Device *device, Scene *scene, Mesh *mesh, Progres
 
     vector<float3> vN_float(num_verts, zero_float3());
     compute_vertex_normals(mesh, mesh->get_verts().data(), tri_recompute, vN_float);
-    recompute_displaced_vertex_normals(mesh, vN_float, tri_recompute, flip);
+
+    if (has_corner_normals) {
+      recompute_displaced_corner_normals(
+          mesh, vN_float, pre_displace_vN, pre_displace_motion_vN, tri_recompute, flip);
+    }
+    else {
+      recompute_displaced_vertex_normals(mesh, vN_float, tri_recompute, flip);
+    }
   }
 
   mesh->update_tangents(scene, false);

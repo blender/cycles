@@ -584,6 +584,17 @@ void Mesh::apply_transform(const Transform &tfm, const bool apply_to_motion)
     }
   }
 
+  Attribute *attr_uN = attributes.find(ATTR_STD_NORMAL_UNDISPLACED);
+  if (attr_uN) {
+    const Transform ntfm = transform_normal;
+    const size_t size = attr_uN->buffer_size(this, ATTR_PRIM_GEOMETRY) / sizeof(packed_normal);
+    packed_normal *uN = attr_uN->data_normal_for_write();
+
+    for (size_t i = 0; i < size; i++) {
+      uN[i] = packed_normal(normalize(transform_direction(&ntfm, uN[i].decode())));
+    }
+  }
+
   if (apply_to_motion) {
     Attribute *attr = attributes.find(ATTR_STD_MOTION_VERTEX_POSITION);
 
@@ -755,10 +766,18 @@ void Mesh::add_undisplaced(Scene *scene)
   if (need_attribute(scene, ATTR_STD_NORMAL_UNDISPLACED) &&
       !attributes.find(ATTR_STD_NORMAL_UNDISPLACED))
   {
-    /* Copy vertex normal to attribute */
-    Attribute *attr_N = attributes.find(ATTR_STD_VERTEX_NORMAL);
+    /* Copy corner or vertex normal to attribute, using the matching element type
+     * so the kernel reads and interpolates it correctly. */
+    Attribute *attr_N = attributes.find(ATTR_STD_CORNER_NORMAL);
+    if (!attr_N) {
+      attr_N = attributes.find(ATTR_STD_VERTEX_NORMAL);
+    }
     if (attr_N) {
-      Attribute *attr = attributes.add(ATTR_STD_NORMAL_UNDISPLACED);
+      Attribute *attr = attributes.add(
+          ustring(Attribute::standard_name(ATTR_STD_NORMAL_UNDISPLACED)),
+          TypeNormal,
+          attr_N->element);
+      attr->std = ATTR_STD_NORMAL_UNDISPLACED;
 
       size_t size = attr->buffer_size(this, ATTR_PRIM_GEOMETRY) / sizeof(packed_normal);
       std::copy_n(attr_N->data_normal(), size, attr->data_normal_for_write());
