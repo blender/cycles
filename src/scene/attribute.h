@@ -8,6 +8,7 @@
 
 #include "kernel/types.h"
 
+#include "util/implicit_sharing.h"
 #include "util/list.h"
 #include "util/param.h"
 #include "util/set.h"
@@ -55,7 +56,13 @@ class Attribute {
   AttributeStandard std;
 
   TypeDesc type;
-  vector<char> buffer;
+  /**
+   * Optionally used to share ownership of #buffer, see implicit_sharing.h.
+   * If this is null, #buffer is wholly owned by this Attribute.
+   */
+  ImplicitSharingInfo sharing_info = nullptr;
+  const void *buffer = nullptr;
+  int size = 0;
   AttributeElement element;
   uint flags; /* enum AttributeFlag */
 
@@ -66,7 +73,14 @@ class Attribute {
             AttributeElement element,
             Geometry *geom,
             AttributePrimitive prim);
-  Attribute(Attribute &&other) = default;
+  Attribute(ustring name,
+            const TypeDesc type,
+            AttributeElement element,
+            const void *data,
+            int size,
+            ImplicitSharingInfo sharing_info);
+  Attribute(Attribute &&other) = delete;
+  Attribute &operator=(Attribute &&other) = delete;
   Attribute(const Attribute &other) = delete;
   Attribute &operator=(const Attribute &other) = delete;
   ~Attribute();
@@ -76,13 +90,10 @@ class Attribute {
   void resize(const size_t num_elements);
 
   size_t data_sizeof() const;
-  size_t element_size(Geometry *geom, AttributePrimitive prim) const;
+  static size_t element_size(Geometry *geom, AttributeElement element, AttributePrimitive prim);
   size_t buffer_size(Geometry *geom, AttributePrimitive prim) const;
 
-  char *data_for_write()
-  {
-    return (!buffer.empty()) ? buffer.data() : nullptr;
-  }
+  char *data_for_write();
   float2 *data_float2_for_write()
   {
     assert(data_sizeof() == sizeof(float2));
@@ -127,7 +138,7 @@ class Attribute {
 
   const char *data() const
   {
-    return (!buffer.empty()) ? buffer.data() : nullptr;
+    return static_cast<const char *>(buffer);
   }
   const float2 *data_float2() const
   {
@@ -174,6 +185,8 @@ class Attribute {
 
   void set_data_from(Attribute &&other);
 
+  void free_data();
+
   static bool same_storage(const TypeDesc a, const TypeDesc b);
   static const char *standard_name(AttributeStandard std);
   static AttributeStandard name_standard(const char *name);
@@ -200,10 +213,21 @@ class AttributeSet {
   ~AttributeSet();
 
   Attribute *add(ustring name, const TypeDesc type, AttributeElement element);
+  Attribute *add_shared(ustring name,
+                        const TypeDesc type,
+                        AttributeElement element,
+                        const void *data,
+                        int size,
+                        ImplicitSharingInfo sharing_info);
   Attribute *find(ustring name) const;
   void remove(ustring name);
 
   Attribute *add(AttributeStandard std, ustring name = ustring());
+  Attribute *add_shared(AttributeStandard std,
+                        ustring name,
+                        const void *data,
+                        int size,
+                        ImplicitSharingInfo sharing_info);
   Attribute *find(AttributeStandard std) const;
   void remove(AttributeStandard std);
 
