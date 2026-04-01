@@ -2070,6 +2070,11 @@ const NodeType *(&ConvertNode::get_node_types())[ConvertNode::MAX_TYPE][ConvertN
   return node_types;
 }
 
+bool ConvertNode::register_on_init = NodeType::register_on_init([] {
+  ConvertNode::get_node_types();
+  return static_cast<const NodeType *>(nullptr);
+});
+
 unique_ptr<Node> ConvertNode::create(const NodeType *type)
 {
   return make_unique<ConvertNode>(type->inputs[0].type, type->outputs[0].type);
