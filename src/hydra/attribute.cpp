@@ -78,7 +78,7 @@ void ApplyPrimvars(AttributeSet &attributes,
   Attribute *const attr = attributes.add(name, attrType, elem);
   attr->std = std;
 
-  assert(size == attr->buffer.size());
+  assert(size == attr->data_sizeof() * attr->size);
   std::memcpy(attr->data_for_write(), data, size);
 }
 
