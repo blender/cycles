@@ -337,21 +337,22 @@ ccl_device
                                     nullptr;
 
             if (bsdf && fresnel) {
+              const bool backfacing = sd->flag & SD_BACKFACING;
+
               bsdf->N = valid_reflection_N;
               bsdf->T = zero_float3();
 
               bsdf->alpha_x = bsdf->alpha_y = sqr(roughness);
-              bsdf->ior = (sd->flag & SD_BACKFACING) ? 1.0f / ior : ior;
+              bsdf->ior = backfacing ? 1.0f / ior : ior;
 
-              fresnel->f0 = make_float3(F0_from_ior(ior)) * specular_tint;
-              fresnel->f90 = one_spectrum();
-              fresnel->exponent = -ior;
-              fresnel->reflection_tint = reflective_caustics ? one_spectrum() : zero_spectrum();
-              fresnel->transmission_tint = refractive_caustics ? sqrt(clamped_base_color) :
-                                                                 zero_spectrum();
-              fresnel->thin_film.thickness = thinfilm_thickness;
-              fresnel->thin_film.ior = (sd->flag & SD_BACKFACING) ? thinfilm_ior / ior :
-                                                                    thinfilm_ior;
+              const FresnelThinFilm thinfilm = {thinfilm_thickness,
+                                                backfacing ? thinfilm_ior / ior : thinfilm_ior};
+              *fresnel = generalized_schlick_setup(ior,
+                                                   reflective_caustics,
+                                                   refractive_caustics,
+                                                   specular_tint,
+                                                   sqrt(clamped_base_color),
+                                                   thinfilm);
 
               /* setup bsdf */
               sd->flag |= bsdf_microfacet_ggx_glass_setup(bsdf);
