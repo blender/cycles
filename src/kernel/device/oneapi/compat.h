@@ -110,11 +110,12 @@ void oneapi_kernel_##name(KernelGlobalsGPU *ccl_restrict kg, \
 /* GPU warp synchronization */
 #  define ccl_gpu_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier()
 #  define ccl_gpu_local_syncthreads() sycl::ext::oneapi::this_work_item::get_nd_item<1>().barrier(sycl::access::fence_space::local_space)
-#  ifdef __SYCL_DEVICE_ONLY__
-#    define ccl_gpu_ballot(predicate) (sycl::ext::oneapi::group_ballot(sycl::ext::oneapi::this_work_item::get_sub_group(), predicate).count())
-#  else
-#    define ccl_gpu_ballot(predicate) (predicate ? 1 : 0)
-#  endif
+
+/* A ballot in SYCL is only available as an Intel extension and its DPC++ v6.3 implementation
+ * does not support devices with sub-group sizes above 64. Summing values (of any type) within
+ * sub-groups can be achieved with the SYCL core feature inclusive_scan_over_group, which has
+ * better support on non-Intel devices. */
+#  define ccl_gpu_ballot(predicate) 0; static_assert(false, "Use sycl::inclusive_scan_over_group on oneAPI device instead of ccl_gpu_ballot")
 
 /* Debug defines */
 #if defined(__SYCL_DEVICE_ONLY__)
