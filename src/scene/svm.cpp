@@ -485,19 +485,22 @@ void SVMCompiler::stack_zero_incomplete_derivatives(const ShaderNode *node)
     return;
   }
 
-  /* Zero derivatives. */
+  /* Zero derivatives. Note we can not use add_value_node since it will
+   * automatically write derivatives. */
   for (const ShaderOutput *output : node->outputs) {
     if (output->stack_offset == SVM_STACK_INVALID) {
       continue;
     }
     const int base_size = stack_size(output->type());
     if (base_size == 3) {
-      add_value_node(node, zero_float3(), output->stack_offset + 3);
-      add_value_node(node, zero_float3(), output->stack_offset + 6);
+      add_node(NODE_VALUE_V, output->stack_offset + 3);
+      add_node(NODE_VALUE_V, zero_float3(), false);
+      add_node(NODE_VALUE_V, output->stack_offset + 6);
+      add_node(NODE_VALUE_V, zero_float3(), false);
     }
     else if (base_size == 1) {
-      add_value_node(node, __float_as_int(0.0f), output->stack_offset + 1);
-      add_value_node(node, __float_as_int(0.0f), output->stack_offset + 2);
+      add_node(NODE_VALUE_F, __float_as_int(0.0f), output->stack_offset + 1);
+      add_node(NODE_VALUE_F, __float_as_int(0.0f), output->stack_offset + 2);
     }
   }
 }
