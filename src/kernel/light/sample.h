@@ -268,27 +268,25 @@ ccl_device_inline void shadow_ray_setup(const ccl_private ShaderData *ccl_restri
                                         ccl_private Ray *ray,
                                         const bool skip_self)
 {
-  if (ls->shader & SHADER_CAST_SHADOW) {
-    /* setup ray */
-    ray->P = P;
-    ray->tmin = 0.0f;
+  /* Setup ray. */
+  ray->P = P;
+  ray->tmin = 0.0f;
 
-    if (ls->t == FLT_MAX) {
-      /* distant light */
-      ray->D = ls->D;
-      ray->tmax = ls->t;
-    }
-    else {
-      /* other lights, avoid self-intersection */
-      ray->D = ls->P - P;
-      ray->D = safe_normalize_len(ray->D, &ray->tmax);
-    }
+  if (ls->t == FLT_MAX) {
+    /* Distant light. */
+    ray->D = ls->D;
+    ray->tmax = ls->t;
   }
   else {
-    /* signal to not cast shadow ray */
-    ray->P = zero_float3();
-    ray->D = zero_float3();
-    ray->tmax = 0.0f;
+    /* Other lights, avoid self-intersection. */
+    ray->D = ls->P - P;
+    ray->D = safe_normalize_len(ray->D, &ray->tmax);
+  }
+
+  if ((ls->shader & SHADER_CAST_SHADOW) == 0) {
+    /* Signal to not cast shadow ray.
+     * Relies on the intersection_ray_valid() rejecting the ray early on. */
+    ray->tmin = FLT_MAX;
   }
 
   ray->dP = differential_make_compact(sd->dP);

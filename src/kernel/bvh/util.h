@@ -22,7 +22,8 @@ ccl_device_inline bool intersection_ray_valid(const ccl_private Ray *ray)
    * Scene intersection may also called with empty rays for conditional trace
    * calls that evaluate to false, so filter those out.
    */
-  return isfinite_safe(ray->P.x) && isfinite_safe(ray->D.x) && len_squared(ray->D) != 0.0f;
+  return isfinite_safe(ray->P.x) && isfinite_safe(ray->D.x) && len_squared(ray->D) != 0.0f &&
+         ray->tmin < FLT_MAX;
 }
 
 /* Offset intersection distance by the smallest possible amount, to skip
