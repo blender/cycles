@@ -5,31 +5,24 @@
 #pragma once
 
 #include "kernel/geom/object.h"
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
 
 /* Vector Transform */
 
-ccl_device_noinline void svm_node_vector_transform(KernelGlobals kg,
-                                                   ccl_private ShaderData *sd,
-                                                   ccl_private float *stack,
-                                                   const uint4 node)
+ccl_device_noinline void svm_node_vector_transform(
+    KernelGlobals kg,
+    ccl_private ShaderData *sd,
+    ccl_private float *ccl_restrict stack,
+    const ccl_global SVMNodeVectorTransform &ccl_restrict node)
 {
-  uint itype;
-  uint ifrom;
-  uint ito;
-  uint vector_in;
-  uint vector_out;
+  float3 in = stack_load(stack, node.vector_in);
 
-  svm_unpack_node_uchar3(node.y, &itype, &ifrom, &ito);
-  svm_unpack_node_uchar2(node.z, &vector_in, &vector_out);
-
-  float3 in = stack_load_float3(stack, vector_in);
-
-  const NodeVectorTransformType type = (NodeVectorTransformType)itype;
-  const NodeVectorTransformConvertSpace from = (NodeVectorTransformConvertSpace)ifrom;
-  const NodeVectorTransformConvertSpace to = (NodeVectorTransformConvertSpace)ito;
+  const NodeVectorTransformType type = node.transform_type;
+  const NodeVectorTransformConvertSpace from = node.convert_from;
+  const NodeVectorTransformConvertSpace to = node.convert_to;
 
   Transform tfm;
   const bool is_object = (sd->object != OBJECT_NONE);
@@ -122,8 +115,8 @@ ccl_device_noinline void svm_node_vector_transform(KernelGlobals kg,
   }
 
   /* Output */
-  if (stack_valid(vector_out)) {
-    stack_store_float3(stack, vector_out, in);
+  if (stack_valid(node.vector_out_offset)) {
+    stack_store_float3(stack, node.vector_out_offset, in);
   }
 }
 

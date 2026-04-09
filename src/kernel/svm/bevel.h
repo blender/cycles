@@ -12,6 +12,7 @@
 
 #include "kernel/integrator/path_state.h"
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -299,35 +300,29 @@ ccl_device_noinline
     svm_node_bevel(KernelGlobals kg,
                    ConstIntegratorGenericState state,
                    ccl_private ShaderData *sd,
-                   ccl_private float *stack,
-                   const uint4 node)
+                   ccl_private float *ccl_restrict stack,
+                   const ccl_global SVMNodeBevel &ccl_restrict node)
 {
-  uint num_samples;
-  uint radius_offset;
-  uint normal_offset;
-  uint out_offset;
-  svm_unpack_node_uchar4(node.y, &num_samples, &radius_offset, &normal_offset, &out_offset);
-
   float3 bevel_N = sd->N;
 
   IF_KERNEL_NODES_FEATURE(RAYTRACE)
   {
-    float radius = stack_load_float(stack, radius_offset);
+    float radius = stack_load(stack, node.radius);
 
 #  ifdef __KERNEL_OPTIX__
-    bevel_N = optixDirectCall<float3>(1, kg, state, sd, radius, num_samples);
+    bevel_N = optixDirectCall<float3>(1, kg, state, sd, radius, node.num_samples);
 #  else
-    bevel_N = svm_bevel(kg, state, sd, radius, num_samples);
+    bevel_N = svm_bevel(kg, state, sd, radius, node.num_samples);
 #  endif
 
-    if (stack_valid(normal_offset)) {
+    if (stack_valid(node.normal_offset)) {
       /* Preserve input normal. */
-      const float3 ref_N = stack_load_float3(stack, normal_offset);
+      const float3 ref_N = stack_load_float3(stack, node.normal_offset);
       bevel_N = normalize(ref_N + (bevel_N - sd->N));
     }
   }
 
-  stack_store_float3(stack, out_offset, bevel_N);
+  stack_store_float3(stack, node.out_offset, bevel_N);
 }
 
 #endif /* __SHADER_RAYTRACE__ */

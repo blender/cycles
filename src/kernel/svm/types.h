@@ -4,22 +4,43 @@
 
 #pragma once
 
+#include "util/transform.h"
+#include "util/types.h"
+
 CCL_NAMESPACE_BEGIN
 
 /* Stack */
+
+/* Stack offset type. Stack offsets are in the range [0, SVM_STACK_SIZE]. */
+using SVMStackOffset = uint8_t;
+
+/* Encodes a node float input, as either float value or a stack offset
+ * encoded in a NaN bit pattern. */
+struct SVMInputFloat {
+  uint bits;
+};
+
+/* Encodes a node float input, as either float3 value or a stack offset
+ * encoded in a NaN bit pattern in the x component. */
+struct SVMInputFloat3 {
+  SVMInputFloat x, y, z;
+};
+
+/* Bit mask for encoding stack offset as NaN. */
+#define SVM_INPUT_STACK_OFFSET_MASK 0x7FC00000u
 
 // NOLINTBEGIN
 /* SVM stack has a fixed size */
 #define SVM_STACK_SIZE 255
 /* SVM stack offsets with this value indicate that it's not on the stack */
-#define SVM_STACK_INVALID 255
+#define SVM_STACK_INVALID SVMStackOffset(255)
 
 #define SVM_BUMP_EVAL_STATE_SIZE 10
 // NOLINTEND
 
 /* Nodes */
 
-enum ShaderNodeType {
+enum ShaderNodeType : uint {
 #define SHADER_NODE_TYPE(name) name,
 #define SHADER_NODE_TYPE_DERIVATIVE(name) name, name##_DERIVATIVE,
 #include "node_types_template.h"
@@ -27,13 +48,13 @@ enum ShaderNodeType {
   NODE_NUM
 };
 
-enum NodeAttributeOutputType {
+enum NodeAttributeOutputType : uint8_t {
   NODE_ATTR_OUTPUT_FLOAT3 = 0,
   NODE_ATTR_OUTPUT_FLOAT,
   NODE_ATTR_OUTPUT_FLOAT_ALPHA,
 };
 
-enum NodeAttributeType {
+enum NodeAttributeType : uint8_t {
   NODE_ATTR_FLOAT = 0,
   NODE_ATTR_FLOAT2,
   NODE_ATTR_FLOAT3,
@@ -42,7 +63,7 @@ enum NodeAttributeType {
   NODE_ATTR_MATRIX
 };
 
-enum NodeGeometry {
+enum NodeGeometry : uint8_t {
   NODE_GEOM_P = 0,
   NODE_GEOM_N,
   NODE_GEOM_T,
@@ -51,7 +72,7 @@ enum NodeGeometry {
   NODE_GEOM_uv
 };
 
-enum NodeObjectInfo {
+enum NodeObjectInfo : uint {
   NODE_INFO_OB_LOCATION,
   NODE_INFO_OB_COLOR,
   NODE_INFO_OB_ALPHA,
@@ -60,7 +81,7 @@ enum NodeObjectInfo {
   NODE_INFO_OB_RANDOM
 };
 
-enum NodeParticleInfo {
+enum NodeParticleInfo : uint {
   NODE_INFO_PAR_INDEX,
   NODE_INFO_PAR_RANDOM,
   NODE_INFO_PAR_AGE,
@@ -72,7 +93,7 @@ enum NodeParticleInfo {
   NODE_INFO_PAR_ANGULAR_VELOCITY
 };
 
-enum NodeHairInfo {
+enum NodeHairInfo : uint {
   NODE_INFO_CURVE_IS_STRAND,
   NODE_INFO_CURVE_INTERCEPT,
   NODE_INFO_CURVE_LENGTH,
@@ -81,13 +102,13 @@ enum NodeHairInfo {
   NODE_INFO_CURVE_RANDOM,
 };
 
-enum NodePointInfo {
+enum NodePointInfo : uint {
   NODE_INFO_POINT_POSITION,
   NODE_INFO_POINT_RADIUS,
   NODE_INFO_POINT_RANDOM,
 };
 
-enum NodeLightPath {
+enum NodeLightPath : uint {
   NODE_LP_camera = 0,
   NODE_LP_shadow,
   NODE_LP_diffuse,
@@ -106,13 +127,13 @@ enum NodeLightPath {
   NODE_LP_ray_portal,
 };
 
-enum NodeLightFalloff {
+enum NodeLightFalloff : uint {
   NODE_LIGHT_FALLOFF_QUADRATIC,
   NODE_LIGHT_FALLOFF_LINEAR,
   NODE_LIGHT_FALLOFF_CONSTANT
 };
 
-enum NodeTexCoord {
+enum NodeTexCoord : uint8_t {
   NODE_TEXCO_NORMAL,
   NODE_TEXCO_OBJECT,
   NODE_TEXCO_OBJECT_WITH_TRANSFORM,
@@ -124,7 +145,7 @@ enum NodeTexCoord {
   NODE_TEXCO_VOLUME_GENERATED
 };
 
-enum NodeMix {
+enum NodeMix : uint {
   NODE_MIX_BLEND = 0,
   NODE_MIX_ADD,
   NODE_MIX_MUL,
@@ -147,7 +168,7 @@ enum NodeMix {
   NODE_MIX_CLAMP /* used for the clamp UI option */
 };
 
-enum NodeMathType {
+enum NodeMathType : uint {
   NODE_MATH_ADD,
   NODE_MATH_SUBTRACT,
   NODE_MATH_MULTIPLY,
@@ -191,7 +212,7 @@ enum NodeMathType {
   NODE_MATH_FLOORED_MODULO,
 };
 
-enum NodeVectorMathType {
+enum NodeVectorMathType : uint {
   NODE_VECTOR_MATH_ADD,
   NODE_VECTOR_MATH_SUBTRACT,
   NODE_VECTOR_MATH_MULTIPLY,
@@ -227,26 +248,26 @@ enum NodeVectorMathType {
   NODE_VECTOR_MATH_ROUND,
 };
 
-enum NodeClampType {
+enum NodeClampType : uint {
   NODE_CLAMP_MINMAX,
   NODE_CLAMP_RANGE,
 };
 
-enum NodeMapRangeType {
+enum NodeMapRangeType : uint {
   NODE_MAP_RANGE_LINEAR,
   NODE_MAP_RANGE_STEPPED,
   NODE_MAP_RANGE_SMOOTHSTEP,
   NODE_MAP_RANGE_SMOOTHERSTEP,
 };
 
-enum NodeMappingType {
+enum NodeMappingType : uint {
   NODE_MAPPING_TYPE_POINT,
   NODE_MAPPING_TYPE_TEXTURE,
   NODE_MAPPING_TYPE_VECTOR,
   NODE_MAPPING_TYPE_NORMAL
 };
 
-enum NodeVectorRotateType {
+enum NodeVectorRotateType : uint {
   NODE_VECTOR_ROTATE_TYPE_AXIS,
   NODE_VECTOR_ROTATE_TYPE_AXIS_X,
   NODE_VECTOR_ROTATE_TYPE_AXIS_Y,
@@ -254,19 +275,19 @@ enum NodeVectorRotateType {
   NODE_VECTOR_ROTATE_TYPE_EULER_XYZ,
 };
 
-enum NodeVectorTransformType {
+enum NodeVectorTransformType : uint {
   NODE_VECTOR_TRANSFORM_TYPE_VECTOR,
   NODE_VECTOR_TRANSFORM_TYPE_POINT,
   NODE_VECTOR_TRANSFORM_TYPE_NORMAL
 };
 
-enum NodeVectorTransformConvertSpace {
+enum NodeVectorTransformConvertSpace : uint {
   NODE_VECTOR_TRANSFORM_CONVERT_SPACE_WORLD,
   NODE_VECTOR_TRANSFORM_CONVERT_SPACE_OBJECT,
   NODE_VECTOR_TRANSFORM_CONVERT_SPACE_CAMERA
 };
 
-enum NodeConvert {
+enum NodeConvert : uint {
   NODE_CONVERT_FV,
   NODE_CONVERT_FI,
   NODE_CONVERT_CF,
@@ -278,7 +299,7 @@ enum NodeConvert {
   NODE_CONVERT_NONE,
 };
 
-enum NodeNoiseType {
+enum NodeNoiseType : uint {
   NODE_NOISE_MULTIFRACTAL,
   NODE_NOISE_FBM,
   NODE_NOISE_HYBRID_MULTIFRACTAL,
@@ -286,41 +307,41 @@ enum NodeNoiseType {
   NODE_NOISE_HETERO_TERRAIN
 };
 
-enum NodeGaborType {
+enum NodeGaborType : uint {
   NODE_GABOR_TYPE_2D,
   NODE_GABOR_TYPE_3D,
 };
 
-enum NodeWaveType { NODE_WAVE_BANDS, NODE_WAVE_RINGS };
+enum NodeWaveType : uint { NODE_WAVE_BANDS, NODE_WAVE_RINGS };
 
-enum NodeWaveBandsDirection {
+enum NodeWaveBandsDirection : uint {
   NODE_WAVE_BANDS_DIRECTION_X,
   NODE_WAVE_BANDS_DIRECTION_Y,
   NODE_WAVE_BANDS_DIRECTION_Z,
   NODE_WAVE_BANDS_DIRECTION_DIAGONAL
 };
 
-enum NodeWaveRingsDirection {
+enum NodeWaveRingsDirection : uint {
   NODE_WAVE_RINGS_DIRECTION_X,
   NODE_WAVE_RINGS_DIRECTION_Y,
   NODE_WAVE_RINGS_DIRECTION_Z,
   NODE_WAVE_RINGS_DIRECTION_SPHERICAL
 };
 
-enum NodeWaveProfile {
+enum NodeWaveProfile : uint {
   NODE_WAVE_PROFILE_SIN,
   NODE_WAVE_PROFILE_SAW,
   NODE_WAVE_PROFILE_TRI,
 };
 
-enum NodeSkyType {
+enum NodeSkyType : uint {
   NODE_SKY_PREETHAM,
   NODE_SKY_HOSEK,
   NODE_SKY_SINGLE_SCATTERING,
   NODE_SKY_MULTIPLE_SCATTERING
 };
 
-enum NodeGradientType {
+enum NodeGradientType : uint {
   NODE_BLEND_LINEAR,
   NODE_BLEND_QUADRATIC,
   NODE_BLEND_EASING,
@@ -330,14 +351,14 @@ enum NodeGradientType {
   NODE_BLEND_SPHERICAL
 };
 
-enum NodeVoronoiDistanceMetric {
+enum NodeVoronoiDistanceMetric : uint {
   NODE_VORONOI_EUCLIDEAN,
   NODE_VORONOI_MANHATTAN,
   NODE_VORONOI_CHEBYCHEV,
   NODE_VORONOI_MINKOWSKI,
 };
 
-enum NodeVoronoiFeature {
+enum NodeVoronoiFeature : uint {
   NODE_VORONOI_F1,
   NODE_VORONOI_F2,
   NODE_VORONOI_SMOOTH_F1,
@@ -345,13 +366,13 @@ enum NodeVoronoiFeature {
   NODE_VORONOI_N_SPHERE_RADIUS,
 };
 
-enum NodeBlendWeightType { NODE_LAYER_WEIGHT_FRESNEL, NODE_LAYER_WEIGHT_FACING };
+enum NodeBlendWeightType : uint { NODE_LAYER_WEIGHT_FRESNEL, NODE_LAYER_WEIGHT_FACING };
 
-enum NodeTangentDirectionType { NODE_TANGENT_RADIAL, NODE_TANGENT_UVMAP };
+enum NodeTangentDirectionType : uint { NODE_TANGENT_RADIAL, NODE_TANGENT_UVMAP };
 
-enum NodeTangentAxis { NODE_TANGENT_AXIS_X, NODE_TANGENT_AXIS_Y, NODE_TANGENT_AXIS_Z };
+enum NodeTangentAxis : uint { NODE_TANGENT_AXIS_X, NODE_TANGENT_AXIS_Y, NODE_TANGENT_AXIS_Z };
 
-enum NodeNormalMapSpace {
+enum NodeNormalMapSpace : uint {
   NODE_NORMAL_MAP_TANGENT,
   NODE_NORMAL_MAP_OBJECT,
   NODE_NORMAL_MAP_WORLD,
@@ -376,7 +397,7 @@ enum NodeNormalMapFlags {
   NODE_NORMAL_MAP_FLAG_ORIGINAL = (1 << 4),
 };
 
-enum NodeImageProjection {
+enum NodeImageProjection : uint {
   NODE_IMAGE_PROJ_FLAT = 0,
   NODE_IMAGE_PROJ_BOX = 1,
   NODE_IMAGE_PROJ_SPHERE = 2,
@@ -388,12 +409,12 @@ enum NodeImageFlags {
   NODE_IMAGE_ALPHA_UNASSOCIATE = 2,
 };
 
-enum NodeEnvironmentProjection {
+enum NodeEnvironmentProjection : uint {
   NODE_ENVIRONMENT_EQUIRECTANGULAR = 0,
   NODE_ENVIRONMENT_MIRROR_BALL = 1,
 };
 
-enum NodeBumpOffset {
+enum NodeBumpOffset : uint8_t {
   NODE_BUMP_OFFSET_CENTER,
   NODE_BUMP_OFFSET_DX,
   NODE_BUMP_OFFSET_DY,
@@ -412,20 +433,20 @@ enum ShaderType {
   SHADER_TYPE_BUMP,
 };
 
-enum NodePrincipledHairModel {
+enum NodePrincipledHairModel : uint {
   NODE_PRINCIPLED_HAIR_CHIANG = 0,
   NODE_PRINCIPLED_HAIR_HUANG = 1,
   NODE_PRINCIPLED_HAIR_MODEL_NUM,
 };
 
-enum NodePrincipledHairParametrization {
+enum NodePrincipledHairParametrization : uint {
   NODE_PRINCIPLED_HAIR_REFLECTANCE = 0,
   NODE_PRINCIPLED_HAIR_PIGMENT_CONCENTRATION = 1,
   NODE_PRINCIPLED_HAIR_DIRECT_ABSORPTION = 2,
   NODE_PRINCIPLED_HAIR_PARAMETRIZATION_NUM,
 };
 
-enum NodeCombSepColorType {
+enum NodeCombSepColorType : uint {
   NODE_COMBSEP_COLOR_RGB,
   NODE_COMBSEP_COLOR_HSV,
   NODE_COMBSEP_COLOR_HSL,
@@ -433,7 +454,7 @@ enum NodeCombSepColorType {
 
 /* Closure */
 
-enum ClosureType {
+enum ClosureType : uint {
   /* Special type, flags generic node as a non-BSDF. */
   CLOSURE_NONE_ID,
 

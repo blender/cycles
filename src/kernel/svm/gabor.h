@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 #include "util/hash.h"
@@ -301,45 +302,16 @@ ccl_device float2 compute_3d_gabor_noise(const float3 coordinates,
   return sum;
 }
 
-ccl_device_noinline int svm_node_tex_gabor(KernelGlobals kg,
-                                           ccl_private float *stack,
-                                           const uint type,
-                                           const uint stack_offsets_1,
-                                           const uint stack_offsets_2,
-                                           int offset)
+ccl_device_noinline void svm_node_tex_gabor(ccl_private float *ccl_restrict stack,
+                                            const ccl_global SVMNodeTexGabor &ccl_restrict node)
 {
-  uint coordinates_stack_offset;
-  uint scale_stack_offset;
-  uint frequency_stack_offset;
-  uint anisotropy_stack_offset;
-  uint orientation_2d_stack_offset;
-  uint orientation_3d_stack_offset;
+  const float3 coordinates = stack_load_float3(stack, node.coordinates);
 
-  svm_unpack_node_uchar4(stack_offsets_1,
-                         &coordinates_stack_offset,
-                         &scale_stack_offset,
-                         &frequency_stack_offset,
-                         &anisotropy_stack_offset);
-  svm_unpack_node_uchar2(
-      stack_offsets_2, &orientation_2d_stack_offset, &orientation_3d_stack_offset);
-
-  const float3 coordinates = stack_load_float3(stack, coordinates_stack_offset);
-
-  uint value_stack_offset;
-  uint phase_stack_offset;
-  uint intensity_stack_offset;
-
-  const uint4 node_1 = read_node(kg, &offset);
-  svm_unpack_node_uchar3(
-      node_1.x, &value_stack_offset, &phase_stack_offset, &intensity_stack_offset);
-  const float scale = stack_load_float_default(stack, scale_stack_offset, node_1.y);
-  float frequency = stack_load_float_default(stack, frequency_stack_offset, node_1.z);
-  const float anisotropy = stack_load_float_default(stack, anisotropy_stack_offset, node_1.w);
-
-  const uint4 node_2 = read_node(kg, &offset);
-  const float orientation_2d = stack_load_float_default(
-      stack, orientation_2d_stack_offset, node_2.x);
-  const float3 orientation_3d = stack_load_float3(stack, orientation_3d_stack_offset);
+  const float scale = stack_load(stack, node.scale);
+  float frequency = stack_load(stack, node.frequency);
+  const float anisotropy = stack_load(stack, node.anisotropy);
+  const float orientation_2d = stack_load(stack, node.orientation_2d);
+  const float3 orientation_3d = stack_load(stack, node.orientation_3d);
 
   const float3 scaled_coordinates = coordinates * scale;
   const float isotropy = 1.0f - clamp(anisotropy, 0.0f, 1.0f);
@@ -347,7 +319,7 @@ ccl_device_noinline int svm_node_tex_gabor(KernelGlobals kg,
 
   float2 phasor = make_float2(0.0f, 0.0f);
   float standard_deviation = 1.0f;
-  switch ((NodeGaborType)type) {
+  switch (node.gabor_type) {
     case NODE_GABOR_TYPE_2D: {
       phasor = compute_2d_gabor_noise(make_float2(scaled_coordinates.x, scaled_coordinates.y),
                                       frequency,
@@ -370,23 +342,21 @@ ccl_device_noinline int svm_node_tex_gabor(KernelGlobals kg,
 
   /* As discussed in compute_2d_gabor_kernel, we use the imaginary part of the phasor as the Gabor
    * value. But remap to [0, 1] from [-1, 1]. */
-  if (stack_valid(value_stack_offset)) {
-    stack_store_float(stack, value_stack_offset, (phasor.y / normalization_factor) * 0.5f + 0.5f);
+  if (stack_valid(node.value_offset)) {
+    stack_store_float(stack, node.value_offset, (phasor.y / normalization_factor) * 0.5f + 0.5f);
   }
 
   /* Compute the phase based on equation (9) in Tricard's paper. But remap the phase into the
    * [0, 1] range. */
-  if (stack_valid(phase_stack_offset)) {
+  if (stack_valid(node.phase_offset)) {
     const float phase = (atan2f(phasor.y, phasor.x) + M_PI_F) / (2.0f * M_PI_F);
-    stack_store_float(stack, phase_stack_offset, phase);
+    stack_store_float(stack, node.phase_offset, phase);
   }
 
   /* Compute the intensity based on equation (8) in Tricard's paper. */
-  if (stack_valid(intensity_stack_offset)) {
-    stack_store_float(stack, intensity_stack_offset, len(phasor) / normalization_factor);
+  if (stack_valid(node.intensity_offset)) {
+    stack_store_float(stack, node.intensity_offset, len(phasor) / normalization_factor);
   }
-
-  return offset;
 }
 
 CCL_NAMESPACE_END

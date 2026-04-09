@@ -10,6 +10,7 @@
 #include "kernel/geom/motion_triangle.h"
 #include "kernel/geom/object.h"
 #include "kernel/geom/triangle.h"
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 #include "kernel/util/differential.h"
 #include "util/math_base.h"
@@ -82,34 +83,27 @@ ccl_device_inline float wireframe(KernelGlobals kg,
 ccl_device_noinline void svm_node_wireframe(KernelGlobals kg,
                                             ccl_private ShaderData *sd,
                                             ccl_private float *stack,
-                                            const uint4 node)
+                                            const ccl_global SVMNodeWireframe &ccl_restrict node)
 {
-  const uint in_size = node.y;
-  const float bump_filter_width = __uint_as_float(node.z);
-  uint use_pixel_size;
-  uint bump_offset;
-  uint out_fac;
-  svm_unpack_node_uchar3(node.w, &use_pixel_size, &bump_offset, &out_fac);
-
   /* Input Data */
-  const float size = stack_load_float(stack, in_size);
-  const int pixel_size = (int)use_pixel_size;
+  const float size = stack_load(stack, node.in_size);
+  const int pixel_size = (int)node.use_pixel_size;
 
   /* Calculate wireframe */
   const differential3 dP = differential_from_compact(sd->Ng, sd->dP);
 
   float3 P = sd->P;
-  if (bump_offset == NODE_BUMP_OFFSET_DX) {
-    P += dP.dx * bump_filter_width;
+  if (node.bump_offset == NODE_BUMP_OFFSET_DX) {
+    P += dP.dx * node.bump_filter_width;
   }
-  else if (bump_offset == NODE_BUMP_OFFSET_DY) {
-    P += dP.dy * bump_filter_width;
+  else if (node.bump_offset == NODE_BUMP_OFFSET_DY) {
+    P += dP.dy * node.bump_filter_width;
   }
 
   const float f = wireframe(kg, sd, dP, size, pixel_size, &P);
 
-  if (stack_valid(out_fac)) {
-    stack_store_float(stack, out_fac, f);
+  if (stack_valid(node.out_fac_offset)) {
+    stack_store_float(stack, node.out_fac_offset, f);
   }
 }
 

@@ -40,7 +40,7 @@ class SVMShaderManager : public ShaderManager {
   void device_update_shader(Scene *scene,
                             Shader *shader,
                             Progress &progress,
-                            array<int4> *svm_nodes);
+                            array<int> *svm_nodes);
 };
 
 /* Graph Compiler */
@@ -76,44 +76,67 @@ class SVMCompiler {
   };
 
   SVMCompiler(Scene *scene, Progress &progress);
-  void compile(Shader *shader,
-               array<int4> &svm_nodes,
-               const int index,
-               Summary *summary = nullptr);
+  void compile(Shader *shader, array<int> &svm_nodes, const int index, Summary *summary = nullptr);
 
-  int stack_assign(ShaderOutput *output);
-  int stack_assign(ShaderInput *input);
-  bool is_linked(ShaderInput *input);
-  int stack_assign_if_linked(ShaderInput *input);
-  int stack_assign_if_linked(ShaderOutput *output);
-  int stack_assign_if_not_equal(ShaderInput *input, const float value);
-  int stack_assign_if_not_equal(ShaderInput *input, const float3 value);
-  int stack_find_offset(const int size);
-  int stack_find_offset(const ShaderIO *io);
-  void stack_clear_offset(const ShaderIO *io, const int offset);
+  /* Create input and output node parameters for struct T passed to add_node. */
+  SVMInputFloat input_float(const char *name);
+  SVMInputFloat3 input_float3(const char *name);
+  SVMInputFloat3 input_float3_from_offset(SVMStackOffset offset);
+  SVMStackOffset input_link(const char *name);
+  SVMStackOffset output(const char *name);
+
+  /* Add simple SVM node without parameters. */
+  void add_node(ShaderNodeType type);
+
+  /* Add SVM node with parameters in struct T. */
+  template<typename T>
+  void add_node(const ShaderNode *shader_node,
+                const ShaderNodeType type,
+                const T &node,
+                const bool use_derivatives = false)
+    requires(std::is_class_v<T> && sizeof(T) % sizeof(int) == 0 && alignof(T) <= sizeof(uint))
+  {
+    const ShaderNodeType resolved_type = node_type(shader_node, type, use_derivatives);
+    current_svm_nodes.push_back_slow(resolved_type);
+    const int *data = reinterpret_cast<const int *>(&node);
+    svm_node_types_used[resolved_type] = true;
+    for (size_t i = 0; i < sizeof(T) / sizeof(int); i++) {
+      current_svm_nodes.push_back_slow(data[i]);
+    }
+  }
+
+  /* Add value node. */
+  void add_value_node(const ShaderNode *shader_node, const float value, const int stack_offset);
+  void add_value_node(const ShaderNode *shader_node, const float3 &value, const int stack_offset);
+
+  /* Add extra node data following add_node. */
+  template<typename T>
+  void add_node_data(const T &data)
+    requires(std::is_class_v<T> && sizeof(T) % sizeof(int) == 0 && alignof(T) <= sizeof(uint))
+  {
+    const int *ptr = reinterpret_cast<const int *>(&data);
+    for (size_t i = 0; i < sizeof(T) / sizeof(int); i++) {
+      current_svm_nodes.push_back_slow(ptr[i]);
+    }
+  }
+  void add_node_data_float4(const float4 &f);
+  void add_node_data_float(const float f);
+
+  /* Low level input and output handling for some special nodes. Usually the functions
+   * above should be used instead of these. */
+  SVMStackOffset stack_assign(ShaderInput *input);
+  SVMStackOffset stack_find_offset(const ShaderIO *io);
+  void stack_clear_offset(const ShaderIO *io, const SVMStackOffset offset);
   void stack_link(ShaderInput *input, ShaderOutput *output);
 
-  void add_node(ShaderNodeType type, const int a = 0, const int b = 0, const int c = 0);
-  void add_node_derivative(const ShaderNodeType type,
-                           const bool need_derivatives,
-                           const int a = 0,
-                           const int b = 0,
-                           const int c = 0);
-  void add_node(const int a = 0, const int b = 0, const int c = 0, const int d = 0);
-  void add_node(const ShaderNode *node, const int a = 0, const int b = 0, const int c = 0);
-  void add_node(ShaderNodeType type, const float3 &f, const bool need_derivatives = 0);
-  void add_node(const float4 &f);
-  void add_value_node(const ShaderNode *node, const int value, const int stack_offset);
-  void add_value_node(const ShaderNode *node, const float3 &value, const int stack_offset);
   uint attribute(ustring name);
   uint attribute(AttributeStandard std);
   uint attribute_standard(ustring name);
-  uint encode_uchar4(const uint x, const uint y = 0, const uint z = 0, const uint w = 0);
-  uint closure_mix_weight_offset()
+  SVMStackOffset closure_mix_weight_offset()
   {
     return mix_weight_offset;
   }
-  uint get_bump_state_offset()
+  SVMStackOffset get_bump_state_offset()
   {
     return bump_state_offset;
   }
@@ -126,6 +149,7 @@ class SVMCompiler {
   Scene *scene;
   Progress &progress;
   ShaderGraph *current_graph;
+  ShaderNode *current_node;
   bool background;
 
  protected:
@@ -200,6 +224,13 @@ class SVMCompiler {
     uint node_feature_mask;
   };
 
+  ShaderNodeType node_type(const ShaderNode *shader_node,
+                           const ShaderNodeType type,
+                           const bool use_derivatives);
+
+  SVMStackOffset stack_assign(ShaderOutput *output);
+  SVMStackOffset stack_find_offset(const int size);
+
   void stack_clear_temporary(ShaderNode *node);
   int stack_size(SocketType::Type type);
   int stack_size(const ShaderIO *io);
@@ -230,13 +261,13 @@ class SVMCompiler {
   void compile_type(Shader *shader, ShaderGraph *graph, ShaderType type);
 
   std::atomic_int *svm_node_types_used;
-  array<int4> current_svm_nodes;
+  array<int> current_svm_nodes;
   ShaderType current_type;
   Shader *current_shader;
   Stack active_stack;
   int max_stack_use;
-  uint mix_weight_offset;
-  uint bump_state_offset;
+  SVMStackOffset mix_weight_offset;
+  SVMStackOffset bump_state_offset;
   bool compile_failed;
 };
 

@@ -12,6 +12,7 @@
 
 #include "kernel/sample/mapping.h"
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -104,42 +105,31 @@ ccl_device_noinline
     svm_node_ao(KernelGlobals kg,
                 ConstIntegratorGenericState state,
                 ccl_private ShaderData *sd,
-                ccl_private float *stack,
-                const uint4 node)
+                ccl_private float *ccl_restrict stack,
+                const ccl_global SVMNodeAmbientOcclusion &ccl_restrict node)
 {
-  uint flags;
-  uint dist_offset;
-  uint normal_offset;
-  uint out_ao_offset;
-  svm_unpack_node_uchar4(node.y, &flags, &dist_offset, &normal_offset, &out_ao_offset);
-
-  uint color_offset;
-  uint out_color_offset;
-  uint samples;
-  svm_unpack_node_uchar3(node.z, &color_offset, &out_color_offset, &samples);
-
   float ao = 1.0f;
 
   IF_KERNEL_NODES_FEATURE(RAYTRACE)
   {
-    float dist = stack_load_float_default(stack, dist_offset, node.w);
-    float3 normal = stack_valid(normal_offset) ? stack_load_float3(stack, normal_offset) : sd->N;
+    float dist = stack_load(stack, node.dist);
+    float3 normal = stack_load_float3_default(stack, node.normal_offset, sd->N);
     normal = safe_normalize(normal);
 
 #  ifdef __KERNEL_OPTIX__
-    ao = optixDirectCall<float>(0, kg, state, sd, normal, dist, samples, flags);
+    ao = optixDirectCall<float>(0, kg, state, sd, normal, dist, node.samples, node.flags);
 #  else
-    ao = svm_ao(kg, state, sd, normal, dist, samples, flags);
+    ao = svm_ao(kg, state, sd, normal, dist, node.samples, node.flags);
 #  endif
   }
 
-  if (stack_valid(out_ao_offset)) {
-    stack_store_float(stack, out_ao_offset, ao);
+  if (stack_valid(node.out_ao_offset)) {
+    stack_store_float(stack, node.out_ao_offset, ao);
   }
 
-  if (stack_valid(out_color_offset)) {
-    const float3 color = stack_load_float3(stack, color_offset);
-    stack_store_float3(stack, out_color_offset, ao * color);
+  if (stack_valid(node.out_color_offset)) {
+    const float3 color = stack_load(stack, node.color);
+    stack_store_float3(stack, node.out_color_offset, ao * color);
   }
 }
 

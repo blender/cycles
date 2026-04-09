@@ -11,7 +11,21 @@
 
 CCL_NAMESPACE_BEGIN
 
-/* Stack */
+/* Stack Load */
+
+ccl_device_inline float stack_load_float(const ccl_private float *stack, const uint a)
+{
+  kernel_assert(a < SVM_STACK_SIZE);
+
+  return stack[a];
+}
+
+ccl_device_inline float stack_load_float_default(const ccl_private float *stack,
+                                                 const uint a,
+                                                 const float value)
+{
+  return (a == (uint)SVM_STACK_INVALID) ? value : stack_load_float(stack, a);
+}
 
 ccl_device_inline float3 stack_load_float3(const ccl_private float *stack, const uint a)
 {
@@ -28,38 +42,11 @@ ccl_device_inline float3 stack_load_float3_default(const ccl_private float *stac
   return (a == (uint)SVM_STACK_INVALID) ? value : stack_load_float3(stack, a);
 }
 
-ccl_device_inline void stack_store_float3(ccl_private float *stack, const uint a, const float3 f)
-{
-  kernel_assert(a + 2 < SVM_STACK_SIZE);
-  copy_v3_v3(stack + a, f);
-}
-
-ccl_device_inline float stack_load_float(const ccl_private float *stack, const uint a)
+ccl_device_inline int stack_load_int(const ccl_private float *stack, const uint a)
 {
   kernel_assert(a < SVM_STACK_SIZE);
 
-  return stack[a];
-}
-
-ccl_device_inline float stack_load_float_default(const ccl_private float *stack,
-                                                 const uint a,
-                                                 const uint value)
-{
-  return (a == (uint)SVM_STACK_INVALID) ? __uint_as_float(value) : stack_load_float(stack, a);
-}
-
-ccl_device_inline float stack_load_float_default(const ccl_private float *stack,
-                                                 const uint a,
-                                                 const float value)
-{
-  return (a == (uint)SVM_STACK_INVALID) ? value : stack_load_float(stack, a);
-}
-
-ccl_device_inline void stack_store_float(ccl_private float *stack, const uint a, const float f)
-{
-  kernel_assert(a < SVM_STACK_SIZE);
-
-  stack[a] = f;
+  return __float_as_int(stack[a]);
 }
 
 /* Type-based stack load. T can be float, float3, dual1, or dual3.
@@ -90,6 +77,83 @@ ccl_device_template_spec dual3 stack_load(const ccl_private float *stack, const 
           stack_load_float3(stack, a + 6)};
 }
 
+/* Load from SVMInputFloat and SVMInputFloat3. With template versions to support duals
+ * for loading derivatives from adjacent stack slots. */
+
+ccl_device_inline float stack_load(const ccl_private float *ccl_restrict stack,
+                                   const SVMInputFloat v)
+{
+  if ((v.bits >> 8) == (SVM_INPUT_STACK_OFFSET_MASK >> 8)) {
+    return stack_load_float(stack, v.bits & 0xFFu);
+  }
+  return __uint_as_float(v.bits);
+}
+
+ccl_device_inline float3 stack_load(const ccl_private float *ccl_restrict stack,
+                                    const SVMInputFloat3 v)
+{
+  if ((v.x.bits >> 8) == (SVM_INPUT_STACK_OFFSET_MASK >> 8)) {
+    return stack_load_float3(stack, v.x.bits & 0xFFu);
+  }
+  return make_float3(
+      __uint_as_float(v.x.bits), __uint_as_float(v.y.bits), __uint_as_float(v.z.bits));
+}
+
+template<typename T>
+ccl_device_inline T stack_load(const ccl_private float *stack, const SVMInputFloat v);
+
+ccl_device_template_spec float stack_load(const ccl_private float *stack, const SVMInputFloat v)
+{
+  return stack_load(stack, v);
+}
+
+ccl_device_template_spec dual1 stack_load(const ccl_private float *stack, const SVMInputFloat v)
+{
+  if ((v.bits >> 8) == (SVM_INPUT_STACK_OFFSET_MASK >> 8)) {
+    return stack_load<dual1>(stack, v.bits & 0xFFu);
+  }
+  return dual1(__uint_as_float(v.bits));
+}
+
+template<typename T>
+ccl_device_inline T stack_load(const ccl_private float *stack, const SVMInputFloat3 v);
+
+ccl_device_template_spec float3 stack_load(const ccl_private float *stack, const SVMInputFloat3 v)
+{
+  return stack_load(stack, v);
+}
+
+ccl_device_template_spec dual3 stack_load(const ccl_private float *stack, const SVMInputFloat3 v)
+{
+  if ((v.x.bits >> 8) == (SVM_INPUT_STACK_OFFSET_MASK >> 8)) {
+    return stack_load<dual3>(stack, v.x.bits & 0xFFu);
+  }
+  return dual3(make_float3(
+      __uint_as_float(v.x.bits), __uint_as_float(v.y.bits), __uint_as_float(v.z.bits)));
+}
+
+/* Stack Store */
+
+ccl_device_inline void stack_store_float(ccl_private float *stack, const uint a, const float f)
+{
+  kernel_assert(a < SVM_STACK_SIZE);
+
+  stack[a] = f;
+}
+
+ccl_device_inline void stack_store_float3(ccl_private float *stack, const uint a, const float3 f)
+{
+  kernel_assert(a + 2 < SVM_STACK_SIZE);
+  copy_v3_v3(stack + a, f);
+}
+
+ccl_device_inline void stack_store_int(ccl_private float *stack, const uint a, const int i)
+{
+  kernel_assert(a < SVM_STACK_SIZE);
+
+  stack[a] = __int_as_float(i);
+}
+
 /* Type-based stack store. Overloaded for plain and dual types.
  * For dual types, derivatives are stored in adjacent stack slots. */
 
@@ -117,26 +181,7 @@ ccl_device_inline void stack_store(ccl_private float *stack, const uint a, const
   stack_store_float3(stack, a + 6, f.dy);
 }
 
-ccl_device_inline int stack_load_int(const ccl_private float *stack, const uint a)
-{
-  kernel_assert(a < SVM_STACK_SIZE);
-
-  return __float_as_int(stack[a]);
-}
-
-ccl_device_inline int stack_load_int_default(ccl_private float *stack,
-                                             const uint a,
-                                             const uint value)
-{
-  return (a == (uint)SVM_STACK_INVALID) ? (int)value : stack_load_int(stack, a);
-}
-
-ccl_device_inline void stack_store_int(ccl_private float *stack, const uint a, const int i)
-{
-  kernel_assert(a < SVM_STACK_SIZE);
-
-  stack[a] = __int_as_float(i);
-}
+/* Stack Utility */
 
 ccl_device_inline bool stack_valid(const uint a)
 {
@@ -145,62 +190,29 @@ ccl_device_inline bool stack_valid(const uint a)
 
 /* Reading Nodes */
 
-ccl_device_inline uint4 read_node(KernelGlobals kg, ccl_private int *const offset)
+/* Read a typed node struct directly from the SVM bytecode stream. The struct T must be a
+ * multiple of sizeof(uint) and its memory layout must match the bytecode encoding. Returns
+ * a const reference into the bytecode array and advances the offset past the struct. */
+template<typename T>
+ccl_device_inline const ccl_global T &svm_node_get(KernelGlobals kg, ccl_private int *const offset)
 {
-  uint4 node = kernel_data_fetch(svm_nodes, *offset);
-  (*offset)++;
+  static_assert(alignof(T) <= alignof(uint));
+  static_assert(sizeof(T) % sizeof(uint) == 0);
+  const ccl_global T &node = *reinterpret_cast<const ccl_global T *>(
+      &kernel_data_fetch(svm_nodes, *offset));
+  *offset += sizeof(T) / sizeof(uint);
   return node;
 }
 
-ccl_device_inline float4 read_node_float(KernelGlobals kg, ccl_private int *const offset)
+ccl_device_inline float4 svm_node_get_data_float4(KernelGlobals kg, const int offset)
 {
-  const uint4 node = kernel_data_fetch(svm_nodes, *offset);
-  const float4 f = make_float4(__uint_as_float(node.x),
-                               __uint_as_float(node.y),
-                               __uint_as_float(node.z),
-                               __uint_as_float(node.w));
-  (*offset)++;
-  return f;
+  return make_float4(__uint_as_float(kernel_data_fetch(svm_nodes, offset)),
+                     __uint_as_float(kernel_data_fetch(svm_nodes, offset + 1)),
+                     __uint_as_float(kernel_data_fetch(svm_nodes, offset + 2)),
+                     __uint_as_float(kernel_data_fetch(svm_nodes, offset + 3)));
 }
 
-ccl_device_inline float4 fetch_node_float(KernelGlobals kg, const int offset)
-{
-  const uint4 node = kernel_data_fetch(svm_nodes, offset);
-  return make_float4(__uint_as_float(node.x),
-                     __uint_as_float(node.y),
-                     __uint_as_float(node.z),
-                     __uint_as_float(node.w));
-}
-
-ccl_device_forceinline void svm_unpack_node_uchar2(const uint i,
-                                                   ccl_private uint *x,
-                                                   ccl_private uint *y)
-{
-  *x = (i & 0xFF);
-  *y = ((i >> 8) & 0xFF);
-}
-
-ccl_device_forceinline void svm_unpack_node_uchar3(const uint i,
-                                                   ccl_private uint *x,
-                                                   ccl_private uint *y,
-                                                   ccl_private uint *z)
-{
-  *x = (i & 0xFF);
-  *y = ((i >> 8) & 0xFF);
-  *z = ((i >> 16) & 0xFF);
-}
-
-ccl_device_forceinline void svm_unpack_node_uchar4(const uint i,
-                                                   ccl_private uint *x,
-                                                   ccl_private uint *y,
-                                                   ccl_private uint *z,
-                                                   ccl_private uint *w)
-{
-  *x = (i & 0xFF);
-  *y = ((i >> 8) & 0xFF);
-  *z = ((i >> 16) & 0xFF);
-  *w = ((i >> 24) & 0xFF);
-}
+/* Shading Helpers */
 
 ccl_device_forceinline float3 dPdx(const ccl_private ShaderData *sd)
 {

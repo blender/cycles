@@ -74,7 +74,7 @@ class DeviceScene {
   device_vector<KernelParticle> particles;
 
   /* shaders */
-  device_vector<int4> svm_nodes;
+  device_vector<int> svm_nodes;
   device_vector<KernelShader> shaders;
 
   /* lookup tables */

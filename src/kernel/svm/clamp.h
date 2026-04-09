@@ -4,37 +4,26 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
 
 /* Clamp Node */
 
-ccl_device_noinline int svm_node_clamp(KernelGlobals kg,
-                                       ccl_private float *stack,
-                                       const uint value_stack_offset,
-                                       const uint parameters_stack_offsets,
-                                       const uint result_stack_offset,
-                                       int offset)
+ccl_device_noinline void svm_node_clamp(ccl_private float *ccl_restrict stack,
+                                        const ccl_global SVMNodeClamp &ccl_restrict node)
 {
-  uint min_stack_offset;
-  uint max_stack_offset;
-  uint type;
-  svm_unpack_node_uchar3(parameters_stack_offsets, &min_stack_offset, &max_stack_offset, &type);
+  const float value = stack_load(stack, node.value);
+  const float min = stack_load(stack, node.min);
+  const float max = stack_load(stack, node.max);
 
-  const uint4 defaults = read_node(kg, &offset);
-
-  const float value = stack_load_float(stack, value_stack_offset);
-  const float min = stack_load_float_default(stack, min_stack_offset, defaults.x);
-  const float max = stack_load_float_default(stack, max_stack_offset, defaults.y);
-
-  if (type == NODE_CLAMP_RANGE && (min > max)) {
-    stack_store_float(stack, result_stack_offset, clamp(value, max, min));
+  if (node.clamp_type == NODE_CLAMP_RANGE && (min > max)) {
+    stack_store_float(stack, node.result_offset, clamp(value, max, min));
   }
   else {
-    stack_store_float(stack, result_stack_offset, clamp(value, min, max));
+    stack_store_float(stack, node.result_offset, clamp(value, min, max));
   }
-  return offset;
 }
 
 CCL_NAMESPACE_END

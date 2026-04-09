@@ -4,29 +4,22 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 #include "util/hash.h"
 
 CCL_NAMESPACE_BEGIN
 
-ccl_device_noinline void svm_node_tex_white_noise(ccl_private float *stack,
-                                                  const uint dimensions,
-                                                  const uint inputs_stack_offsets,
-                                                  const uint outputs_stack_offsets)
+ccl_device_noinline void svm_node_tex_white_noise(
+    ccl_private float *ccl_restrict stack,
+    const ccl_global SVMNodeTexWhiteNoise &ccl_restrict node)
 {
-  uint vector_stack_offset;
-  uint w_stack_offset;
-  uint value_stack_offset;
-  uint color_stack_offset;
-  svm_unpack_node_uchar2(inputs_stack_offsets, &vector_stack_offset, &w_stack_offset);
-  svm_unpack_node_uchar2(outputs_stack_offsets, &value_stack_offset, &color_stack_offset);
+  const float3 vector = stack_load(stack, node.vector);
+  const float w = stack_load(stack, node.w);
 
-  const float3 vector = stack_load_float3(stack, vector_stack_offset);
-  const float w = stack_load_float(stack, w_stack_offset);
-
-  if (stack_valid(color_stack_offset)) {
+  if (stack_valid(node.color_offset)) {
     float3 color;
-    switch (dimensions) {
+    switch (node.dimensions) {
       case 1:
         color = hash_float_to_float3(w);
         break;
@@ -44,12 +37,12 @@ ccl_device_noinline void svm_node_tex_white_noise(ccl_private float *stack,
         kernel_assert(0);
         break;
     }
-    stack_store_float3(stack, color_stack_offset, color);
+    stack_store_float3(stack, node.color_offset, color);
   }
 
-  if (stack_valid(value_stack_offset)) {
+  if (stack_valid(node.value_offset)) {
     float value;
-    switch (dimensions) {
+    switch (node.dimensions) {
       case 1:
         value = hash_float_to_float(w);
         break;
@@ -67,7 +60,7 @@ ccl_device_noinline void svm_node_tex_white_noise(ccl_private float *stack,
         kernel_assert(0);
         break;
     }
-    stack_store_float(stack, value_stack_offset, value);
+    stack_store_float(stack, node.value_offset, value);
   }
 }
 

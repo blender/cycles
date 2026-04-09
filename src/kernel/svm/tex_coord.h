@@ -11,6 +11,7 @@
 #include "kernel/geom/primitive.h"
 
 #include "kernel/svm/attribute.h"
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/types.h"
 #include "kernel/svm/util.h"
 #include "util/math_base.h"
@@ -91,12 +92,12 @@ template<typename Float3Type>
 ccl_device_noinline Float3Type svm_node_tex_coord_eval(KernelGlobals kg,
                                                        ccl_private ShaderData *sd,
                                                        const uint32_t path_flag,
-                                                       const uint type,
+                                                       const NodeTexCoord type,
                                                        ccl_private int *offset)
 {
   Float3Type data;
 
-  switch ((NodeTexCoord)type) {
+  switch (type) {
     case NODE_TEXCO_OBJECT:
     case NODE_TEXCO_OBJECT_WITH_TRANSFORM: {
       data = shading_position<Float3Type>(sd);
@@ -104,10 +105,7 @@ ccl_device_noinline Float3Type svm_node_tex_coord_eval(KernelGlobals kg,
         object_inverse_position_transform_if_object(kg, sd, &data);
       }
       else {
-        Transform tfm;
-        tfm.x = read_node_float(kg, offset);
-        tfm.y = read_node_float(kg, offset);
-        tfm.z = read_node_float(kg, offset);
+        const Transform tfm = make_transform(svm_node_get<PackedTransform>(kg, offset));
         data = transform_point(&tfm, data);
       }
       break;
@@ -181,90 +179,75 @@ ccl_device_noinline Float3Type svm_node_tex_coord_eval(KernelGlobals kg,
 ccl_device_noinline int svm_node_tex_coord(KernelGlobals kg,
                                            ccl_private ShaderData *sd,
                                            const uint32_t path_flag,
-                                           ccl_private float *stack,
-                                           const uint4 node,
+                                           ccl_private float *ccl_restrict stack,
+                                           const ccl_global SVMNodeTexCoord &ccl_restrict node,
                                            int offset)
 {
-  uint type, unused1, unused2;
-  svm_unpack_node_uchar3(node.y, &type, &unused1, &unused2);
-  const float3 data = svm_node_tex_coord_eval<float3>(kg, sd, path_flag, type, &offset);
-  stack_store(stack, node.z, data);
+  const float3 data = svm_node_tex_coord_eval<float3>(kg, sd, path_flag, node.texco_type, &offset);
+  stack_store(stack, node.out_offset, data);
   return offset;
 }
 
-ccl_device_noinline int svm_node_tex_coord_derivative(KernelGlobals kg,
-                                                      ccl_private ShaderData *sd,
-                                                      const uint32_t path_flag,
-                                                      ccl_private float *stack,
-                                                      const uint4 node,
-                                                      int offset)
+ccl_device_noinline int svm_node_tex_coord_derivative(
+    KernelGlobals kg,
+    ccl_private ShaderData *sd,
+    const uint32_t path_flag,
+    ccl_private float *ccl_restrict stack,
+    const ccl_global SVMNodeTexCoord &ccl_restrict node,
+    int offset)
 {
-  uint type, bump_offset, store_derivatives;
-  svm_unpack_node_uchar3(node.y, &type, &bump_offset, &store_derivatives);
-
-  dual3 data = svm_node_tex_coord_eval<dual3>(kg, sd, path_flag, type, &offset);
-  const float bump_filter_width = __uint_as_float(node.w);
-  if (bump_offset == NODE_BUMP_OFFSET_DX) {
-    data.val += data.dx * bump_filter_width;
+  dual3 data = svm_node_tex_coord_eval<dual3>(kg, sd, path_flag, node.texco_type, &offset);
+  if (node.bump_offset == NODE_BUMP_OFFSET_DX) {
+    data.val += data.dx * node.bump_filter_width;
   }
-  else if (bump_offset == NODE_BUMP_OFFSET_DY) {
-    data.val += data.dy * bump_filter_width;
+  else if (node.bump_offset == NODE_BUMP_OFFSET_DY) {
+    data.val += data.dy * node.bump_filter_width;
   }
   /* Normal texture coordinate must be normalized after bump offset, matching OSL. */
-  if (type == NODE_TEXCO_NORMAL) {
+  if (node.texco_type == NODE_TEXCO_NORMAL) {
     data = safe_normalize(data);
   }
-  if (store_derivatives) {
-    stack_store(stack, node.z, data);
+  if (node.store_derivatives) {
+    stack_store(stack, node.out_offset, data);
   }
   else {
-    stack_store(stack, node.z, data.val);
+    stack_store(stack, node.out_offset, data.val);
   }
   return offset;
 }
 
 ccl_device_noinline void svm_node_normal_map(KernelGlobals kg,
                                              ccl_private ShaderData *sd,
-                                             ccl_private float *stack,
-                                             const uint4 node)
+                                             ccl_private float *ccl_restrict stack,
+                                             const ccl_global SVMNodeNormalMap &ccl_restrict node)
 {
-  uint color_offset;
-  uint strength_offset;
-  uint normal_offset;
-  uint flags;
-  svm_unpack_node_uchar4(node.y, &color_offset, &strength_offset, &normal_offset, &flags);
-
-  const uint space = flags & NODE_NORMAL_MAP_FLAG_SPACE_MASK;
-  const bool invert_green = (flags & NODE_NORMAL_MAP_FLAG_DIRECTX) != 0;
-  const bool use_original_base = (flags & NODE_NORMAL_MAP_FLAG_ORIGINAL) != 0;
-
-  float3 color = stack_load_float3(stack, color_offset);
+  float3 color = stack_load(stack, node.color);
   color = 2.0f * make_float3(color.x - 0.5f, color.y - 0.5f, color.z - 0.5f);
 
-  if (invert_green) {
+  if (node.invert_green) {
     color.y = -color.y;
   }
 
   const bool is_backfacing = (sd->flag & SD_BACKFACING) != 0;
   float3 N;
-  float strength = stack_load_float(stack, strength_offset);
+  float strength = stack_load(stack, node.strength);
   bool linear_interpolate_strength = false;
 
-  if (space == NODE_NORMAL_MAP_TANGENT) {
+  if (node.space == NODE_NORMAL_MAP_TANGENT) {
     /* tangent space */
     if (sd->object == OBJECT_NONE || (sd->type & PRIMITIVE_TRIANGLE) == 0) {
       /* Fall back to unperturbed normal. */
-      stack_store_float3(stack, normal_offset, sd->N);
+      stack_store_float3(stack, node.normal_offset, sd->N);
       return;
     }
 
     /* first try to get tangent attribute */
-    const AttributeDescriptor attr = find_attribute(kg, sd, node.z);
-    const AttributeDescriptor attr_sign = find_attribute(kg, sd, node.w);
+    const AttributeDescriptor attr = find_attribute(kg, sd, node.attr);
+    const AttributeDescriptor attr_sign = find_attribute(kg, sd, node.attr_sign);
 
     if (attr.offset == ATTR_STD_NOT_FOUND || attr_sign.offset == ATTR_STD_NOT_FOUND) {
       /* Fall back to unperturbed normal. */
-      stack_store_float3(stack, normal_offset, sd->N);
+      stack_store_float3(stack, node.normal_offset, sd->N);
       return;
     }
 
@@ -275,7 +258,7 @@ ccl_device_noinline void svm_node_normal_map(KernelGlobals kg,
 
     if (sd->shader & SHADER_SMOOTH_NORMAL) {
       const AttributeDescriptor attr_undisplaced_normal =
-          (use_original_base) ?
+          (node.use_original_base) ?
               find_attribute(kg, sd->object, sd->prim, ATTR_STD_NORMAL_UNDISPLACED) :
               AttributeDescriptor{ATTR_ELEMENT_NONE, NODE_ATTR_FLOAT3, ATTR_STD_NOT_FOUND};
       if (attr_undisplaced_normal.offset != ATTR_STD_NOT_FOUND) {
@@ -321,7 +304,9 @@ ccl_device_noinline void svm_node_normal_map(KernelGlobals kg,
     linear_interpolate_strength = true;
 
     /* strange blender convention */
-    if (space == NODE_NORMAL_MAP_BLENDER_OBJECT || space == NODE_NORMAL_MAP_BLENDER_WORLD) {
+    if (node.space == NODE_NORMAL_MAP_BLENDER_OBJECT ||
+        node.space == NODE_NORMAL_MAP_BLENDER_WORLD)
+    {
       color.y = -color.y;
       color.z = -color.z;
     }
@@ -329,7 +314,7 @@ ccl_device_noinline void svm_node_normal_map(KernelGlobals kg,
     /* object, world space */
     N = color;
 
-    if (space == NODE_NORMAL_MAP_OBJECT || space == NODE_NORMAL_MAP_BLENDER_OBJECT) {
+    if (node.space == NODE_NORMAL_MAP_OBJECT || node.space == NODE_NORMAL_MAP_BLENDER_OBJECT) {
       object_normal_transform(kg, sd, &N);
     }
     else {
@@ -352,27 +337,22 @@ ccl_device_noinline void svm_node_normal_map(KernelGlobals kg,
     N = sd->N;
   }
 
-  stack_store_float3(stack, normal_offset, N);
+  stack_store_float3(stack, node.normal_offset, N);
 }
 
 template<typename Float3Type>
 ccl_device_noinline void svm_node_tangent(KernelGlobals kg,
                                           ccl_private ShaderData *sd,
                                           ccl_private float *stack,
-                                          const uint4 node)
+                                          const ccl_global SVMNodeTangent &ccl_restrict node)
 {
-  uint tangent_offset;
-  uint direction_type;
-  uint axis;
-  svm_unpack_node_uchar3(node.y, &tangent_offset, &direction_type, &axis);
-
-  const AttributeDescriptor desc = find_attribute(kg, sd, node.z);
+  const AttributeDescriptor desc = find_attribute(kg, sd, node.attr);
 
   Float3Type tangent;
-  if (direction_type == NODE_TANGENT_UVMAP) {
+  if (node.direction_type == NODE_TANGENT_UVMAP) {
     /* UV map */
     if (desc.offset == ATTR_STD_NOT_FOUND) {
-      stack_store(stack, tangent_offset, Float3Type());
+      stack_store(stack, node.tangent_offset, Float3Type());
       return;
     }
     if (desc.type == NODE_ATTR_FLOAT2) {
@@ -407,10 +387,10 @@ ccl_device_noinline void svm_node_tangent(KernelGlobals kg,
 
     if constexpr (is_dual_v<Float3Type>) {
       using FloatType = dual_scalar_t<Float3Type>;
-      if (axis == NODE_TANGENT_AXIS_X) {
+      if (node.axis == NODE_TANGENT_AXIS_X) {
         tangent = make_float3(FloatType(), -(generated.z() - 0.5f), (generated.y() - 0.5f));
       }
-      else if (axis == NODE_TANGENT_AXIS_Y) {
+      else if (node.axis == NODE_TANGENT_AXIS_Y) {
         tangent = make_float3(-(generated.z() - 0.5f), FloatType(), (generated.x() - 0.5f));
       }
       else {
@@ -418,10 +398,10 @@ ccl_device_noinline void svm_node_tangent(KernelGlobals kg,
       }
     }
     else {
-      if (axis == NODE_TANGENT_AXIS_X) {
+      if (node.axis == NODE_TANGENT_AXIS_X) {
         tangent = make_float3(0.0f, -(generated.z - 0.5f), (generated.y - 0.5f));
       }
-      else if (axis == NODE_TANGENT_AXIS_Y) {
+      else if (node.axis == NODE_TANGENT_AXIS_Y) {
         tangent = make_float3(-(generated.z - 0.5f), 0.0f, (generated.x - 0.5f));
       }
       else {
@@ -432,7 +412,7 @@ ccl_device_noinline void svm_node_tangent(KernelGlobals kg,
 
   object_normal_transform(kg, sd, &tangent);
   tangent = cross(sd->N, normalize(cross(tangent, sd->N)));
-  stack_store(stack, tangent_offset, tangent);
+  stack_store(stack, node.tangent_offset, tangent);
 }
 
 CCL_NAMESPACE_END

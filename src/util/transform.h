@@ -687,6 +687,39 @@ Transform transform_from_viewplane(BoundBox2D &viewplane);
 
 #endif
 
+/* Packed Transform.
+ *
+ * Transform type with no alignment requirements.
+ * It does not support any mathematical operations, only conversion to Transform. */
+
+struct PackedTransform {
+  ccl_device_inline_method PackedTransform() = default;
+
+  ccl_device_inline_method PackedTransform(const Transform a) : x(a.x), y(a.y), z(a.z) {}
+
+  ccl_device_inline_method PackedTransform operator=(const Transform a)
+  {
+    x = a.x;
+    y = a.y;
+    z = a.z;
+    return *this;
+  }
+
+  packed_float4 x, y, z;
+};
+static_assert(alignof(PackedTransform) == alignof(float),
+              "PackedTransform expected to have the same alignment as float");
+static_assert(sizeof(PackedTransform) == 48, "packed_float4 expected to be exactly 48 bytes");
+
+ccl_device_inline Transform make_transform(const PackedTransform packed_tfm)
+{
+  Transform tfm;
+  tfm.x = packed_tfm.x;
+  tfm.y = packed_tfm.y;
+  tfm.z = packed_tfm.z;
+  return tfm;
+}
+
 /* TODO: This can be removed when we know if no devices will require explicit
  * address space qualifiers for this case. */
 

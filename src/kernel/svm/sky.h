@@ -6,6 +6,7 @@
 
 #include "kernel/image.h"
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/types.h"
 #include "kernel/svm/util.h"
 
@@ -184,87 +185,40 @@ ccl_device float3 sky_radiance_nishita(KernelGlobals kg,
 ccl_device_noinline int svm_node_tex_sky(KernelGlobals kg,
                                          ccl_private ShaderData *sd,
                                          const uint32_t path_flag,
-                                         ccl_private float *stack,
-                                         const uint4 node,
+                                         ccl_private float *ccl_restrict stack,
+                                         const ccl_global SVMNodeTexSky &ccl_restrict node,
                                          int offset)
 {
   /* Load data */
-  const uint dir_offset = node.y;
-  const uint out_offset = node.z;
-  const NodeSkyType sky_type = NodeSkyType(node.w);
+  const NodeSkyType sky_type = node.sky_type;
 
-  const float3 dir = stack_load_float3(stack, dir_offset);
+  const float3 dir = stack_load_float3(stack, node.dir_offset);
   float3 rgb;
 
   /* Preetham and Hosek share the same data */
   if (sky_type == NODE_SKY_PREETHAM || sky_type == NODE_SKY_HOSEK) {
-    /* Define variables */
-    float sunphi;
-    float suntheta;
-    float radiance_x;
-    float radiance_y;
-    float radiance_z;
-    float config_x[9];
-    float config_y[9];
-    float config_z[9];
+    const ccl_global SVMNodeTexSkyPreethamData &preetham =
+        *reinterpret_cast<const ccl_global SVMNodeTexSkyPreethamData *>(
+            &kernel_data_fetch(svm_nodes, offset));
+    offset += sizeof(SVMNodeTexSkyPreethamData) / sizeof(uint);
 
-    float4 data = read_node_float(kg, &offset);
-    sunphi = data.x;
-    suntheta = data.y;
-    radiance_x = data.z;
-    radiance_y = data.w;
-
-    data = read_node_float(kg, &offset);
-    radiance_z = data.x;
-    config_x[0] = data.y;
-    config_x[1] = data.z;
-    config_x[2] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_x[3] = data.x;
-    config_x[4] = data.y;
-    config_x[5] = data.z;
-    config_x[6] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_x[7] = data.x;
-    config_x[8] = data.y;
-    config_y[0] = data.z;
-    config_y[1] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_y[2] = data.x;
-    config_y[3] = data.y;
-    config_y[4] = data.z;
-    config_y[5] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_y[6] = data.x;
-    config_y[7] = data.y;
-    config_y[8] = data.z;
-    config_z[0] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_z[1] = data.x;
-    config_z[2] = data.y;
-    config_z[3] = data.z;
-    config_z[4] = data.w;
-
-    data = read_node_float(kg, &offset);
-    config_z[5] = data.x;
-    config_z[6] = data.y;
-    config_z[7] = data.z;
-    config_z[8] = data.w;
+    /* Copy config arrays to private memory for GPU compatibility. */
+    float config_x[9], config_y[9], config_z[9];
+    for (int i = 0; i < 9; i++) {
+      config_x[i] = preetham.config_x[i];
+      config_y[i] = preetham.config_y[i];
+      config_z[i] = preetham.config_z[i];
+    }
 
     /* Compute Sky */
     if (sky_type == NODE_SKY_PREETHAM) {
       rgb = sky_radiance_preetham(kg,
                                   dir,
-                                  sunphi,
-                                  suntheta,
-                                  radiance_x,
-                                  radiance_y,
-                                  radiance_z,
+                                  preetham.phi,
+                                  preetham.theta,
+                                  preetham.radiance_x,
+                                  preetham.radiance_y,
+                                  preetham.radiance_z,
                                   config_x,
                                   config_y,
                                   config_z);
@@ -272,11 +226,11 @@ ccl_device_noinline int svm_node_tex_sky(KernelGlobals kg,
     else {
       rgb = sky_radiance_hosek(kg,
                                dir,
-                               sunphi,
-                               suntheta,
-                               radiance_x,
-                               radiance_y,
-                               radiance_z,
+                               preetham.phi,
+                               preetham.theta,
+                               preetham.radiance_x,
+                               preetham.radiance_y,
+                               preetham.radiance_z,
                                config_x,
                                config_y,
                                config_z);
@@ -284,30 +238,27 @@ ccl_device_noinline int svm_node_tex_sky(KernelGlobals kg,
   }
   /* Nishita */
   else {
-    float4 data = read_node_float(kg, &offset);
-    const float3 pixel_bottom = make_float3(data.x, data.y, data.z);
-    float3 pixel_top;
-    pixel_top.x = data.w;
+    const ccl_global SVMNodeTexSkyNishitaData &nishita =
+        *reinterpret_cast<const ccl_global SVMNodeTexSkyNishitaData *>(
+            &kernel_data_fetch(svm_nodes, offset));
+    offset += sizeof(SVMNodeTexSkyNishitaData) / sizeof(uint);
 
-    float sky_data[5];
-    data = read_node_float(kg, &offset);
-    pixel_top.y = data.x;
-    pixel_top.z = data.y;
-    sky_data[0] = data.z;
-    sky_data[1] = data.w;
-
-    data = read_node_float(kg, &offset);
-    sky_data[2] = data.x;
-    sky_data[3] = data.y;
-    sky_data[4] = data.z;
-    const uint texture_id = __float_as_uint(data.w);
+    const float3 pixel_bottom = make_float3(
+        nishita.pixel_bottom_x, nishita.pixel_bottom_y, nishita.pixel_bottom_z);
+    const float3 pixel_top = make_float3(
+        nishita.pixel_top_x, nishita.pixel_top_y, nishita.pixel_top_z);
+    const float sky_data[5] = {nishita.sun_elevation,
+                               nishita.sun_rotation,
+                               nishita.angular_diameter,
+                               nishita.sun_intensity,
+                               nishita.earth_intersection_angle};
 
     /* Compute Sky */
     rgb = sky_radiance_nishita(
-        kg, sd, dir, path_flag, pixel_bottom, pixel_top, sky_data, texture_id);
+        kg, sd, dir, path_flag, pixel_bottom, pixel_top, sky_data, nishita.texture_id);
   }
 
-  stack_store_float3(stack, out_offset, rgb);
+  stack_store_float3(stack, node.out_offset, rgb);
   return offset;
 }
 

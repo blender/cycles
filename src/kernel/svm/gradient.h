@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -55,25 +56,19 @@ ccl_device float svm_gradient(const float3 p, NodeGradientType type)
   return 0.0f;
 }
 
-ccl_device_noinline void svm_node_tex_gradient(ccl_private float *stack, const uint4 node)
+ccl_device_noinline void svm_node_tex_gradient(
+    ccl_private float *ccl_restrict stack, const ccl_global SVMNodeTexGradient &ccl_restrict node)
 {
-  uint type;
-  uint co_offset;
-  uint color_offset;
-  uint fac_offset;
+  const float3 co = stack_load_float3(stack, node.co);
 
-  svm_unpack_node_uchar4(node.y, &type, &co_offset, &fac_offset, &color_offset);
-
-  const float3 co = stack_load_float3(stack, co_offset);
-
-  float f = svm_gradient(co, (NodeGradientType)type);
+  float f = svm_gradient(co, node.gradient_type);
   f = saturatef(f);
 
-  if (stack_valid(fac_offset)) {
-    stack_store_float(stack, fac_offset, f);
+  if (stack_valid(node.fac_offset)) {
+    stack_store_float(stack, node.fac_offset, f);
   }
-  if (stack_valid(color_offset)) {
-    stack_store_float3(stack, color_offset, make_float3(f, f, f));
+  if (stack_valid(node.color_offset)) {
+    stack_store_float3(stack, node.color_offset, make_float3(f, f, f));
   }
 }
 

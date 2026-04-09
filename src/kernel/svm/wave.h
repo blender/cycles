@@ -5,6 +5,7 @@
 #pragma once
 
 #include "kernel/svm/fractal_noise.h"
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -75,49 +76,21 @@ ccl_device_noinline_cpu float svm_wave(NodeWaveType type,
   return fabsf(n - floorf(n + 0.5f)) * 2.0f;
 }
 
-ccl_device_noinline int svm_node_tex_wave(KernelGlobals kg,
-                                          ccl_private float *stack,
-                                          const uint4 node,
-                                          int offset)
+ccl_device_noinline void svm_node_tex_wave(ccl_private float *ccl_restrict stack,
+                                           const ccl_global SVMNodeTexWave &ccl_restrict node)
 {
-  const uint4 node2 = read_node(kg, &offset);
-  const uint4 node3 = read_node(kg, &offset);
+  const float3 co = stack_load_float3(stack, node.co);
+  const float scale = stack_load(stack, node.scale);
+  const float distortion = stack_load(stack, node.distortion);
+  const float detail = stack_load(stack, node.detail);
+  const float dscale = stack_load(stack, node.dscale);
+  const float droughness = stack_load(stack, node.droughness);
+  const float phase = stack_load(stack, node.phase);
 
-  /* RNA properties */
-  uint type_offset;
-  uint bands_dir_offset;
-  uint rings_dir_offset;
-  uint profile_offset;
-  /* Inputs, Outputs */
-  uint co_offset;
-  uint scale_offset;
-  uint distortion_offset;
-  uint detail_offset;
-  uint dscale_offset;
-  uint droughness_offset;
-  uint phase_offset;
-  uint color_offset;
-  uint fac_offset;
-
-  svm_unpack_node_uchar4(
-      node.y, &type_offset, &bands_dir_offset, &rings_dir_offset, &profile_offset);
-  svm_unpack_node_uchar3(node.z, &co_offset, &scale_offset, &distortion_offset);
-  svm_unpack_node_uchar4(
-      node.w, &detail_offset, &dscale_offset, &droughness_offset, &phase_offset);
-  svm_unpack_node_uchar2(node2.x, &color_offset, &fac_offset);
-
-  const float3 co = stack_load_float3(stack, co_offset);
-  const float scale = stack_load_float_default(stack, scale_offset, node2.y);
-  const float distortion = stack_load_float_default(stack, distortion_offset, node2.z);
-  const float detail = stack_load_float_default(stack, detail_offset, node2.w);
-  const float dscale = stack_load_float_default(stack, dscale_offset, node3.x);
-  const float droughness = stack_load_float_default(stack, droughness_offset, node3.y);
-  const float phase = stack_load_float_default(stack, phase_offset, node3.z);
-
-  const float f = svm_wave((NodeWaveType)type_offset,
-                           (NodeWaveBandsDirection)bands_dir_offset,
-                           (NodeWaveRingsDirection)rings_dir_offset,
-                           (NodeWaveProfile)profile_offset,
+  const float f = svm_wave(node.wave_type,
+                           node.bands_direction,
+                           node.rings_direction,
+                           node.profile,
                            co * scale,
                            distortion,
                            detail,
@@ -125,13 +98,12 @@ ccl_device_noinline int svm_node_tex_wave(KernelGlobals kg,
                            droughness,
                            phase);
 
-  if (stack_valid(fac_offset)) {
-    stack_store_float(stack, fac_offset, f);
+  if (stack_valid(node.fac_offset)) {
+    stack_store_float(stack, node.fac_offset, f);
   }
-  if (stack_valid(color_offset)) {
-    stack_store_float3(stack, color_offset, make_float3(f, f, f));
+  if (stack_valid(node.color_offset)) {
+    stack_store_float3(stack, node.color_offset, make_float3(f, f, f));
   }
-  return offset;
 }
 
 CCL_NAMESPACE_END

@@ -4,35 +4,26 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
 
-ccl_device_noinline int svm_node_normal(KernelGlobals kg,
-                                        ccl_private float *stack,
-                                        const uint in_normal_offset,
-                                        const uint out_normal_offset,
-                                        const uint out_dot_offset,
-                                        int offset)
+ccl_device_noinline void svm_node_normal(ccl_private float *ccl_restrict stack,
+                                         const ccl_global SVMNodeNormal &ccl_restrict node)
 {
-  /* read extra data */
-  const uint4 node1 = read_node(kg, &offset);
-  const float3 normal = stack_load_float3(stack, in_normal_offset);
+  const float3 normal = stack_load(stack, node.in_normal);
 
-  float3 direction;
-  direction.x = __int_as_float(node1.x);
-  direction.y = __int_as_float(node1.y);
-  direction.z = __int_as_float(node1.z);
+  float3 direction = make_float3(node.direction_x, node.direction_y, node.direction_z);
   direction = normalize(direction);
 
-  if (stack_valid(out_normal_offset)) {
-    stack_store_float3(stack, out_normal_offset, direction);
+  if (stack_valid(node.out_normal_offset)) {
+    stack_store_float3(stack, node.out_normal_offset, direction);
   }
 
-  if (stack_valid(out_dot_offset)) {
-    stack_store_float(stack, out_dot_offset, dot(direction, normalize(normal)));
+  if (stack_valid(node.out_dot_offset)) {
+    stack_store_float(stack, node.out_dot_offset, dot(direction, normalize(normal)));
   }
-  return offset;
 }
 
 CCL_NAMESPACE_END

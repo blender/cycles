@@ -5,6 +5,7 @@
 #pragma once
 
 #include "kernel/svm/fractal_noise.h"
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -242,52 +243,18 @@ ccl_device void noise_texture_4d(const float4 co,
   }
 }
 
-ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
-                                           ccl_private float *stack,
-                                           const uint offsets1,
-                                           const uint offsets2,
-                                           const uint offsets3,
-                                           int node_offset)
+ccl_device_noinline void svm_node_tex_noise(ccl_private float *ccl_restrict stack,
+                                            const ccl_global SVMNodeTexNoise &ccl_restrict node)
 {
-  uint vector_stack_offset;
-  uint w_stack_offset;
-  uint scale_stack_offset;
-  uint detail_stack_offset;
-  uint roughness_stack_offset;
-  uint lacunarity_stack_offset;
-  uint offset_stack_offset;
-  uint gain_stack_offset;
-  uint distortion_stack_offset;
-  uint value_stack_offset;
-  uint color_stack_offset;
-
-  svm_unpack_node_uchar4(
-      offsets1, &vector_stack_offset, &w_stack_offset, &scale_stack_offset, &detail_stack_offset);
-  svm_unpack_node_uchar4(offsets2,
-                         &roughness_stack_offset,
-                         &lacunarity_stack_offset,
-                         &offset_stack_offset,
-                         &gain_stack_offset);
-  svm_unpack_node_uchar3(
-      offsets3, &distortion_stack_offset, &value_stack_offset, &color_stack_offset);
-
-  const uint4 defaults1 = read_node(kg, &node_offset);
-  const uint4 defaults2 = read_node(kg, &node_offset);
-  const uint4 properties = read_node(kg, &node_offset);
-
-  const uint dimensions = properties.x;
-  const uint type = properties.y;
-  const uint normalize = properties.z;
-
-  float3 vector = stack_load_float3(stack, vector_stack_offset);
-  float w = stack_load_float_default(stack, w_stack_offset, defaults1.x);
-  const float scale = stack_load_float_default(stack, scale_stack_offset, defaults1.y);
-  float detail = stack_load_float_default(stack, detail_stack_offset, defaults1.z);
-  float roughness = stack_load_float_default(stack, roughness_stack_offset, defaults1.w);
-  const float lacunarity = stack_load_float_default(stack, lacunarity_stack_offset, defaults2.x);
-  const float offset = stack_load_float_default(stack, offset_stack_offset, defaults2.y);
-  const float gain = stack_load_float_default(stack, gain_stack_offset, defaults2.z);
-  const float distortion = stack_load_float_default(stack, distortion_stack_offset, defaults2.w);
+  float3 vector = stack_load_float3(stack, node.vector);
+  float w = stack_load(stack, node.w);
+  const float scale = stack_load(stack, node.scale);
+  float detail = stack_load(stack, node.detail);
+  float roughness = stack_load(stack, node.roughness);
+  const float lacunarity = stack_load(stack, node.lacunarity);
+  const float offset = stack_load(stack, node.offset);
+  const float gain = stack_load(stack, node.gain);
+  const float distortion = stack_load(stack, node.distortion);
 
   detail = clamp(detail, 0.0f, 15.0f);
   roughness = fmaxf(roughness, 0.0f);
@@ -297,7 +264,7 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
 
   float value;
   float3 color;
-  switch (dimensions) {
+  switch (node.dimensions) {
     case 1:
       noise_texture_1d(w,
                        detail,
@@ -306,9 +273,9 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
                        offset,
                        gain,
                        distortion,
-                       type,
-                       normalize,
-                       stack_valid(color_stack_offset),
+                       node.noise_type,
+                       node.normalize,
+                       stack_valid(node.color_offset),
                        &value,
                        &color);
       break;
@@ -320,9 +287,9 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
                        offset,
                        gain,
                        distortion,
-                       type,
-                       normalize,
-                       stack_valid(color_stack_offset),
+                       node.noise_type,
+                       node.normalize,
+                       stack_valid(node.color_offset),
                        &value,
                        &color);
       break;
@@ -334,9 +301,9 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
                        offset,
                        gain,
                        distortion,
-                       type,
-                       normalize,
-                       stack_valid(color_stack_offset),
+                       node.noise_type,
+                       node.normalize,
+                       stack_valid(node.color_offset),
                        &value,
                        &color);
       break;
@@ -348,9 +315,9 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
                        offset,
                        gain,
                        distortion,
-                       type,
-                       normalize,
-                       stack_valid(color_stack_offset),
+                       node.noise_type,
+                       node.normalize,
+                       stack_valid(node.color_offset),
                        &value,
                        &color);
       break;
@@ -358,13 +325,12 @@ ccl_device_noinline int svm_node_tex_noise(KernelGlobals kg,
       kernel_assert(0);
   }
 
-  if (stack_valid(value_stack_offset)) {
-    stack_store_float(stack, value_stack_offset, value);
+  if (stack_valid(node.value_offset)) {
+    stack_store_float(stack, node.value_offset, value);
   }
-  if (stack_valid(color_stack_offset)) {
-    stack_store_float3(stack, color_stack_offset, color);
+  if (stack_valid(node.color_offset)) {
+    stack_store_float3(stack, node.color_offset, color);
   }
-  return node_offset;
 }
 
 CCL_NAMESPACE_END

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -14,14 +15,13 @@ template<uint node_feature_mask, typename ConstIntegratorGenericState>
 ccl_device_noinline void svm_node_light_path(KernelGlobals kg,
                                              ConstIntegratorGenericState state,
                                              const ccl_private ShaderData *sd,
-                                             ccl_private float *stack,
-                                             const uint type,
-                                             const uint out_offset,
+                                             ccl_private float *ccl_restrict stack,
+                                             const ccl_global SVMNodeLightPath &ccl_restrict node,
                                              const uint32_t path_flag)
 {
   float info = 0.0f;
 
-  switch ((NodeLightPath)type) {
+  switch (node.path_type) {
     case NODE_LP_camera:
       info = (path_flag & PATH_RAY_CAMERA) ? 1.0f : 0.0f;
       break;
@@ -101,32 +101,25 @@ ccl_device_noinline void svm_node_light_path(KernelGlobals kg,
       break;
   }
 
-  stack_store_float(stack, out_offset, info);
+  stack_store_float(stack, node.out_offset, info);
 }
 
 /* Light Falloff Node */
 
 ccl_device_noinline void svm_node_light_falloff(ccl_private ShaderData *sd,
-                                                ccl_private float *stack,
-                                                const uint4 node)
+                                                ccl_private float *ccl_restrict stack,
+                                                const ccl_global SVMNodeLightFalloff &ccl_restrict
+                                                    node)
 {
-  uint strength_offset;
-  uint out_offset;
-  uint smooth_offset;
-
-  svm_unpack_node_uchar3(node.z, &strength_offset, &smooth_offset, &out_offset);
-
-  float strength = stack_load_float(stack, strength_offset);
+  float strength = stack_load(stack, node.strength);
   if (sd->ray_length == FLT_MAX) {
     /* Distant lights (which have a ray_length of FLT_MAX) overflow when using most outputs of
      * the light falloff node. So just ignore the node in that case. */
-    stack_store_float(stack, out_offset, strength);
+    stack_store_float(stack, node.out_offset, strength);
     return;
   }
 
-  const uint type = node.y;
-
-  switch ((NodeLightFalloff)type) {
+  switch (node.falloff_type) {
     case NODE_LIGHT_FALLOFF_QUADRATIC:
       break;
     case NODE_LIGHT_FALLOFF_LINEAR:
@@ -137,14 +130,14 @@ ccl_device_noinline void svm_node_light_falloff(ccl_private ShaderData *sd,
       break;
   }
 
-  const float smooth = stack_load_float(stack, smooth_offset);
+  const float smooth = stack_load(stack, node.smooth);
 
   if (smooth > 0.0f) {
     const float squared = sd->ray_length * sd->ray_length;
     strength *= squared / (smooth + squared);
   }
 
-  stack_store_float(stack, out_offset, strength);
+  stack_store_float(stack, node.out_offset, strength);
 }
 
 CCL_NAMESPACE_END

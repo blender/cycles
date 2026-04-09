@@ -131,4 +131,39 @@ ccl_device_inline void print_float4(const ccl_private char *label, const float4 
 }
 #endif
 
+/* Packed float4.
+ *
+ * float4 type with no alignment requirements.
+ * It does not support any mathematical operations, only conversion to float4. */
+
+#if defined(__KERNEL_METAL__)
+/* Metal has native packed_float4. */
+#else
+struct packed_float4 {
+  ccl_device_inline_method packed_float4() = default;
+
+  ccl_device_inline_method packed_float4(const float4 a) : x(a.x), y(a.y), z(a.z), w(a.w) {}
+
+  ccl_device_inline_method operator float4() const
+  {
+    return make_float4(x, y, z, w);
+  }
+
+  ccl_device_inline_method packed_float4 &operator=(const float4 &a)
+  {
+    x = a.x;
+    y = a.y;
+    z = a.z;
+    w = a.w;
+    return *this;
+  }
+
+  float x, y, z, w;
+};
+#endif
+
+static_assert(alignof(packed_float4) == alignof(float),
+              "packed_float4 expected to have the same alignment as float");
+static_assert(sizeof(packed_float4) == 16, "packed_float4 expected to be exactly 16 bytes");
+
 CCL_NAMESPACE_END

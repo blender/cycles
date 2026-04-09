@@ -10,6 +10,7 @@
 #include "kernel/geom/object.h"
 #include "kernel/geom/primitive.h"
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 #include "kernel/util/differential.h"
@@ -21,8 +22,10 @@ CCL_NAMESPACE_BEGIN
 ccl_device_noinline void svm_node_enter_bump_eval(KernelGlobals kg,
                                                   ccl_private ShaderData *sd,
                                                   ccl_private float *stack,
-                                                  const uint offset)
+                                                  const ccl_global SVMNodeEnterBumpEval &node)
 {
+  const uint offset = node.state_offset;
+
   /* save state */
   stack_store_float3(stack, offset + 0, sd->P);
   stack_store_float(stack, offset + 3, sd->dP);
@@ -48,8 +51,10 @@ ccl_device_noinline void svm_node_enter_bump_eval(KernelGlobals kg,
 
 ccl_device_noinline void svm_node_leave_bump_eval(ccl_private ShaderData *sd,
                                                   ccl_private float *stack,
-                                                  const uint offset)
+                                                  const ccl_global SVMNodeLeaveBumpEval &node)
 {
+  const uint offset = node.state_offset;
+
   /* restore state */
   sd->P = stack_load_float3(stack, offset + 0);
   sd->dP = stack_load_float(stack, offset + 3);

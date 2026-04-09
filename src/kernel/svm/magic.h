@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "kernel/svm/node_types.h"
 #include "kernel/svm/util.h"
 
 CCL_NAMESPACE_BEGIN
@@ -98,35 +99,21 @@ ccl_device_noinline_cpu float3 svm_magic(const float3 p,
   return make_float3(0.5f - x, 0.5f - y, 0.5f - z);
 }
 
-ccl_device_noinline int svm_node_tex_magic(KernelGlobals kg,
-                                           ccl_private float *stack,
-                                           const uint4 node,
-                                           int offset)
+ccl_device_noinline void svm_node_tex_magic(ccl_private float *ccl_restrict stack,
+                                            const ccl_global SVMNodeTexMagic &ccl_restrict node)
 {
-  uint depth;
-  uint scale_offset;
-  uint distortion_offset;
-  uint co_offset;
-  uint fac_offset;
-  uint color_offset;
+  const float3 co = stack_load_float3(stack, node.co);
+  const float scale = stack_load(stack, node.scale);
+  const float distortion = stack_load(stack, node.distortion);
 
-  svm_unpack_node_uchar3(node.y, &depth, &color_offset, &fac_offset);
-  svm_unpack_node_uchar3(node.z, &co_offset, &scale_offset, &distortion_offset);
+  const float3 color = svm_magic(co, scale, node.depth, distortion);
 
-  const uint4 node2 = read_node(kg, &offset);
-  const float3 co = stack_load_float3(stack, co_offset);
-  const float scale = stack_load_float_default(stack, scale_offset, node2.x);
-  const float distortion = stack_load_float_default(stack, distortion_offset, node2.y);
-
-  const float3 color = svm_magic(co, scale, depth, distortion);
-
-  if (stack_valid(fac_offset)) {
-    stack_store_float(stack, fac_offset, average(color));
+  if (stack_valid(node.fac_offset)) {
+    stack_store_float(stack, node.fac_offset, average(color));
   }
-  if (stack_valid(color_offset)) {
-    stack_store_float3(stack, color_offset, color);
+  if (stack_valid(node.color_offset)) {
+    stack_store_float3(stack, node.color_offset, color);
   }
-  return offset;
 }
 
 CCL_NAMESPACE_END

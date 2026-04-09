@@ -71,7 +71,7 @@ KERNEL_DATA_ARRAY(uint, triangle_to_tree)
 KERNEL_DATA_ARRAY(KernelParticle, particles)
 
 /* shaders */
-KERNEL_DATA_ARRAY(uint4, svm_nodes)
+KERNEL_DATA_ARRAY(uint, svm_nodes)
 KERNEL_DATA_ARRAY(KernelShader, shaders)
 
 /* lookup tables */
