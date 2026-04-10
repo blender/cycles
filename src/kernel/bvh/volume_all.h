@@ -126,7 +126,8 @@ ccl_device_inline
             case PRIMITIVE_TRIANGLE: {
               /* intersect ray against primitive */
               for (; prim_addr < prim_addr2; prim_addr++) {
-                kernel_assert(kernel_data_fetch(prim_type, prim_addr) == type);
+                kernel_assert((kernel_data_fetch(prim_type, prim_addr) & PRIMITIVE_ALL) ==
+                          (type & PRIMITIVE_ALL));
                 /* only primitives from volume object */
                 const int prim_object = (object == OBJECT_NONE) ?
                                             kernel_data_fetch(prim_object, prim_addr) :
@@ -163,7 +164,8 @@ ccl_device_inline
             case PRIMITIVE_MOTION_TRIANGLE: {
               /* intersect ray against primitive */
               for (; prim_addr < prim_addr2; prim_addr++) {
-                kernel_assert(kernel_data_fetch(prim_type, prim_addr) == type);
+                kernel_assert((kernel_data_fetch(prim_type, prim_addr) & PRIMITIVE_ALL) ==
+                          (type & PRIMITIVE_ALL));
                 /* only primitives from volume object */
                 const int prim_object = (object == OBJECT_NONE) ?
                                             kernel_data_fetch(prim_object, prim_addr) :

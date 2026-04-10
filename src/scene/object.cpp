@@ -645,7 +645,7 @@ void ObjectManager::device_update_object_transform(UpdateObjectTransformState *s
   kobject.dupli_generated[2] = ob->dupli_generated[2];
   kobject.dupli_uv[0] = ob->dupli_uv[0];
   kobject.dupli_uv[1] = ob->dupli_uv[1];
-  kobject.num_geom_steps = (geom->get_motion_steps() - 1) / 2;
+  kobject.num_geom_steps = geom->get_motion_steps();
   kobject.num_tfm_steps = ob->motion.size();
   kobject.numverts = object_num_motion_verts(geom);
   kobject.numprims = (geom->is_mesh() || geom->is_volume()) ?

@@ -32,15 +32,16 @@ ccl_device_inline void motion_triangle_verts_for_step(KernelGlobals kg,
                                                       int step,
                                                       float3 verts[3])
 {
-  if (step == numsteps) {
+  const int center_step = (numsteps - 1) / 2;
+  if (step == center_step) {
     /* center step: regular vertex location */
     verts[0] = kernel_data_fetch(tri_verts, tri_vindex.x);
     verts[1] = kernel_data_fetch(tri_verts, tri_vindex.y);
     verts[2] = kernel_data_fetch(tri_verts, tri_vindex.z);
   }
   else {
-    /* center step not store in this array */
-    if (step > numsteps) {
+    /* center step not stored in this array */
+    if (step > center_step) {
       step--;
     }
 
@@ -62,14 +63,15 @@ ccl_device_inline void motion_triangle_normals_for_step(KernelGlobals kg,
                                                         int step,
                                                         float3 normals[3])
 {
-  const bool is_center_step = step == numsteps;
+  const int center_step = (numsteps - 1) / 2;
+  const bool is_center_step = step == center_step;
   if (is_center_step) {
     /* Center step in the regular attribute. */
     offset = kernel_data_fetch(objects, object).normal_attr_offset;
   }
   else {
     /* Other steps in the motion attribute, compensate for missing center step. */
-    if (step > numsteps) {
+    if (step > center_step) {
       step--;
     }
   }
@@ -111,7 +113,7 @@ ccl_device_inline void motion_triangle_compute_info(KernelGlobals kg,
   *numsteps = kernel_data_fetch(objects, object).num_geom_steps;
 
   /* Figure out which steps we need to fetch and their interpolation factor. */
-  const int maxstep = *numsteps * 2;
+  const int maxstep = *numsteps - 1;
   *step = min((int)(time * maxstep), maxstep - 1);
   *t = time * maxstep - *step;
 

@@ -24,12 +24,13 @@ CCL_NAMESPACE_BEGIN
 ccl_device_inline float4 motion_point_for_step(
     KernelGlobals kg, int offset, const int numverts, const int numsteps, int step, const int prim)
 {
-  if (step == numsteps) {
+  const int center_step = (numsteps - 1) / 2;
+  if (step == center_step) {
     /* center step: regular key location */
     return kernel_data_fetch(points, prim);
   }
   /* center step is not stored in this array */
-  if (step > numsteps) {
+  if (step > center_step) {
     step--;
   }
 
@@ -49,7 +50,7 @@ ccl_device_inline float4 motion_point(KernelGlobals kg,
   const int numverts = kernel_data_fetch(objects, object).numverts;
 
   /* figure out which steps we need to fetch and their interpolation factor */
-  const int maxstep = numsteps * 2;
+  const int maxstep = numsteps - 1;
   const int step = min((int)(time * maxstep), maxstep - 1);
   const float t = time * maxstep - step;
 
