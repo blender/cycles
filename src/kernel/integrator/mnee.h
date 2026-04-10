@@ -161,12 +161,12 @@ ccl_device_inline void mnee_setup_manifold_vertex(KernelGlobals kg,
 
   /* Instance transform. */
   if (!(sd_vtx->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-    object_position_transform_auto(kg, sd_vtx, &verts[0]);
-    object_position_transform_auto(kg, sd_vtx, &verts[1]);
-    object_position_transform_auto(kg, sd_vtx, &verts[2]);
-    object_normal_transform_auto(kg, sd_vtx, &normals[0]);
-    object_normal_transform_auto(kg, sd_vtx, &normals[1]);
-    object_normal_transform_auto(kg, sd_vtx, &normals[2]);
+    object_position_transform(kg, sd_vtx, &verts[0]);
+    object_position_transform(kg, sd_vtx, &verts[1]);
+    object_position_transform(kg, sd_vtx, &verts[2]);
+    object_normal_transform(kg, sd_vtx, &normals[0]);
+    object_normal_transform(kg, sd_vtx, &normals[1]);
+    object_normal_transform(kg, sd_vtx, &normals[2]);
   }
 
   /* Tangent space (position derivatives) WRT barycentric (u, v). */

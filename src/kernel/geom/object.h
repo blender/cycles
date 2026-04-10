@@ -509,11 +509,4 @@ ccl_device_inline void bvh_instance_pop(const ccl_private Ray *ray,
   *idir = bvh_inverse_direction(*dir);
 }
 
-/* TODO: This can be removed when we know if no devices will require explicit
- * address space qualifiers for this case. */
-
-#define object_position_transform_auto object_position_transform
-#define object_dir_transform_auto object_dir_transform
-#define object_normal_transform_auto object_normal_transform
-
 CCL_NAMESPACE_END

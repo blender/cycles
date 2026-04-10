@@ -101,11 +101,11 @@ ccl_device_inline
 
     if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
       /* instance transform */
-      object_normal_transform_auto(kg, sd, &sd->N);
-      object_normal_transform_auto(kg, sd, &sd->Ng);
+      object_normal_transform(kg, sd, &sd->N);
+      object_normal_transform(kg, sd, &sd->Ng);
 #ifdef __DPDU__
-      object_dir_transform_auto(kg, sd, &sd->dPdu);
-      object_dir_transform_auto(kg, sd, &sd->dPdv);
+      object_dir_transform(kg, sd, &sd->dPdu);
+      object_dir_transform(kg, sd, &sd->dPdv);
 #endif
     }
   }
@@ -186,10 +186,10 @@ ccl_device_inline void shader_setup_from_sample(KernelGlobals kg,
 
     /* transform into world space */
     if (object_space) {
-      object_position_transform_auto(kg, sd, &sd->P);
-      object_normal_transform_auto(kg, sd, &sd->Ng);
+      object_position_transform(kg, sd, &sd->P);
+      object_normal_transform(kg, sd, &sd->Ng);
       sd->N = sd->Ng;
-      object_dir_transform_auto(kg, sd, &sd->wi);
+      object_dir_transform(kg, sd, &sd->wi);
     }
 
     if (sd->type == PRIMITIVE_TRIANGLE) {
@@ -199,7 +199,7 @@ ccl_device_inline void shader_setup_from_sample(KernelGlobals kg,
             kg, Ng, sd->object, sd->object_flag, sd->prim, sd->u, sd->v);
 
         if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-          object_normal_transform_auto(kg, sd, &sd->N);
+          object_normal_transform(kg, sd, &sd->N);
         }
       }
 
@@ -208,8 +208,8 @@ ccl_device_inline void shader_setup_from_sample(KernelGlobals kg,
       triangle_dPdudv(kg, sd->prim, &sd->dPdu, &sd->dPdv);
 
       if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-        object_dir_transform_auto(kg, sd, &sd->dPdu);
-        object_dir_transform_auto(kg, sd, &sd->dPdv);
+        object_dir_transform(kg, sd, &sd->dPdu);
+        object_dir_transform(kg, sd, &sd->dPdv);
       }
 #endif
     }
@@ -357,9 +357,9 @@ ccl_device void shader_setup_from_curve(KernelGlobals kg,
 
   /* Transform into world space */
   if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-    object_position_transform_auto(kg, sd, &sd->P);
+    object_position_transform(kg, sd, &sd->P);
 #  ifdef __DPDU__
-    object_dir_transform_auto(kg, sd, &sd->dPdu);
+    object_dir_transform(kg, sd, &sd->dPdu);
 #  endif
   }
 

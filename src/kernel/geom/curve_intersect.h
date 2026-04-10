@@ -940,9 +940,9 @@ ccl_device_inline void curve_shader_setup(KernelGlobals kg,
 
   /* Convert to world space. */
   if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-    object_position_transform_auto(kg, sd, &P);
-    object_normal_transform_auto(kg, sd, &sd->N);
-    object_dir_transform_auto(kg, sd, &sd->dPdu);
+    object_position_transform(kg, sd, &P);
+    object_normal_transform(kg, sd, &sd->N);
+    object_dir_transform(kg, sd, &sd->dPdu);
   }
 
   sd->P = P;

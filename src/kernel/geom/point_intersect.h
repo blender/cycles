@@ -108,7 +108,7 @@ ccl_device_inline void point_shader_setup(KernelGlobals kg,
                                   motion_point(kg, sd->object, sd->prim, sd->time) :
                                   kernel_data_fetch(points, sd->prim));
   if (!(sd->object_flag & SD_OBJECT_TRANSFORM_APPLIED)) {
-    object_position_transform_auto(kg, sd, &center);
+    object_position_transform(kg, sd, &center);
   }
 
   /* Normal */
