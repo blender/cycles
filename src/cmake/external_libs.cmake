@@ -935,7 +935,7 @@ if(WITH_CYCLES_DEVICE_ONEAPI AND WITH_CYCLES_ONEAPI_BINARIES)
   # dependencies at the path:
   # <DPCPP_ROOT_DIRECTORY>/lib/igc/
   if(NOT IGC_INSTALL_DIR)
-    if (WIN32)
+    if(WIN32)
       set(IGC_INSTALL_DIR "${OCLOC_INSTALL_DIR}")
     else()
       get_filename_component(_sycl_compiler_root ${SYCL_COMPILER} DIRECTORY)
@@ -969,7 +969,7 @@ if(WITH_CYCLES_DEVICE_ONEAPI AND WITH_CYCLES_ONEAPI_BINARIES)
   if(NOT EXISTS ${OCLOC_INSTALL_DIR})
     set(OCLOC_FOUND OFF)
     set(_ocloc_missing_error_msg "oneAPI ocloc directory not found as ${OCLOC_INSTALL_DIR}.")
-  elseif (NOT EXISTS ${OCLOC_BINARY_FULL_FILEPATH})
+  elseif(NOT EXISTS ${OCLOC_BINARY_FULL_FILEPATH})
     set(OCLOC_FOUND OFF)
     set(_ocloc_missing_error_msg
       "oneAPI ocloc directory ${OCLOC_INSTALL_DIR} was found."

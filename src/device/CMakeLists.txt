@@ -215,7 +215,7 @@ if(WITH_CYCLES_DEVICE_ONEAPI)
           sycl::ext::oneapi::experimental::unmap_external_linear_memory(nullptr, sycl_queue);
       }
   " SYCL_UNMAP_EXTERNAL_LINEAR_MEMORY_SUPPORTED)
-  if (SYCL_UNMAP_EXTERNAL_LINEAR_MEMORY_SUPPORTED)
+  if(SYCL_UNMAP_EXTERNAL_LINEAR_MEMORY_SUPPORTED)
     foreach(FILE ${SRC_ONEAPI})
       set_source_files_properties(
           ${FILE} PROPERTIES COMPILE_DEFINITIONS "SYCL_LINEAR_MEMORY_INTEROP_AVAILABLE"
