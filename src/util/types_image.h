@@ -121,6 +121,13 @@ struct KernelImageUDIM {
 #define KERNEL_TILE_LOAD_REQUEST (KERNEL_TILE_LOAD_NONE - 1)
 #define KERNEL_TILE_LOAD_FAILED (KERNEL_TILE_LOAD_NONE - 2)
 
+/* Tile access state, written by the kernel and read back by the host.
+ * - NONE: Tile has not been accessed since the last clear.
+ * - REQUESTED: Kernel hit a cache miss on this tile, it needs to be loaded.
+ */
+#define KERNEL_TILE_ACCESS_NONE 0
+#define KERNEL_TILE_ACCESS_REQUESTED (1 << 0)
+
 /* Kernel data structure for image textures.
  *
  * This describes a logical image texture for the shading system, that may be stored

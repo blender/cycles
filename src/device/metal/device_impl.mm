@@ -757,6 +757,11 @@ void MetalDevice::mem_copy_from(
   /* No need to copy - Apple Silicon has Unified Memory Architecture. */
 }
 
+void MetalDevice::mem_or_from_device(device_memory & /*mem*/)
+{
+  /* No need to copy - Apple Silicon has Unified Memory Architecture. */
+}
+
 void MetalDevice::mem_zero(device_memory &mem)
 {
   if (!mem.device_pointer) {

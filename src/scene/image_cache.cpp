@@ -47,7 +47,7 @@ void ImageCache::device_free(DeviceScene &dscene)
   images.clear();
   images_first_free.clear();
   dscene.image_texture_tile_descriptors.free();
-  dscene.image_texture_tile_request_mask.free();
+  dscene.image_texture_tile_access_state.free();
 }
 
 /* Full image management. */
@@ -441,16 +441,18 @@ void ImageCache::load_image_tiled(DeviceScene &dscene,
     const thread_scoped_lock device_lock(device_mutex);
 
     device_vector<KernelTileDescriptor> &tile_descriptors = dscene.image_texture_tile_descriptors;
-    device_vector<uint8_t> &tile_request_mask = dscene.image_texture_tile_request_mask;
+    device_vector<uint8_t> &tile_access = dscene.image_texture_tile_access_state;
 
     const int tile_descriptor_offset = tile_descriptors.size();
     tile_descriptors.resize(tile_descriptor_offset + levels.size() + num_tiles);
 
-    /* Resize request mask to match tile descriptors. */
-    const size_t old_size = tile_request_mask.size();
+    /* Resize access state to match tile descriptors. */
+    const size_t old_size = tile_access.size();
     if (tile_descriptors.size() > old_size) {
-      tile_request_mask.resize(tile_descriptors.size());
-      memset(tile_request_mask.data() + old_size, 0, tile_descriptors.size() - old_size);
+      tile_access.resize(tile_descriptors.size());
+      memset(tile_access.data() + old_size,
+             KERNEL_TILE_ACCESS_NONE,
+             tile_descriptors.size() - old_size);
     }
 
     KernelTileDescriptor *descr_data = tile_descriptors.data() + tile_descriptor_offset;
@@ -530,7 +532,7 @@ void ImageCache::load_requested_tiles(Device &device,
                                       const KernelImageTexture &tex,
                                       ImageLoader &loader,
                                       const ImageMetaData &metadata,
-                                      const uint8_t *request_mask)
+                                      const uint8_t *access_state)
 {
   const int tile_size = metadata.tile_size;
   const InterpolationType interpolation = InterpolationType(tex.interpolation);
@@ -541,9 +543,9 @@ void ImageCache::load_requested_tiles(Device &device,
   const KernelTileDescriptor *levels = dscene.image_texture_tile_descriptors.data() +
                                        tex.tile_descriptor_offset;
 
-  /* Scan request mask for this image's tiles. */
+  /* Scan access state for this image's tiles. */
   for (size_t tile_idx = 0; tile_idx < tex.tile_num; tile_idx++) {
-    if (request_mask[base_offset + tile_idx] == 0) {
+    if (access_state[base_offset + tile_idx] != KERNEL_TILE_ACCESS_REQUESTED) {
       continue;
     }
 
@@ -555,7 +557,7 @@ void ImageCache::load_requested_tiles(Device &device,
 
     /* Atomically claim this tile slot. If another thread or GPU callback wins the race,
      * skip and let the winner load it. We don't require KERNEL_TILE_LOAD_REQUEST because
-     * the request mask might be set without it even if that race condition is unlikely. */
+     * the access state might be set without it even if that race condition is unlikely. */
     const KernelTileDescriptor old = atomic_cas_uint32(
         &descriptors[tile_idx], KERNEL_TILE_LOAD_NONE, KERNEL_TILE_LOAD_REQUEST);
     if (old != KERNEL_TILE_LOAD_NONE && old != KERNEL_TILE_LOAD_REQUEST) {
@@ -673,7 +675,7 @@ void ImageCache::collect_statistics(DeviceScene &dscene,
 
 size_t ImageCache::memory_size(DeviceScene &dscene) const
 {
-  return dscene.image_texture_tile_request_mask.memory_size() +
+  return dscene.image_texture_tile_access_state.memory_size() +
          dscene.image_texture_tile_descriptors.memory_size();
 }
 
@@ -687,10 +689,10 @@ void ImageCache::copy_to_device(DeviceScene &dscene)
 
   thread_scoped_lock device_lock(device_mutex);
   dscene.image_texture_tile_descriptors.copy_to_device_if_modified();
-  dscene.image_texture_tile_request_mask.copy_to_device_if_modified();
+  dscene.image_texture_tile_access_state.copy_to_device_if_modified();
 
   dscene.image_texture_tile_descriptors.clear_modified();
-  dscene.image_texture_tile_request_mask.clear_modified();
+  dscene.image_texture_tile_access_state.clear_modified();
 }
 
 void ImageCache::copy_to_device(DeviceScene &dscene, DeviceQueue &queue)
@@ -703,9 +705,11 @@ void ImageCache::copy_to_device(DeviceScene &dscene, DeviceQueue &queue)
    * without freeing, and load_image_info() is delayed. */
   copy_images_to_device();
 
-  /* Copy updated tile descriptors and zero request bits for this GPU device only. */
+  /* Copy updated tile descriptors for this GPU device only.
+   * Note the tile access buffer is not zeroed here as we want to keep the USED
+   * state until cache eviction. Some tiles may remain as REQUESTED but that's
+   * fine, they will be skipped in load_requested_tiles if already loaded. */
   queue.copy_to_device(dscene.image_texture_tile_descriptors);
-  queue.zero_to_device(dscene.image_texture_tile_request_mask);
 
   /* Update image info only for this GPU device. */
   queue.load_image_info();
