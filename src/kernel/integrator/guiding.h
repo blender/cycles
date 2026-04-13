@@ -98,13 +98,17 @@ ccl_device_forceinline void guiding_record_surface_segment(
   const pgl_vec3f one = guiding_vec3f(one_float3());
 
   state->guiding.path_segment = kg->opgl_path_segment_storage->NextSegment();
-  openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(sd->P));
-  openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(sd->wi));
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
-  openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  /* FIXME: investigate and fix why state->guiding.path_segment could be nullptr. */
+  kernel_assert(state->guiding.path_segment != nullptr);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(sd->P));
+    openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(sd->wi));
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
+    openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  }
 #endif
 }
 
@@ -132,16 +136,17 @@ ccl_device_forceinline void guiding_record_surface_bounce(
   const float3 normal = clamp(N, -one_float3(), one_float3());
 
   kernel_assert(state->guiding.path_segment != nullptr);
-
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(one_float3()));
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
-  openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
-  openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
-  openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
-  openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
-  openpgl::cpp::SetIsDelta(state->guiding.path_segment, is_delta);
-  openpgl::cpp::SetEta(state->guiding.path_segment, eta);
-  openpgl::cpp::SetRoughness(state->guiding.path_segment, min_roughness);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(one_float3()));
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
+    openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
+    openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
+    openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
+    openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
+    openpgl::cpp::SetIsDelta(state->guiding.path_segment, is_delta);
+    openpgl::cpp::SetEta(state->guiding.path_segment, eta);
+    openpgl::cpp::SetRoughness(state->guiding.path_segment, min_roughness);
+  }
 #endif
 }
 
@@ -159,10 +164,13 @@ ccl_device_forceinline void guiding_record_surface_emission(
 
   assert((INTEGRATOR_STATE(state, path, flag) & PATH_RAY_SHADOW_CATCHER_PASS) == 0);
 
-  const float3 Le_rgb = spectrum_to_rgb(Le);
+  kernel_assert(state->guiding.path_segment != nullptr);
+  if (state->guiding.path_segment != nullptr) {
+    const float3 Le_rgb = spectrum_to_rgb(Le);
 
-  openpgl::cpp::SetDirectContribution(state->guiding.path_segment, guiding_vec3f(Le_rgb));
-  openpgl::cpp::SetMiWeight(state->guiding.path_segment, mis_weight);
+    openpgl::cpp::SetDirectContribution(state->guiding.path_segment, guiding_vec3f(Le_rgb));
+    openpgl::cpp::SetMiWeight(state->guiding.path_segment, mis_weight);
+  }
 #endif
 }
 
@@ -189,13 +197,17 @@ ccl_device_forceinline void guiding_record_bssrdf_segment(ccl_attr_maybe_unused 
   const pgl_vec3f one = guiding_vec3f(one_float3());
 
   state->guiding.path_segment = kg->opgl_path_segment_storage->NextSegment();
-  openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
-  openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(wi));
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
-  openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  /* FIXME: investigate and fix why state->guiding.path_segment could be nullptr. */
+  kernel_assert(state->guiding.path_segment != nullptr);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
+    openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(wi));
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
+    openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  }
 #endif
 }
 
@@ -218,12 +230,14 @@ ccl_device_forceinline void guiding_record_bssrdf_weight(
   const float3 weight_rgb = spectrum_to_rgb(safe_divide_color(weight, albedo));
 
   kernel_assert(state->guiding.path_segment != nullptr);
-
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(zero_float3()));
-  openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
-  openpgl::cpp::SetIsDelta(state->guiding.path_segment, false);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
-  openpgl::cpp::SetRoughness(state->guiding.path_segment, 1.0f);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment,
+                                         guiding_vec3f(zero_float3()));
+    openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
+    openpgl::cpp::SetIsDelta(state->guiding.path_segment, false);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
+    openpgl::cpp::SetRoughness(state->guiding.path_segment, 1.0f);
+  }
 #endif
 }
 
@@ -251,12 +265,13 @@ ccl_device_forceinline void guiding_record_bssrdf_bounce(
   const float3 weight_rgb = spectrum_to_rgb(weight * albedo);
 
   kernel_assert(state->guiding.path_segment != nullptr);
-
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
-  openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
-  openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
-  openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
+    openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
+    openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
+    openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
+  }
 #endif
 }
 
@@ -282,14 +297,17 @@ ccl_device_forceinline void guiding_record_volume_segment(ccl_attr_maybe_unused 
   const pgl_vec3f one = guiding_vec3f(one_float3());
 
   state->guiding.path_segment = kg->opgl_path_segment_storage->NextSegment();
-
-  openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
-  openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(I));
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
-  openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  /* FIXME: investigate and fix why state->guiding.path_segment could be nullptr. */
+  kernel_assert(state->guiding.path_segment != nullptr);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
+    openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(I));
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
+    openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0);
+  }
 #endif
 }
 
@@ -313,16 +331,17 @@ ccl_device_forceinline void guiding_record_volume_bounce(
   const float3 normal = make_float3(0.0f, 0.0f, 1.0f);
 
   kernel_assert(state->guiding.path_segment != nullptr);
-
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(one_float3()));
-  openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
-  openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
-  openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
-  openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
-  openpgl::cpp::SetIsDelta(state->guiding.path_segment, false);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
-  openpgl::cpp::SetRoughness(state->guiding.path_segment, roughness);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, true);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, guiding_vec3f(one_float3()));
+    openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(normal));
+    openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(wo));
+    openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, pdf);
+    openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, guiding_vec3f(weight_rgb));
+    openpgl::cpp::SetIsDelta(state->guiding.path_segment, false);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
+    openpgl::cpp::SetRoughness(state->guiding.path_segment, roughness);
+  }
 #endif
 }
 
@@ -405,17 +424,21 @@ ccl_device_forceinline void guiding_record_light_surface_segment(
   const float3 P = ray_P + isect->t * ray_D;
 
   state->guiding.path_segment = kg->opgl_path_segment_storage->NextSegment();
-  openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
-  openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(-ray_D));
-  openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(-ray_D));
-  openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(ray_D));
-  openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, 1.0f);
-  openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
-  openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
-  openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
-  openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, one);
-  openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
+  /* FIXME: investigate and fix why state->guiding.path_segment could be nullptr. */
+  kernel_assert(state->guiding.path_segment != nullptr);
+  if (state->guiding.path_segment != nullptr) {
+    openpgl::cpp::SetPosition(state->guiding.path_segment, guiding_point3f(P));
+    openpgl::cpp::SetDirectionOut(state->guiding.path_segment, guiding_vec3f(-ray_D));
+    openpgl::cpp::SetNormal(state->guiding.path_segment, guiding_vec3f(-ray_D));
+    openpgl::cpp::SetDirectionIn(state->guiding.path_segment, guiding_vec3f(ray_D));
+    openpgl::cpp::SetPDFDirectionIn(state->guiding.path_segment, 1.0f);
+    openpgl::cpp::SetVolumeScatter(state->guiding.path_segment, false);
+    openpgl::cpp::SetScatteredContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetDirectContribution(state->guiding.path_segment, zero);
+    openpgl::cpp::SetTransmittanceWeight(state->guiding.path_segment, one);
+    openpgl::cpp::SetScatteringWeight(state->guiding.path_segment, one);
+    openpgl::cpp::SetEta(state->guiding.path_segment, 1.0f);
+  }
 #endif
 }
 
