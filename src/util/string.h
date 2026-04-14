@@ -16,6 +16,7 @@
 
 CCL_NAMESPACE_BEGIN
 
+struct float2;
 struct float4;
 
 using std::string;
@@ -45,6 +46,7 @@ string string_remove_trademark(const string &s);
 string string_from_bool(const bool var);
 string string_hex(const uint8_t *data, const size_t size);
 string to_string(const char *str);
+string to_string(const float2 &v);
 string to_string(const float4 &v);
 string string_to_lower(const string &s);
 string string_remove_gpu_from_cpu_name(const string &s);

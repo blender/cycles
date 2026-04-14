@@ -441,6 +441,7 @@ static MTLFunctionConstantValues *GetConstantValues(const KernelData *data = nul
 
   MTLDataType MTLDataType_int = MTLDataTypeInt;
   MTLDataType MTLDataType_float = MTLDataTypeFloat;
+  MTLDataType MTLDataType_float2 = MTLDataTypeFloat2;
   MTLDataType MTLDataType_float4 = MTLDataTypeFloat4;
   KernelData zero_data = {0};
   if (!data) {

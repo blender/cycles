@@ -17,6 +17,25 @@ class Device;
 class DeviceScene;
 class Scene;
 
+struct HaltonSequence {
+  HaltonSequence()
+  {
+    reset();
+  }
+
+  void reset()
+  {
+    a2 = 0;
+    b2 = 1;
+    a3 = 0;
+    b3 = 1;
+  }
+  float2 next();
+
+  int a2, b2;
+  int a3, b3;
+};
+
 class Integrator : public Node {
  public:
   NODE_DECLARE
@@ -94,6 +113,9 @@ class Integrator : public Node {
 
   NODE_SOCKET_API(SamplingPattern, sampling_pattern)
   NODE_SOCKET_API(float, scrambling_distance)
+
+  NODE_SOCKET_API(bool, use_pixel_jitter);
+  HaltonSequence pixel_jitter_state;
 
   NODE_SOCKET_API(bool, use_denoise);
   NODE_SOCKET_API(DenoiserType, denoiser_type);

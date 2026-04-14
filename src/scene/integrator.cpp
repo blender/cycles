@@ -26,6 +26,28 @@
 
 CCL_NAMESPACE_BEGIN
 
+/* Halton sequence generator using only integer numbers.
+ * See https://doi.org/10.1016/0010-4655(91)90064-R for details. */
+static float halton(int &a, int &b, int base)
+{
+  int x = b - a;
+  if (x == 1) {
+    a = 1;
+    b *= base;
+  }
+  else {
+    int y = b / base;
+    while (x <= y)
+      y /= base;
+    a = (1 + base) * y - x;
+  }
+  return static_cast<float>(a) / static_cast<float>(b);
+}
+float2 HaltonSequence::next()
+{
+  return make_float2(halton(a2, b2, 2) - 0.5f, halton(a3, b3, 3) - 0.5f);
+}
+
 NODE_DEFINE(Integrator)
 {
   NodeType *type = NodeType::add("integrator", create);
@@ -105,6 +127,7 @@ NODE_DEFINE(Integrator)
   SOCKET_BOOLEAN(use_emission, "Use Emission", true);
 
   SOCKET_INT(seed, "Seed", 0);
+
   SOCKET_FLOAT(sample_clamp_direct, "Sample Clamp Direct", 0.0f);
   SOCKET_FLOAT(sample_clamp_indirect, "Sample Clamp Indirect", 10.0f);
   SOCKET_BOOLEAN(motion_blur, "Motion Blur", false);
@@ -132,6 +155,8 @@ NODE_DEFINE(Integrator)
               sampling_pattern_enum,
               SAMPLING_PATTERN_TABULATED_SOBOL);
   SOCKET_FLOAT(scrambling_distance, "Scrambling Distance", 1.0f);
+
+  SOCKET_BOOLEAN(use_pixel_jitter, "Use Pixel Jitter", false);
 
   static NodeEnum denoiser_type_enum;
   denoiser_type_enum.insert("none", DENOISER_NONE);
@@ -301,10 +326,14 @@ void Integrator::device_update(Device *device, DeviceScene *dscene, Scene *scene
     kintegrator->blue_noise_sequence_length -= 1;
   }
 
+  /* Randomize the seed every frame when applying pixel jitter. */
+  if (use_pixel_jitter) {
+    kintegrator->seed = hash_uint3(seed, pixel_jitter_state.a2, pixel_jitter_state.a3);
+  }
   /* The blue-noise sampler needs a randomized seed to scramble properly, providing e.g. 0 won't
    * work properly. Therefore, hash the seed in those cases. */
-  if (kintegrator->sampling_pattern == SAMPLING_PATTERN_BLUE_NOISE_FIRST ||
-      kintegrator->sampling_pattern == SAMPLING_PATTERN_BLUE_NOISE_PURE)
+  else if (kintegrator->sampling_pattern == SAMPLING_PATTERN_BLUE_NOISE_FIRST ||
+           kintegrator->sampling_pattern == SAMPLING_PATTERN_BLUE_NOISE_PURE)
   {
     kintegrator->seed = hash_uint(seed);
   }
@@ -348,6 +377,14 @@ void Integrator::device_update(Device *device, DeviceScene *dscene, Scene *scene
   }
 
   kintegrator->has_shadow_catcher = scene->has_shadow_catcher();
+
+  if (use_pixel_jitter) {
+    kintegrator->pixel_jitter = pixel_jitter_state.next();
+  }
+  else {
+    kintegrator->pixel_jitter = make_float2(FLT_MAX);
+    pixel_jitter_state.reset();
+  }
 
   dscene->sample_pattern_lut.clear_modified();
   clear_modified();

@@ -202,6 +202,11 @@ string to_string(const char *str)
   return string(str);
 }
 
+string to_string(const float2 &v)
+{
+  return string_printf("%f,%f", v.x, v.y);
+}
+
 string to_string(const float4 &v)
 {
   return string_printf("%f,%f,%f,%f", v.x, v.y, v.z, v.w);

@@ -41,7 +41,8 @@ bool OptiXDenoiser::denoise_buffer(const BufferParams &buffer_params,
                                    const BufferParams &denoised_buffer_params,
                                    RenderBuffers *render_buffers,
                                    const int num_samples,
-                                   const bool allow_inplace_modification)
+                                   const bool allow_inplace_modification,
+                                   const float2 pixel_jitter)
 {
   OptiXDevice *const optix_device = static_cast<OptiXDevice *>(denoiser_device_);
   const CUDAContextScope scope(optix_device);
@@ -50,7 +51,8 @@ bool OptiXDenoiser::denoise_buffer(const BufferParams &buffer_params,
                                      denoised_buffer_params,
                                      render_buffers,
                                      num_samples,
-                                     allow_inplace_modification);
+                                     allow_inplace_modification,
+                                     pixel_jitter);
 }
 
 bool OptiXDenoiser::denoise_create_if_needed(DenoiseContext &context)

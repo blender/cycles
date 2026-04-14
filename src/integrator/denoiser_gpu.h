@@ -22,7 +22,8 @@ class DenoiserGPU : public Denoiser {
                       const BufferParams &denoised_buffer_params,
                       RenderBuffers *render_buffers,
                       int num_samples,
-                      bool allow_inplace_modification) override;
+                      bool allow_inplace_modification,
+                      float2 pixel_jitter) override;
 
  protected:
   class DenoisePass;
@@ -99,7 +100,8 @@ class DenoiserGPU : public Denoiser {
                             const BufferParams &denoised_buffer_params,
                             RenderBuffers *render_buffers,
                             int num_samples,
-                            bool allow_inplace_modification);
+                            bool allow_inplace_modification,
+                            float2 pixel_jitter);
 
     const DenoiseParams &denoise_params;
 
@@ -147,6 +149,9 @@ class DenoiserGPU : public Denoiser {
      * the (0.5, 0.5, 0.5). This flag indicates that the real albedo pass has been replaced with
      * the fake values and denoising of passes which do need albedo can no longer happen. */
     bool albedo_replaced_with_fake = false;
+
+    /* Sub-pixel jitter offset of the current frame. This can be used for upscaling. */
+    float2 pixel_jitter;
   };
 };
 
