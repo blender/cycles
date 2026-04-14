@@ -293,16 +293,16 @@ class AttributeRequestSet {
 
   void add(ustring name);
   void add(AttributeStandard std);
-  void add(AttributeRequestSet &reqs);
+  void add(const AttributeRequestSet &reqs);
   void add_standard(ustring name);
 
-  bool find(ustring name);
-  bool find(AttributeStandard std);
+  bool find(ustring name) const;
+  bool find(AttributeStandard std) const;
 
-  size_t size();
+  size_t size() const;
   void clear();
 
-  bool modified(const AttributeRequestSet &other);
+  bool modified(const AttributeRequestSet &other) const;
 };
 
 CCL_NAMESPACE_END
