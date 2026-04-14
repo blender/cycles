@@ -1002,6 +1002,9 @@ ccl_device void osl_closure_bssrdf_setup(KernelGlobals /*kg*/,
   else if (closure->method == make_string("random_walk_skin", 3096325052680726300ull)) {
     type = CLOSURE_BSSRDF_RANDOM_WALK_SKIN_ID;
   }
+  else if (closure->method == make_string("random_walk_legacy", 3162086485308246001ull)) {
+    type = CLOSURE_BSSRDF_RANDOM_WALK_LEGACY_ID;
+  }
   else {
     return;
   }

@@ -73,19 +73,45 @@ ccl_device void subsurface_random_walk_remap(const float albedo,
   *sigma_t = sigma_t_prime / (1.0f - g);
 }
 
+/* Mapping from subsurface color and anisotropy to single scatter albedo, taken from
+ * "A Hitchhiker's Guide to Multiple Scattering" by Eugene d'Eon, v0.3.2 Eq (53.7),
+ * https://eugenedeon.com/hitchhikers
+ */
+ccl_device void subsurface_random_walk_remap(const Spectrum color,
+                                             const Spectrum radius,
+                                             const float g,
+                                             ccl_private Spectrum *sigma_t,
+                                             ccl_private Spectrum *alpha)
+{
+  const Spectrum s_sq = sqr(4.20863f * color -
+                            sqrt(9.59217f + 41.6808f * color + 17.7126f * sqr(color)) + 4.09712f);
+  *alpha = safe_divide(1.0f - s_sq, 1.0f - g * s_sq);
+
+  /* Clamp to avoid numerical issues. */
+  *alpha = clamp(*alpha, zero_spectrum(), make_spectrum(0.999999f));
+
+  *sigma_t = reciprocal(max(radius, make_spectrum(1e-16f)));
+}
+
 ccl_device void subsurface_random_walk_coefficients(const Spectrum albedo,
                                                     const Spectrum radius,
                                                     const float anisotropy,
+                                                    const bool van_de_hulst,
                                                     ccl_private Spectrum *sigma_t,
                                                     ccl_private Spectrum *alpha,
                                                     ccl_private Spectrum *throughput)
 {
-  FOREACH_SPECTRUM_CHANNEL (i) {
-    subsurface_random_walk_remap(GET_SPECTRUM_CHANNEL(albedo, i),
-                                 GET_SPECTRUM_CHANNEL(radius, i),
-                                 anisotropy,
-                                 &GET_SPECTRUM_CHANNEL(*sigma_t, i),
-                                 &GET_SPECTRUM_CHANNEL(*alpha, i));
+  if (van_de_hulst) {
+    subsurface_random_walk_remap(albedo, radius, anisotropy, sigma_t, alpha);
+  }
+  else {
+    FOREACH_SPECTRUM_CHANNEL (i) {
+      subsurface_random_walk_remap(GET_SPECTRUM_CHANNEL(albedo, i),
+                                   GET_SPECTRUM_CHANNEL(radius, i),
+                                   anisotropy,
+                                   &GET_SPECTRUM_CHANNEL(*sigma_t, i),
+                                   &GET_SPECTRUM_CHANNEL(*alpha, i));
+    }
   }
 
   /* Throughput already contains closure weight at this point, which includes the
@@ -204,12 +230,26 @@ ccl_device_inline bool subsurface_random_walk(KernelGlobals kg,
    * The single-scattering albedo is named alpha to avoid confusion with the surface albedo. */
   const Spectrum albedo = INTEGRATOR_STATE(state, subsurface, albedo);
   const Spectrum radius = INTEGRATOR_STATE(state, subsurface, radius);
-  const float anisotropy = INTEGRATOR_STATE(state, subsurface, anisotropy);
+  float anisotropy = INTEGRATOR_STATE(state, subsurface, anisotropy);
+
+  bool van_de_hulst;
+  if (anisotropy >= 1.0f) {
+    /* Legacy random walk was mapped from (-1, 1) to (1, 3) when stored in integrator state.
+     * Remapp to the original value. */
+    anisotropy -= 2.0f;
+    /* Legacy mapping doesn't support negative range, use Van de Hulst instead. */
+    van_de_hulst = anisotropy < 0.0f;
+  }
+  else {
+    /* Use Van de Hulst mapping for the new random walk model. */
+    van_de_hulst = true;
+  }
 
   Spectrum sigma_t;
   Spectrum alpha;
   Spectrum throughput = INTEGRATOR_STATE(state, path, throughput);
-  subsurface_random_walk_coefficients(albedo, radius, anisotropy, &sigma_t, &alpha, &throughput);
+  subsurface_random_walk_coefficients(
+      albedo, radius, anisotropy, van_de_hulst, &sigma_t, &alpha, &throughput);
   const Spectrum sigma_s = sigma_t * alpha;
 
   /* Theoretically it should be better to use the exact alpha for the channel we're sampling at

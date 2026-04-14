@@ -137,7 +137,11 @@ ccl_device int subsurface_bounce(KernelGlobals kg,
   /* Pass BSSRDF parameters. */
   INTEGRATOR_STATE_WRITE(state, subsurface, albedo) = bssrdf->albedo;
   INTEGRATOR_STATE_WRITE(state, subsurface, radius) = bssrdf->radius;
-  INTEGRATOR_STATE_WRITE(state, subsurface, anisotropy) = bssrdf->anisotropy;
+  /* Encode the bssrdf type in anisotropy. */
+  INTEGRATOR_STATE_WRITE(state, subsurface, anisotropy) = (bssrdf->type ==
+                                                           CLOSURE_BSSRDF_RANDOM_WALK_ID) ?
+                                                              bssrdf->anisotropy :
+                                                              bssrdf->anisotropy + 2.0f;
 
   /* Path guiding. */
   guiding_record_bssrdf_weight(kg, state, weight, bssrdf->albedo);
