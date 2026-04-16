@@ -338,10 +338,9 @@ class MultiDevice : public Device {
 
     /* Get the memory owner of this key (first try current device, then peer devices) */
     SubDevice *owner_sub = &sub;
-    if (owner_sub->ptr_map.find(key) == owner_sub->ptr_map.end()) {
+    if (!owner_sub->ptr_map.contains(key)) {
       for (SubDevice *island_sub : peer_islands[sub.peer_island_index]) {
-        if (island_sub != owner_sub && island_sub->ptr_map.find(key) != island_sub->ptr_map.end())
-        {
+        if (island_sub != owner_sub && island_sub->ptr_map.contains(key)) {
           owner_sub = island_sub;
         }
       }
@@ -356,7 +355,7 @@ class MultiDevice : public Device {
     /* Get the memory owner of this key or the device with the lowest memory usage when new */
     SubDevice *owner_sub = island.front();
     for (SubDevice *island_sub : island) {
-      if (key ? (island_sub->ptr_map.find(key) != island_sub->ptr_map.end()) :
+      if (key ? (island_sub->ptr_map.contains(key)) :
                 (island_sub->device->stats.mem_used < owner_sub->device->stats.mem_used))
       {
         owner_sub = island_sub;
