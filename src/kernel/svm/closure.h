@@ -858,7 +858,7 @@ ccl_device
 
       const AttributeDescriptor attr_descr_random = find_attribute(kg, sd, hdata.attr_random);
       float random = 0.0f;
-      if (attr_descr_random.offset != ATTR_STD_NOT_FOUND) {
+      if (is_attribute_found(attr_descr_random)) {
         random = primitive_surface_attribute<float>(kg, sd, attr_descr_random);
       }
       else {
@@ -1263,7 +1263,7 @@ ccl_device_noinline void svm_node_principled_volume(
   if (density > 0.0f) {
     /* Density and color attribute lookup if available. */
     const AttributeDescriptor attr_density = find_attribute(kg, sd, node.attr_density);
-    if (attr_density.offset != ATTR_STD_NOT_FOUND) {
+    if (is_attribute_found(attr_density)) {
       primitive_density = primitive_volume_attribute<float>(kg, sd, attr_density, true);
       density = fmaxf(density * primitive_density, 0.0f);
     }
@@ -1274,7 +1274,7 @@ ccl_device_noinline void svm_node_principled_volume(
     Spectrum color = closure_weight;
 
     const AttributeDescriptor attr_color = find_attribute(kg, sd, node.attr_color);
-    if (attr_color.offset != ATTR_STD_NOT_FOUND) {
+    if (is_attribute_found(attr_color)) {
       color *= rgb_to_spectrum(primitive_volume_attribute<float3>(kg, sd, attr_color, true));
     }
 
@@ -1317,7 +1317,7 @@ ccl_device_noinline void svm_node_principled_volume(
 
     /* Add flame temperature from attribute if available. */
     const AttributeDescriptor attr_temperature = find_attribute(kg, sd, node.attr_temperature);
-    if (attr_temperature.offset != ATTR_STD_NOT_FOUND) {
+    if (is_attribute_found(attr_temperature)) {
       const float temperature = primitive_volume_attribute<float>(kg, sd, attr_temperature, true);
       T *= fmaxf(temperature, 0.0f);
     }
