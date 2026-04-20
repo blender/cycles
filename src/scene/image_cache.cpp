@@ -321,6 +321,8 @@ device_image &ImageCache::alloc_tile(Device &device,
 
     img->alloc(tile_size_padded * TILE_IMAGE_MAX_TILES, tile_size_padded);
     tile_offset = 0;
+
+    images_first_free[key] = std::min(size_t(image_info_id), images_first_free[key]);
   }
 
   if (alloc_image && device.has_unified_memory()) {
