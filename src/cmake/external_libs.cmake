@@ -362,20 +362,16 @@ endif()
 # OpenColorIO
 ###########################################################################
 
-if(WITH_CYCLES_OPENCOLORIO)
-	set(WITH_OPENCOLORIO ON)
-
-	if(NOT USD_OVERRIDE_OPENCOLORIO)
-		if(MSVC AND EXISTS ${_cycles_lib_dir})
-			set(OPENCOLORIO_INCLUDE_DIRS ${OPENCOLORIO_ROOT_DIR}/include)
-			set(OPENCOLORIO_LIBRARIES
-				optimized ${OPENCOLORIO_ROOT_DIR}/lib/OpenColorIO.lib
-				debug ${OPENCOLORIO_ROOT_DIR}/lib/OpencolorIO_d.lib
-				)
-		else()
-			find_package(OpenColorIO REQUIRED)
-		endif()
-	endif()
+if(NOT USD_OVERRIDE_OPENCOLORIO)
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(OPENCOLORIO_INCLUDE_DIRS ${OPENCOLORIO_ROOT_DIR}/include)
+    set(OPENCOLORIO_LIBRARIES
+      optimized ${OPENCOLORIO_ROOT_DIR}/lib/OpenColorIO.lib
+      debug ${OPENCOLORIO_ROOT_DIR}/lib/OpencolorIO_d.lib
+      )
+  else()
+    find_package(OpenColorIO REQUIRED)
+  endif()
 endif()
 
 if(WIN32)
