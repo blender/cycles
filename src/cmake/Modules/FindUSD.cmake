@@ -56,6 +56,20 @@ find_library(USD_LIBRARY
   DOC "Universal Scene Description (USD) monolithic library"
 )
 
+if(MSVC)
+  find_library(USD_LIBRARY_DEBUG
+    NAMES
+      usd_usd_m_d usd_usd_ms_d usd_m_d usd_ms_d
+      ${PXR_LIB_PREFIX}usd_d
+    NAMES_PER_DIR
+    HINTS
+      ${_usd_SEARCH_DIRS}
+    PATH_SUFFIXES
+      lib64 lib lib/static
+    DOC "Universal Scene Description (USD) monolithic debug library"
+  )
+endif()
+
 if(NOT USD_LIBRARY)
   set(USD_FOUND FALSE)
 else()
@@ -67,7 +81,14 @@ else()
   if(USD_FOUND)
     get_filename_component(USD_LIBRARY_DIR ${USD_LIBRARY} DIRECTORY)
     set(USD_INCLUDE_DIRS ${USD_INCLUDE_DIR})
-    set(USD_LIBRARIES ${USD_LIBRARY})
+    if(MSVC AND USD_LIBRARY_DEBUG)
+      set(USD_LIBRARIES
+        optimized ${USD_LIBRARY}
+        debug ${USD_LIBRARY_DEBUG}
+      )
+    else()
+      set(USD_LIBRARIES ${USD_LIBRARY})
+    endif()
     if(EXISTS ${USD_INCLUDE_DIR}/pxr/base/tf/pyModule.h)
       set(USD_PYTHON_SUPPORT ON)
     endif()
@@ -78,6 +99,7 @@ mark_as_advanced(
   USD_INCLUDE_DIR
   USD_LIBRARY_DIR
   USD_LIBRARY
+  USD_LIBRARY_DEBUG
 )
 
 unset(_usd_SEARCH_DIRS)

@@ -47,6 +47,17 @@ find_library(OPENVDB_LIBRARY
     lib64 lib
 )
 
+if(MSVC)
+  find_library(OPENVDB_LIBRARY_DEBUG
+    NAMES
+      openvdb_d
+    HINTS
+      ${_openvdb_SEARCH_DIRS}
+    PATH_SUFFIXES
+      lib64 lib
+  )
+endif()
+
 # handle the QUIETLY and REQUIRED arguments and set OPENVDB_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
@@ -54,13 +65,21 @@ find_package_handle_standard_args(OpenVDB DEFAULT_MSG
     OPENVDB_LIBRARY OPENVDB_INCLUDE_DIR)
 
 if(OPENVDB_FOUND)
-  set(OPENVDB_LIBRARIES ${OPENVDB_LIBRARY})
+  if(MSVC AND OPENVDB_LIBRARY_DEBUG)
+    set(OPENVDB_LIBRARIES
+      optimized ${OPENVDB_LIBRARY}
+      debug ${OPENVDB_LIBRARY_DEBUG}
+    )
+  else()
+    set(OPENVDB_LIBRARIES ${OPENVDB_LIBRARY})
+  endif()
   set(OPENVDB_INCLUDE_DIRS ${OPENVDB_INCLUDE_DIR})
 endif()
 
 mark_as_advanced(
   OPENVDB_INCLUDE_DIR
   OPENVDB_LIBRARY
+  OPENVDB_LIBRARY_DEBUG
 )
 
 unset(_openvdb_SEARCH_DIRS)
