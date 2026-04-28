@@ -21,7 +21,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-bool Geometry::need_attribute(Scene *scene, AttributeStandard std)
+bool Geometry::need_attribute(const Scene *scene, AttributeStandard std)
 {
   if (std == ATTR_STD_NONE) {
     return false;
