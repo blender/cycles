@@ -450,6 +450,10 @@ void Scene::need_global_attributes(AttributeRequestSet &attributes)
       attributes.add((AttributeStandard)std);
     }
   }
+
+  for (const Shader *shader : shaders) {
+    attributes.add(shader->global_attributes);
+  }
 }
 
 bool Scene::need_update()

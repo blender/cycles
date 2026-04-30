@@ -41,10 +41,16 @@ bool Geometry::need_attribute(const Scene *scene, AttributeStandard std)
   return false;
 }
 
-bool Geometry::need_attribute(Scene * /*scene*/, ustring name)
+bool Geometry::need_attribute(Scene *scene, ustring name)
 {
   if (name.empty()) {
     return false;
+  }
+
+  for (const Shader *shader : scene->shaders) {
+    if (shader->global_attributes.find(name)) {
+      return true;
+    }
   }
 
   for (Node *node : used_shaders) {

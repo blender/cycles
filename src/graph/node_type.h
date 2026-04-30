@@ -79,14 +79,14 @@ struct SocketType {
   };
 
   ustring name;
-  Type type;
-  int struct_offset;
-  const void *default_value;
-  const NodeEnum *enum_values;
-  const NodeType *node_type;
-  int flags;
+  Type type = UNDEFINED;
+  int struct_offset = -1;
+  const void *default_value = nullptr;
+  const NodeEnum *enum_values = nullptr;
+  const NodeType *node_type = nullptr;
+  int flags = 0;
   ustring ui_name;
-  SocketModifiedFlags modified_flag_bit;
+  SocketModifiedFlags modified_flag_bit = 9;
 
   size_t storage_size() const;
   size_t packed_size() const;
