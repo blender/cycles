@@ -1623,6 +1623,15 @@ bool OSLManager::need_update() const
 
 void OSLCompiler::add(ShaderNode * /*node*/, const char * /*name*/, bool /*isfilepath*/) {}
 
+void OSLCompiler::add_output_converter(const ShaderNode * /*node*/,
+                                       string_view /*converter_name*/,
+                                       string_view /*node_output_parameter*/,
+                                       string_view /*converter_input_parameter*/,
+                                       string_view /*converter_output_parameter*/,
+                                       string_view /*shader_output_parameter*/)
+{
+}
+
 void OSLCompiler::parameter(ShaderNode * /*node*/, const char * /*name*/) {}
 
 void OSLCompiler::parameter(const char * /*name*/, float /*f*/) {}
@@ -1646,6 +1655,8 @@ void OSLCompiler::parameter(const char * /*name*/, const Transform & /*tfm*/) {}
 void OSLCompiler::parameter_array(const char * /*name*/, const float /*f*/[], int /*arraylen*/) {}
 
 void OSLCompiler::parameter_color_array(const char * /*name*/, const array<float3> & /*f*/) {}
+
+void OSLCompiler::parameter_string_array(const char * /*name*/, const array<ustring> & /*a*/) {}
 
 void OSLCompiler::parameter_texture(const char * /*name*/, const ImageHandle & /*handle*/) {}
 
