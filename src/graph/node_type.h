@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <bitset>
+
 #include "graph/node_enum.h"
 
 #include "util/array.h"  // IWYU pragma: keep
@@ -18,7 +20,7 @@ CCL_NAMESPACE_BEGIN
 struct Node;
 struct NodeType;
 
-using SocketModifiedFlags = uint64_t;
+using SocketModifiedFlags = std::bitset<128>;
 
 /* Socket Type */
 
@@ -86,7 +88,7 @@ struct SocketType {
   const NodeType *node_type = nullptr;
   int flags = 0;
   ustring ui_name;
-  SocketModifiedFlags modified_flag_bit = 9;
+  uint8_t modified_flag_bit = 0;
 
   size_t storage_size() const;
   size_t packed_size() const;
