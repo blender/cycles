@@ -42,17 +42,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [Linux, macOS, Windows]
         include:
           - platform: Linux
             os: ubuntu-latest
             make: make
+            build: ""
+            test: test
           - platform: macOS
             os: macos-latest
             make: make
+            build: ""
+            test: test
           - platform: Windows
             os: windows-latest
             make: cmd /c make.bat
+            build: ""
+            test: test
+          - platform: Windows-Debug
+            os: windows-latest
+            make: cmd /c make.bat
+            build: debug
+            test: test_debug
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -80,8 +90,8 @@ jobs:
 
       - name: Build
         working-directory: cycles
-        run: ${{ matrix.make }}
+        run: ${{ matrix.make }} ${{ matrix.build }}
 
       - name: Test
         working-directory: cycles
-        run: ${{ matrix.make }} test
+        run: ${{ matrix.make }} ${{ matrix.test }}

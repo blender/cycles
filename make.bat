@@ -20,6 +20,8 @@ if "%COMMAND%" == "release" (
 	cd %BUILD_DIR% && cmake --build . --target clean
 ) else if "%COMMAND%" == "test" (
 	cd %BUILD_DIR% && ctest -C Release --output-on-failure
+) else if "%COMMAND%" == "test_debug" (
+	cd %BUILD_DIR% && ctest -C Debug --output-on-failure
 ) else if "%COMMAND%" == "update" (
 	%PYTHON% src/cmake/make_update.py
 ) else if "%COMMAND%" == "update_legacy" (
