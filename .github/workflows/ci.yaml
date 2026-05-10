@@ -71,22 +71,31 @@ jobs:
         with:
           path: cycles
 
+      - name: Compute Libraries Key
+        id: libs_key
+        shell: bash
+        working-directory: cycles
+        run: echo "sha=$(git ls-tree HEAD lib | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
       - name: Restore Libraries
+        id: restore_libs
         uses: actions/cache/restore@v4
         with:
           path: cycles/.git/modules/lib
-          key: libs-${{ matrix.os }}
+          key: libs-${{ matrix.os }}-${{ steps.libs_key.outputs.sha }}
+          restore-keys: |
+            libs-${{ matrix.os }}-
 
       - name: Update
         working-directory: cycles
         run: ${{ matrix.make }} update
 
       - name: Cache Libraries
+        if: steps.restore_libs.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
-        if: always()
         with:
           path: cycles/.git/modules/lib
-          key: libs-${{ matrix.os }}-${{ github.ref }}
+          key: libs-${{ matrix.os }}-${{ steps.libs_key.outputs.sha }}
 
       - name: Build
         working-directory: cycles
