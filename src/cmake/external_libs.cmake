@@ -377,11 +377,8 @@ endif()
 
 if(NOT USD_OVERRIDE_OPENCOLORIO)
   if(MSVC AND EXISTS ${_cycles_lib_dir})
-    set(OPENCOLORIO_INCLUDE_DIRS ${OPENCOLORIO_ROOT_DIR}/include)
-    set(OPENCOLORIO_LIBRARIES
-      optimized ${OPENCOLORIO_ROOT_DIR}/lib/OpenColorIO.lib
-      debug ${OPENCOLORIO_ROOT_DIR}/lib/OpencolorIO_d.lib
-      )
+    set(OpenColorIO_ROOT ${OPENCOLORIO_ROOT_DIR})
+    find_package(OpenColorIO REQUIRED CONFIG)
   else()
     find_package(OpenColorIO REQUIRED)
   endif()

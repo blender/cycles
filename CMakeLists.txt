@@ -50,7 +50,12 @@ if(POLICY CMP0074)
 endif()
 if(POLICY CMP0144)
   cmake_policy(SET CMP0144 NEW)
-endif() 
+endif()
+
+# install() DESTINATION paths are normalized.
+if(POLICY CMP0177)
+  cmake_policy(SET CMP0177 NEW)
+endif()
 
 # The target_sources() command converts relative paths to absolute.
 cmake_policy(SET CMP0076 NEW)

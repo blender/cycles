@@ -77,6 +77,8 @@ elseif(MSVC)
 
   if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /wd4996")
+    string(APPEND CMAKE_CXX_FLAGS " /wd4244")
+    string(APPEND CMAKE_CXX_FLAGS " /wd4267")
   endif()
 
   # Make Visual Studio Report __cplusplus version.
