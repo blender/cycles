@@ -131,10 +131,6 @@ function(cycles_external_libraries_append libraries)
   endif()
   list(APPEND ${libraries}
     bf::dependencies::openimageio
-    ${PNG_LIBRARIES}
-    ${JPEG_LIBRARIES}
-    ${TIFF_LIBRARY}
-    ${OPENJPEG_LIBRARIES}
     bf::dependencies::openexr
     ${PUGIXML_LIBRARIES}
     ${ZLIB_LIBRARIES}

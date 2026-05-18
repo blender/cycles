@@ -26,6 +26,7 @@ if(WITH_USD)
   if(HOUDINI_ROOT)
     find_package(USDHoudini)
   elseif(PXR_ROOT)
+    find_package(OpenGL)
     find_package(USDPixar)
   endif()
 endif()
@@ -99,19 +100,16 @@ if(EXISTS ${_cycles_lib_dir} AND WITH_LIBS_PRECOMPILED)
   _set_default(OPENEXR_ROOT_DIR "${_cycles_lib_dir}/openexr")
   _set_default(OPENIMAGEDENOISE_ROOT_DIR "${_cycles_lib_dir}/openimagedenoise")
   _set_default(OPENIMAGEIO_ROOT_DIR "${_cycles_lib_dir}/openimageio")
-  _set_default(OPENJPEG_ROOT_DIR "${_cycles_lib_dir}/openjpeg")
   _set_default(openjph_ROOT "${_cycles_lib_dir}/openjph")
   _set_default(OPENSUBDIV_ROOT_DIR "${_cycles_lib_dir}/opensubdiv")
   _set_default(OPENVDB_ROOT_DIR "${_cycles_lib_dir}/openvdb")
   _set_default(OSL_ROOT_DIR "${_cycles_lib_dir}/osl")
-  _set_default(PNG_ROOT "${_cycles_lib_dir}/png")
   _set_default(PUGIXML_ROOT_DIR "${_cycles_lib_dir}/pugixml")
   _set_default(PYTHON_ROOT_DIR "${_cycles_lib_dir}/python")
   _set_default(SSE2NEON_ROOT_DIR "${_cycles_lib_dir}/sse2neon")
   _set_default(TBB_ROOT_DIR "${_cycles_lib_dir}/tbb")
   _set_default(USD_ROOT_DIR "${_cycles_lib_dir}/usd")
   _set_default(VULKAN_ROOT_DIR "${_cycles_lib_dir}/vulkan")
-  _set_default(WEBP_ROOT_DIR "${_cycles_lib_dir}/webp")
   _set_default(ZLIB_ROOT "${_cycles_lib_dir}/zlib")
   _set_default(ZSTD_ROOT_DIR "${_cycles_lib_dir}/zstd")
   if(WIN32)
@@ -250,48 +248,34 @@ endif()
 ###########################################################################
 # OpenImageIO and image libraries
 ###########################################################################
+if(NOT USD_OVERRIDE_OPENIMAGEIO)
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(OpenImageIO_ROOT ${OPENIMAGEIO_ROOT_DIR})
+    find_package(OpenImageIO REQUIRED CONFIG)
 
-if(MSVC AND EXISTS ${_cycles_lib_dir})
-  set(OpenImageIO_ROOT ${OPENIMAGEIO_ROOT_DIR})
-  find_package(OpenImageIO REQUIRED CONFIG)
-
-  set(PUGIXML_INCLUDE_DIR ${PUGIXML_ROOT_DIR}/include)
-  set(PUGIXML_LIBRARIES
-    optimized ${PUGIXML_ROOT_DIR}/lib/pugixml.lib
-    debug ${PUGIXML_ROOT_DIR}/lib/pugixml_d.lib
-  )
-else()
-  find_package(OpenImageIO REQUIRED CONFIG)
-  if(OPENIMAGEIO_PUGIXML_FOUND)
-    set(PUGIXML_INCLUDE_DIR "${OPENIMAGEIO_INCLUDE_DIR}/OpenImageIO")
-    set(PUGIXML_LIBRARIES "")
+    set(PUGIXML_INCLUDE_DIR ${PUGIXML_ROOT_DIR}/include)
+    set(PUGIXML_LIBRARIES
+      optimized ${PUGIXML_ROOT_DIR}/lib/pugixml.lib
+      debug ${PUGIXML_ROOT_DIR}/lib/pugixml_d.lib
+    )
   else()
-    find_package(PugiXML REQUIRED)
+    find_package(OpenImageIO REQUIRED CONFIG)
+    if(OPENIMAGEIO_PUGIXML_FOUND)
+      set(PUGIXML_INCLUDE_DIR "${OPENIMAGEIO_INCLUDE_DIR}/OpenImageIO")
+      set(PUGIXML_LIBRARIES "")
+    else()
+      find_package(PugiXML REQUIRED)
+    endif()
   endif()
-endif()
 
-# Dependencies
-if(MSVC AND EXISTS ${_cycles_lib_dir})
-  set(OPENJPEG_INCLUDE_DIR ${OPENJPEG}/include/openjpeg-2.3)
-  set(OPENJPEG_LIBRARIES ${_cycles_lib_dir}/openjpeg/lib/openjp2.lib)
+  if(WIN32)
+    add_bundled_libraries(openimageio/bin)
+    add_bundled_libraries(aom/bin)
+  else()
+    add_bundled_libraries(openimageio/lib)
+  endif()
 else()
-  find_package(OpenJPEG REQUIRED)
-endif()
-
-find_package(JPEG REQUIRED)
-find_package(fmt REQUIRED)
-find_package(WebP)
-
-if(EXISTS ${_cycles_lib_dir})
-  set(PNG_NAMES png16 libpng16 png libpng)
-endif()
-find_package(PNG REQUIRED)
-
-if(WIN32)
-  add_bundled_libraries(openimageio/bin)
-  add_bundled_libraries(aom/bin)
-else()
-  add_bundled_libraries(openimageio/lib)
+  find_package(PugiXML REQUIRED)
 endif()
 
 ###########################################################################
@@ -299,28 +283,28 @@ endif()
 ###########################################################################
 
 set(WITH_IMAGE_OPENEXR ON)
+if(NOT USD_OVERRIDE_OPENEXR)
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(OpenEXR_ROOT ${OPENEXR_ROOT_DIR})
+    set(Imath_ROOT ${IMATH_ROOT_DIR})
+    find_package(OpenEXR REQUIRED CONFIG)
+  else()
+    find_package(OpenEXR REQUIRED)
+  endif()
 
-if(MSVC AND EXISTS ${_cycles_lib_dir})
-  set(OpenEXR_ROOT ${OPENEXR_ROOT_DIR})
-  set(Imath_ROOT ${IMATH_ROOT_DIR})
-  find_package(OpenEXR REQUIRED CONFIG)
-else()
-  find_package(OpenEXR REQUIRED)
+  if(WIN32)
+    add_bundled_libraries(openexr/bin)
+    add_bundled_libraries(imath/bin)
+  else()
+    add_bundled_libraries(openexr/lib)
+    add_bundled_libraries(imath/lib)
+  endif()
+  if(WIN32)
+    add_bundled_libraries(openjph/bin)
+  else()
+    add_bundled_libraries(openjph/lib)
+  endif()
 endif()
-
-if(WIN32)
-	add_bundled_libraries(openexr/bin)
-	add_bundled_libraries(imath/bin)
-else()
-	add_bundled_libraries(openexr/lib)
-	add_bundled_libraries(imath/lib)
-endif()
-if(WIN32)
-  add_bundled_libraries(openjph/bin)
-else()
-  add_bundled_libraries(openjph/lib)
-endif()
-
 ###########################################################################
 # OpenShadingLanguage
 ###########################################################################
@@ -337,12 +321,12 @@ if(WITH_CYCLES_OSL)
 	else()
     find_package(OSL REQUIRED CONFIG)
 	endif()
-endif()
 
-if(WIN32)
-  add_bundled_libraries(osl/bin)
-else()
-  add_bundled_libraries(osl/lib)
+  if(WIN32)
+    add_bundled_libraries(osl/bin)
+  else()
+    add_bundled_libraries(osl/lib)
+  endif()
 endif()
 
 ###########################################################################
@@ -380,12 +364,12 @@ if(NOT USD_OVERRIDE_OPENCOLORIO)
   else()
     find_package(OpenColorIO REQUIRED)
   endif()
-endif()
 
-if(WIN32)
-	add_bundled_libraries(opencolorio/bin)
-else()
-	add_bundled_libraries(opencolorio/lib)
+  if(WIN32)
+    add_bundled_libraries(opencolorio/bin)
+  else()
+    add_bundled_libraries(opencolorio/lib)
+  endif()
 endif()
 
 ###########################################################################
@@ -567,15 +551,15 @@ if(WITH_CYCLES_OPENVDB)
 
   if(NOT USD_OVERRIDE_OPENVDB)
     find_package(OpenVDB REQUIRED)
-  endif()
-endif()
 
-if(WIN32)
-  add_bundled_libraries(openvdb/bin)
-else()
-  add_bundled_libraries(openvdb/lib)
-endif()
+    if(WIN32)
+      add_bundled_libraries(openvdb/bin)
+    else()
+      add_bundled_libraries(openvdb/lib)
+    endif()
 
+    endif()
+endif()
 ###########################################################################
 # NanoVDB
 ###########################################################################
@@ -598,14 +582,13 @@ endif()
 if(WITH_CYCLES_OPENIMAGEDENOISE)
   set(WITH_OPENIMAGEDENOISE ON)
   find_package(OpenImageDenoise REQUIRED)
-endif()
 
-if(WIN32)
-  add_bundled_libraries(openimagedenoise/bin)
-else()
-  add_bundled_libraries(openimagedenoise/lib)
+  if(WIN32)
+    add_bundled_libraries(openimagedenoise/bin)
+  else()
+    add_bundled_libraries(openimagedenoise/lib)
+  endif()
 endif()
-
 ###########################################################################
 # TBB
 ###########################################################################
@@ -629,12 +612,12 @@ if(NOT USD_OVERRIDE_TBB)
   else()
     find_package(TBB REQUIRED)
   endif()
-endif()
 
-if(WIN32)
-  add_bundled_libraries(tbb/bin)
-else()
-  add_bundled_libraries(tbb/lib)
+  if(WIN32)
+    add_bundled_libraries(tbb/bin)
+  else()
+    add_bundled_libraries(tbb/lib)
+  endif()
 endif()
 
 ###########################################################################
@@ -649,10 +632,11 @@ if((WITH_CYCLES_STANDALONE AND WITH_CYCLES_STANDALONE_GUI) OR
   else()
     find_package(Epoxy REQUIRED)
   endif()
-endif()
 
-if(WIN32)
-  add_bundled_libraries(epoxy/bin)
+  if(WIN32)
+    add_bundled_libraries(epoxy/bin)
+  endif()
+
 endif()
 
 ###########################################################################
@@ -676,12 +660,6 @@ endif()
 # MaterialX
 ###########################################################################
 
-if(WIN32)
-  add_bundled_libraries(MaterialX/bin)
-else()
-  add_bundled_libraries(materialx/lib)
-endif()
-
 if(WITH_USD)
   if(WIN32)
     add_bundled_libraries(vulkan/bin)
@@ -690,7 +668,7 @@ if(WITH_USD)
   endif()
 endif()
 
-if(WITH_USD)
+if(WITH_USD AND NOT USD_OVERRIDE_MATERIALX)
   if(DEFINED _cycles_lib_dir)
     # USD linking needs to be able to find MaterialX libraries.
     link_directories(${MATERIALX_ROOT_DIR}/lib)
@@ -710,6 +688,12 @@ if(WITH_USD)
         list(APPEND USD_LIBRARIES ${VULKAN_LIBRARIES})
       endif()
     endif()
+  endif()
+
+  if(WIN32)
+    add_bundled_libraries(MaterialX/bin)
+  else()
+    add_bundled_libraries(materialx/lib)
   endif()
 endif()
 

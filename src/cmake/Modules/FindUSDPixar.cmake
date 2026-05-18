@@ -58,6 +58,62 @@ if(pxr_FOUND)
   unset(_tbb_library_debug_pxr CACHE)
   unset(_tbb_library_release_pxr CACHE)
 
+  # OpenColorIO
+  find_library(_opencolorio_library_pxr NAMES OpenColorIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+  if(_opencolorio_library_pxr)
+    add_library(OpenColorIO::OpenColorIO UNKNOWN IMPORTED)
+    set_target_properties(OpenColorIO::OpenColorIO PROPERTIES
+      IMPORTED_LOCATION "${_opencolorio_library_pxr}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+    )
+    set(USD_OVERRIDE_OPENCOLORIO ON)
+  endif()
+  unset(_opencolorio_library_pxr CACHE)
+
+  # OpenEXR
+  find_library(_openexr_library_pxr NAMES OpenEXR OpenCore PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+  if(_openexr_library_pxr)
+    add_library(OpenEXR::OpenEXR UNKNOWN IMPORTED)
+    set_target_properties(OpenEXR::OpenEXR PROPERTIES
+      IMPORTED_LOCATION "${_openexr_library_pxr}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+    )
+    set(USD_OVERRIDE_OPENEXR ON)
+  endif()
+  unset(_openexr_library_pxr CACHE)
+
+  # OpenImageIO
+  find_library(_openimageio_library_pxr NAMES OpenImageIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+  find_library(_openimageio_util_library_pxr NAMES OpenImageIO_Util PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+  if(_openimageio_library_pxr AND _openimageio_util_library_pxr)
+    add_library(OpenImageIO::OpenImageIO UNKNOWN IMPORTED)
+    set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
+      IMPORTED_LOCATION "${_openimageio_library_pxr}"
+      INTERFACE_LINK_LIBRARIES "${_openimageio_util_library_pxr}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+    )
+    set(USD_OVERRIDE_OPENIMAGEIO ON)
+  endif()
+  unset(_openimageio_library_pxr CACHE)
+
+  # MaterialX
+  find_library(_materialx_core_library_pxr NAMES MaterialXCore PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+  if(_materialx_core_library_pxr)
+    list(APPEND USD_LIBRARIES
+      MaterialXCore
+      MaterialXFormat
+      MaterialXRender
+      MaterialXGenGlsl
+      MaterialXGenMsl
+    )
+  endif()
+  set(USD_OVERRIDE_MATERIALX ON)
+
+  message(STATUS "OSL is not part of the USD package, disabling WITH_CYCLES_OSL")
+  set(WITH_CYCLES_OSL OFF)
+  message(STATUS "NanoVDB is not part of the USD package, disabling WITH_CYCLES_NANOVDB")
+  set(WITH_CYCLES_NANOVDB OFF)
+
   unset(_pxr_library_dir)
 else()
   message(STATUS "Did not find USD at ${PXR_ROOT}")

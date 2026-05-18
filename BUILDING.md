@@ -27,7 +27,8 @@ The resulting binary will be at:
 
 ## Hydra Render Delegate with USD Repository
 
-This will make the render delegate work with usdview and other applications built using the USD repository. USD version 24.03 or newer is required.
+This will make the render delegate work with usdview and other applications built using the USD repository. USD version 25.11 or newer is required.
+
 
 USD includes a script to build itself and all required dependencies and then install the result a specified directory.
 
@@ -40,14 +41,8 @@ Get the Cycles source code:
     git clone https://projects.blender.org/blender/cycles.git
     cd cycles
 
-By default older precompiled libraries need to be used, for compatibility with older VFX platforms and TBB.
-Download the libraries and build pointing to the USD directory like this.
-
-    make update_legacy
-    cmake -B ./build -DPXR_ROOT="<path to USD install>" -DWITH_LEGACY_LIBRARIES=ON
-    make
-
-When using a newer VFX platform and USD was built with `--onetbb`, do this instead:
+At the moment, when using USD from the USD repository, Cycles will build without OSL and NanoVDB support.
+To build Cycles, download the Cycles dependency libraries and point CMake to the USD directory like this.
 
     make update
     cmake -B ./build -DPXR_ROOT="<path to USD install>"
