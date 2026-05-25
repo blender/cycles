@@ -165,6 +165,10 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
   delayed_install("${CMAKE_CURRENT_SOURCE_DIR}" "plugInfo.json" ${CYCLES_HYDRA_INSTALL_PATH})
   delayed_install("" $<TARGET_FILE:${HdCyclesPluginName}> ${CYCLES_HYDRA_INSTALL_PATH})
 
+  if(CYCLES_STANDALONE_REPOSITORY)
+    cycles_install_libraries(${HdCyclesPluginName})
+  endif()
+
   set_target_properties(${HdCyclesPluginName}
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
