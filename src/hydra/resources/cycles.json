@@ -1,7 +1,0 @@
-{
-   "env":[
-      {
-         "HOUDINI_PATH":"@CMAKE_INSTALL_PREFIX@/houdini"
-      }
-   ]
-}

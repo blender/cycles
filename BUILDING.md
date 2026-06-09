@@ -54,8 +54,7 @@ Test in usdview.
 
 ## Hydra Render Delegate for Houdini
 
-For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 20 or newer is required.
-Currently older libraries must be used for compatibility. Future Houdini versions will not need the legacy options.
+For use in Houdini, Cycles must be built using Houdini's USD libraries. Houdini version 21+ is required. 
 
 Get the source code:
 
@@ -64,9 +63,21 @@ Get the source code:
 
 Download precompiled libraries and build.
 
-    make update_legacy
-    cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>" -DWITH_LEGACY_LIBRARIES=ON
-    make
+Linux:
+```
+    make update
+    cmake -B ./build -DHOUDINI_ROOT="<path to Houdini>"
+    cmake --build build --config Release
+    cmake --install build
+```
+
+Windows:
+```
+    .\make.bat update
+    cmake -B .\build -DHOUDINI_ROOT="<path to Houdini>"
+    cmake --build build --config Release
+    cmake --install build
+```
 
 The path to Houdini depends on the operating system, typically:
 - Linux: `/opt/hfsX.Y`
@@ -78,6 +89,11 @@ Test in Houdini using an environment variable.
     PXR_PLUGINPATH_NAME=<path to cycles>/install/houdini/dso/usd_plugins houdini
 
 Or copy `install/houdini/packages/cycles.json` to the Houdini packages directory to make it always available.
+The packages directory can be found (or needs to be created) under:
+- Linux: `/home/[username]/houdiniX.Y`
+- macOS: `/Users/[username]/Library/Preferences/houdini/X.Y`
+- Windows: `C:/Users/[username]/Documents/houdiniX.Y`
+**Note:** If you move the Cycles installation folder to another place you need to adjust the path in `cycles.json`.
 
 ## Build System
 

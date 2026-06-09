@@ -72,7 +72,7 @@ set(_cycles_lib_dir "${CMAKE_CURRENT_SOURCE_DIR}/lib/${_cycles_lib_platform}")
 
 # Use legacy libraries for compatibility with Houdini or USD without oneTBB.
 set(_cycles_lib_dir_legacy "${CMAKE_CURRENT_SOURCE_DIR}/lib/legacy/${_cycles_lib_platform}")
-if((HOUDINI_ROOT AND HOUDINI_VERSION_MAJOR VERSION_LESS 21) OR WITH_LEGACY_LIBRARIES)
+if((HOUDINI_FOUND AND HOUDINI_VERSION_MAJOR VERSION_LESS 21) OR WITH_LEGACY_LIBRARIES)
   set(_cycles_use_legacy_libs ON)
   set(_cycles_lib_dir "${_cycles_lib_dir_legacy}")
 else()
@@ -191,7 +191,7 @@ set(CMAKE_FIND_FRAMEWORK NEVER)
 ###########################################################################
 
 if(WITH_USD)
-  if(NOT HOUDINI_ROOT AND NOT PXR_ROOT)
+  if(NOT HOUDINI_FOUND AND NOT PXR_ROOT)
     find_package(USD)
     add_bundled_libraries(usd/lib)
   endif()
@@ -200,20 +200,22 @@ if(WITH_USD)
 
   set(WITH_PYTHON ON)
 
-  if(WIN32)
-    set(PYTHON_VERSION 3.13)
-    string(REPLACE "." "" PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
-    set(PYTHON_INCLUDE_DIR ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/include)
-    set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIR})
-    set(PYTHON_LIBRARIES
-      optimized ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}.lib
-      debug ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}_d.lib)
-    link_directories(${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs)
-    if(NOT HOUDINI_ROOT AND NOT PXR_ROOT)
-      add_bundled_libraries(python/${PYTHON_VERSION_NO_DOTS}/bin)
+  if(NOT USD_OVERRIDE_PYTHON)
+    if(WIN32)
+      set(PYTHON_VERSION 3.13)
+      string(REPLACE "." "" PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
+      set(PYTHON_INCLUDE_DIR ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/include)
+      set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIR})
+      set(PYTHON_LIBRARIES
+        optimized ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}.lib
+        debug ${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs/python${PYTHON_VERSION_NO_DOTS}_d.lib)
+      link_directories(${PYTHON_ROOT_DIR}/${PYTHON_VERSION_NO_DOTS}/libs)
+      if(NOT HOUDINI_FOUND AND NOT PXR_ROOT)
+        add_bundled_libraries(python/${PYTHON_VERSION_NO_DOTS}/bin)
+      endif()
+    else()
+      find_package(PythonLibsUnix REQUIRED)
     endif()
-  else()
-    find_package(PythonLibsUnix REQUIRED)
   endif()
 endif()
 
@@ -260,12 +262,6 @@ if(NOT USD_OVERRIDE_OPENIMAGEIO)
     )
   else()
     find_package(OpenImageIO REQUIRED CONFIG)
-    if(OPENIMAGEIO_PUGIXML_FOUND)
-      set(PUGIXML_INCLUDE_DIR "${OPENIMAGEIO_INCLUDE_DIR}/OpenImageIO")
-      set(PUGIXML_LIBRARIES "")
-    else()
-      find_package(PugiXML REQUIRED)
-    endif()
   endif()
 
   if(WIN32)
@@ -274,6 +270,11 @@ if(NOT USD_OVERRIDE_OPENIMAGEIO)
   else()
     add_bundled_libraries(openimageio/lib)
   endif()
+endif()
+
+if(OPENIMAGEIO_PUGIXML_FOUND)
+  set(PUGIXML_INCLUDE_DIR "${OPENIMAGEIO_INCLUDE_DIR}/OpenImageIO")
+  set(PUGIXML_LIBRARIES "")
 else()
   find_package(PugiXML REQUIRED)
 endif()
@@ -295,32 +296,30 @@ if(NOT USD_OVERRIDE_OPENEXR)
   if(WIN32)
     add_bundled_libraries(openexr/bin)
     add_bundled_libraries(imath/bin)
+    add_bundled_libraries(openjph/bin)
   else()
     add_bundled_libraries(openexr/lib)
     add_bundled_libraries(imath/lib)
-  endif()
-  if(WIN32)
-    add_bundled_libraries(openjph/bin)
-  else()
     add_bundled_libraries(openjph/lib)
   endif()
 endif()
+
 ###########################################################################
 # OpenShadingLanguage
 ###########################################################################
 
-if(WITH_CYCLES_OSL)
-	if(MSVC AND EXISTS ${_cycles_lib_dir})
-		set(OSL_ROOT ${OSL_ROOT_DIR})
-		find_package(OSL REQUIRED CONFIG)
-
-		set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/shaders)
-		if(NOT EXISTS "${OSL_SHADER_DIR}")
-			set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/share/OSL/shaders)
-		endif()
-	else()
+if(WITH_CYCLES_OSL AND NOT USD_OVERRIDE_OSL)
+  if(MSVC AND EXISTS ${_cycles_lib_dir})
+    set(OSL_ROOT ${OSL_ROOT_DIR})
     find_package(OSL REQUIRED CONFIG)
-	endif()
+
+    set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/shaders)
+    if(NOT EXISTS "${OSL_SHADER_DIR}")
+      set(OSL_SHADER_DIR ${OSL_ROOT_DIR}/share/OSL/shaders)
+    endif()
+  else()
+    find_package(OSL REQUIRED CONFIG)
+  endif()
 
   if(WIN32)
     add_bundled_libraries(osl/bin)
@@ -501,13 +500,15 @@ if(WITH_CYCLES_EMBREE)
   else()
     find_package(Embree 3.8.0 REQUIRED)
   endif()
+  
+  if(WIN32)
+    add_bundled_libraries(embree/bin)
+  else()
+    add_bundled_libraries(embree/lib)
+  endif()
 endif()
 
-if(WIN32)
-  add_bundled_libraries(embree/bin)
-else()
-  add_bundled_libraries(embree/lib)
-endif()
+
 
 ###########################################################################
 # Logging
@@ -537,10 +538,10 @@ if(WITH_CYCLES_OPENSUBDIV)
     else()
       find_package(OpenSubdiv REQUIRED)
     endif()
+    
+    add_bundled_libraries(opensubdiv/lib)
   endif()
 endif()
-
-add_bundled_libraries(opensubdiv/lib)
 
 ###########################################################################
 # OpenVDB
@@ -557,21 +558,22 @@ if(WITH_CYCLES_OPENVDB)
     else()
       add_bundled_libraries(openvdb/lib)
     endif()
-
-    endif()
+  endif()
 endif()
+
 ###########################################################################
 # NanoVDB
 ###########################################################################
 
 if(WITH_CYCLES_NANOVDB)
   set(WITH_NANOVDB ON)
-
-  if(MSVC AND EXISTS ${_cycles_lib_dir})
-    set(NANOVDB_INCLUDE_DIR ${NANOVDB_ROOT_DIR}/include)
-    set(NANOVDB_INCLUDE_DIRS ${NANOVDB_INCLUDE_DIR})
-  else()
-    find_package(NanoVDB REQUIRED)
+  if (NOT USD_OVERRIDE_NANOVDB)
+    if(MSVC AND EXISTS ${_cycles_lib_dir})
+      set(NANOVDB_INCLUDE_DIR ${NANOVDB_ROOT_DIR}/include)
+      set(NANOVDB_INCLUDE_DIRS ${NANOVDB_INCLUDE_DIR})
+    else()
+      find_package(NanoVDB REQUIRED)
+    endif()
   endif()
 endif()
 
@@ -660,7 +662,7 @@ endif()
 # MaterialX
 ###########################################################################
 
-if(WITH_USD)
+if(WITH_USD AND NOT HOUDINI_FOUND)
   if(WIN32)
     add_bundled_libraries(vulkan/bin)
   elseif(UNIX AND NOT APPLE)
@@ -1008,7 +1010,11 @@ endif()
 ###########################################################################
 
 if(WIN32)
-  set(PLATFORM_LIB_INSTALL_DIR ".")
+  if(HOUDINI_FOUND)
+    set(PLATFORM_LIB_INSTALL_DIR "houdini/bin")
+  else()
+    set(PLATFORM_LIB_INSTALL_DIR ".")
+  endif()
   # Environment variables to run precompiled executables that needed libraries.
   list(JOIN PLATFORM_BUNDLED_LIBRARY_DIRS "\;" _library_paths)
   set(PLATFORM_ENV_BUILD_DIRS "${_library_paths}\;${PATH}")
@@ -1020,9 +1026,14 @@ if(WIN32)
   set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
   set(CMAKE_INSTALL_OPENMP_LIBRARIES FALSE)
   include(InstallRequiredSystemLibraries)
-  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION . COMPONENT Libraries)
+  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ${PLATFORM_LIB_INSTALL_DIR} COMPONENT Libraries)
 elseif(APPLE)
-  set(PLATFORM_LIB_INSTALL_DIR "lib")
+  if(HOUDINI_FOUND)
+    set(PLATFORM_LIB_INSTALL_DIR "houdini/lib")
+  else()
+    set(PLATFORM_LIB_INSTALL_DIR "lib")
+  endif()
+  set(PLATFORM_BUNDLED_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${PLATFORM_LIB_INSTALL_DIR}")
   # For install step, set rpath relative to where shared libs will be copied.
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH "@loader_path/${PLATFORM_LIB_INSTALL_DIR}")
@@ -1037,7 +1048,12 @@ elseif(APPLE)
   set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths};${DYLD_LIBRARY_PATH}\"")
   unset(_library_paths)
 elseif(UNIX)
-  set(PLATFORM_LIB_INSTALL_DIR "lib")
+  if(HOUDINI_FOUND)
+    set(PLATFORM_LIB_INSTALL_DIR "houdini/lib")
+  else()
+    set(PLATFORM_LIB_INSTALL_DIR "lib")
+  endif()
+  set(PLATFORM_BUNDLED_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${PLATFORM_LIB_INSTALL_DIR}")
   # For install step, set rpath relative to where shared libs will be copied.
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/${PLATFORM_LIB_INSTALL_DIR})

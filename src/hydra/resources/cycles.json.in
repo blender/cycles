@@ -1,0 +1,17 @@
+{
+  "env": [
+    {
+      "CYCLES_ROOT": {
+        "value": "@CMAKE_INSTALL_PREFIX@/houdini",
+        "method": "replace"
+      }
+    },
+    {
+      "PATH": {
+        "value": "$CYCLES_ROOT/bin",
+        "method": "append"
+      }
+    }
+  ],
+  "hpath": "$CYCLES_ROOT"
+}
