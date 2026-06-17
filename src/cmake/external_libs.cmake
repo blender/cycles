@@ -1033,7 +1033,7 @@ elseif(APPLE)
   else()
     set(PLATFORM_LIB_INSTALL_DIR "lib")
   endif()
-  set(PLATFORM_BUNDLED_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${PLATFORM_LIB_INSTALL_DIR}")
+
   # For install step, set rpath relative to where shared libs will be copied.
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH "@loader_path/${PLATFORM_LIB_INSTALL_DIR}")
@@ -1045,7 +1045,7 @@ elseif(APPLE)
 
   # Environment variables to run precompiled executables that needed libraries.
   list(JOIN PLATFORM_BUNDLED_LIBRARY_DIRS ":" _library_paths)
-  set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths};${DYLD_LIBRARY_PATH}\"")
+  set(PLATFORM_ENV_BUILD "DYLD_LIBRARY_PATH=\"${_library_paths}:$$DYLD_LIBRARY_PATH\"")
   unset(_library_paths)
 elseif(UNIX)
   if(HOUDINI_FOUND)
@@ -1053,7 +1053,6 @@ elseif(UNIX)
   else()
     set(PLATFORM_LIB_INSTALL_DIR "lib")
   endif()
-  set(PLATFORM_BUNDLED_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${PLATFORM_LIB_INSTALL_DIR}")
   # For install step, set rpath relative to where shared libs will be copied.
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/${PLATFORM_LIB_INSTALL_DIR})
