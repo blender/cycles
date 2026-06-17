@@ -16,7 +16,7 @@ Source code is available either as standalone repository or bundled with the Ble
 
 ### Documentation
 
-* [User Manual](https://docs.blender.org/manual/en/dev/render/cycles/introduction.html)
+* [User Manual](https://docs.blender.org/manual/en/dev/render/cycles/)
 * [Developer Docs](https://developer.blender.org/docs/features/cycles/)
 
 ### Contributors
