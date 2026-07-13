@@ -47,6 +47,17 @@ find_library(PUGIXML_LIBRARY
     lib64 lib
 )
 
+if(MSVC)
+  find_library(PUGIXML_LIBRARY_DEBUG
+    NAMES
+      pugixml_d
+    HINTS
+      ${_pugixml_SEARCH_DIRS}
+    PATH_SUFFIXES
+      lib64 lib
+  )
+endif()
+
 # handle the QUIETLY and REQUIRED arguments and set PUGIXML_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
@@ -54,7 +65,14 @@ find_package_handle_standard_args(PugiXML DEFAULT_MSG
     PUGIXML_LIBRARY PUGIXML_INCLUDE_DIR)
 
 if(PUGIXML_FOUND)
-  set(PUGIXML_LIBRARIES ${PUGIXML_LIBRARY})
+  if(MSVC AND PUGIXML_LIBRARY_DEBUG)
+    set(PUGIXML_LIBRARIES
+      optimized ${PUGIXML_LIBRARY}
+      debug ${PUGIXML_LIBRARY_DEBUG}
+    )
+  else()
+    set(PUGIXML_LIBRARIES ${PUGIXML_LIBRARY})
+  endif()
   set(PUGIXML_INCLUDE_DIRS ${PUGIXML_INCLUDE_DIR})
 else()
   set(PUGIXML_FOUND FALSE)
@@ -63,6 +81,7 @@ endif()
 mark_as_advanced(
   PUGIXML_INCLUDE_DIR
   PUGIXML_LIBRARY
+  PUGIXML_LIBRARY_DEBUG
 )
 
 unset(_pugixml_SEARCH_DIRS)
