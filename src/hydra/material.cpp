@@ -588,6 +588,11 @@ unique_ptr<ShaderGraph> HdCyclesMaterial::BuildShaderGraph(HdMaterialNetworkSche
     else if (terminalName == HdMaterialTerminalTokens->displacement ||
              terminalName == CyclesMaterialTokens->cyclesDisplacement)
     {
+      if (nodeIt->second.mapping) {
+        /* Unsupported mapped USD inputs and connections are reported while
+         * processing the node. */
+        continue;
+      }
       inputName = outputName = "Displacement";
     }
     else if (terminalName == HdMaterialTerminalTokens->volume ||
