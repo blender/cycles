@@ -398,10 +398,27 @@ void HdCyclesMaterial::UpdateConnections(NodeDesc &nodeDesc,
     }
 
     if (!input) {
-      TF_WARN("Ignoring connection on '%s.%s', input '%s' was not found",
-              nodePath.GetText(),
-              dstSocketName.GetText(),
-              dstSocketName.GetText());
+      if (inputMapping) {
+        if (inputMapping->hasParameterMapping(dstSocketName)) {
+          TF_WARN("USD input '%s' on node '%s' maps to unavailable Cycles input '%s' on '%s'",
+                  dstSocketName.GetText(),
+                  nodePath.GetText(),
+                  inputName.c_str(),
+                  nodeDesc.node->name.c_str());
+        }
+        else {
+          TF_WARN("Unsupported USD input '%s' on node '%s' ('%s'); connection ignored",
+                  dstSocketName.GetText(),
+                  nodePath.GetText(),
+                  nodeDesc.node->name.c_str());
+        }
+      }
+      else {
+        TF_WARN("Ignoring connection on '%s.%s', input '%s' was not found",
+                nodePath.GetText(),
+                dstSocketName.GetText(),
+                inputName.c_str());
+      }
       continue;
     }
 
@@ -453,7 +470,7 @@ void HdCyclesMaterial::UpdateConnections(NodeDesc &nodeDesc,
               upstreamOutputName.GetText(),
               nodePath.GetText(),
               dstSocketName.GetText(),
-              upstreamOutputName.GetText());
+              outputName.c_str());
       continue;
     }
 
