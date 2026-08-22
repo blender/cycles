@@ -364,9 +364,7 @@ HdAovDescriptor HdCyclesDelegate::GetDefaultAovDescriptor(const TfToken &name) c
   if (name == HdAovTokens->normal) {
     return HdAovDescriptor(HdFormatFloat32Vec3, false, VtValue(GfVec3f(0.0f)));
   }
-  if (name == HdAovTokens->primId || name == HdAovTokens->instanceId ||
-      name == HdAovTokens->elementId)
-  {
+  if (name == HdAovTokens->primId || name == HdAovTokens->instanceId) {
     return HdAovDescriptor(HdFormatInt32, false, VtValue(-1));
   }
 
