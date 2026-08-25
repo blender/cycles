@@ -768,9 +768,9 @@ void HdCyclesLight::Finalize(HdRenderParam *renderParam)
   const bool keep_nodes = static_cast<const HdCyclesSession *>(renderParam)->keep_nodes;
 
   if (!keep_nodes) {
-    /* Delete the object before the light, since the object references the light. */
-    lock.scene->delete_node(_object);
-    lock.scene->delete_node(_light);
+    HdCyclesSession *const session = static_cast<HdCyclesSession *>(renderParam);
+    session->DeleteNode(_object);
+    session->DeleteNode(_light);
   }
 
   _light = nullptr;

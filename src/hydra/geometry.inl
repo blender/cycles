@@ -142,7 +142,7 @@ void HdCyclesGeometry<Base, CyclesBase>::Sync(HdSceneDelegate *sceneDelegate,
 
     // Resize instance list
     for (size_t i = newSize; i < oldSize; ++i) {
-      lock.scene->delete_node(_instances[i]);
+      static_cast<HdCyclesSession *>(renderParam)->DeleteNode(_instances[i]);
     }
     _instances.resize(newSize);
     for (size_t i = oldSize; i < newSize; ++i) {
@@ -188,16 +188,16 @@ void HdCyclesGeometry<Base, CyclesBase>::Finalize(HdRenderParam *renderParam)
   const SceneLock lock(renderParam);
   const bool keep_nodes = static_cast<const HdCyclesSession *>(renderParam)->keep_nodes;
 
-  /* Delete the instances before the geometry, since the objects reference the geometry. */
   if (!keep_nodes) {
-    lock.scene->delete_nodes(set<Object *>(_instances.begin(), _instances.end()));
+    HdCyclesSession *const session = static_cast<HdCyclesSession *>(renderParam);
+    for (Object *instance : _instances) {
+      session->DeleteNode(instance);
+    }
+    session->DeleteNode(_geom);
   }
   _instances.clear();
   _instances.shrink_to_fit();
 
-  if (!keep_nodes) {
-    lock.scene->delete_node(_geom);
-  }
   _geom = nullptr;
 }
 

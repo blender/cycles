@@ -89,13 +89,55 @@ HdCyclesSession::HdCyclesSession(const SessionParams &params)
 HdCyclesSession::~HdCyclesSession()
 {
   if (_ownCyclesSession) {
+    /* Scene destruction releases all remaining nodes in dependency order. */
     delete session;
+  }
+  else {
+    const SceneLock lock(this);
+    FlushDeletedNodes();
+  }
+}
+
+void HdCyclesSession::DeleteNode(Object *node)
+{
+  _deletedObjects.insert(node);
+}
+
+void HdCyclesSession::DeleteNode(Geometry *node)
+{
+  _deletedGeometry.insert(node);
+}
+
+void HdCyclesSession::DeleteNode(Shader *node)
+{
+  _deletedShaders.insert(node);
+}
+
+void HdCyclesSession::FlushDeletedNodes()
+{
+  Scene *const scene = session->scene.get();
+
+  /* Batch deletion to avoid quadratic cost, in dependency order: objects reference
+   * geometry, geometry references shaders. */
+  if (!_deletedObjects.empty()) {
+    scene->delete_nodes(_deletedObjects);
+    _deletedObjects.clear();
+  }
+  if (!_deletedGeometry.empty()) {
+    scene->delete_nodes(_deletedGeometry);
+    _deletedGeometry.clear();
+  }
+  if (!_deletedShaders.empty()) {
+    scene->delete_nodes(_deletedShaders);
+    _deletedShaders.clear();
   }
 }
 
 void HdCyclesSession::UpdateScene()
 {
   Scene *const scene = session->scene.get();
+
+  FlushDeletedNodes();
 
   // Update background depending on presence of a background light
   if (scene->light_manager->need_update()) {

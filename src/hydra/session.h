@@ -6,6 +6,7 @@
 #pragma once
 
 #include "hydra/config.h"
+#include "util/set.h"
 #include "util/thread.h"
 
 #include <pxr/imaging/hd/renderDelegate.h>
@@ -27,6 +28,11 @@ class HdCyclesSession final : public PXR_NS::HdRenderParam {
   HdCyclesSession(CCL_NS::Session *session_, const bool keep_nodes);
   HdCyclesSession(const CCL_NS::SessionParams &params);
   ~HdCyclesSession() override;
+
+  /* Queue node for deletion on the next UpdateScene(). Must be called with the scene locked. */
+  void DeleteNode(CCL_NS::Object *node);
+  void DeleteNode(CCL_NS::Geometry *node);
+  void DeleteNode(CCL_NS::Shader *node);
 
   void UpdateScene();
 
@@ -77,6 +83,11 @@ class HdCyclesSession final : public PXR_NS::HdRenderParam {
   PXR_NS::TfToken _stageUpAxis = PXR_NS::TfToken("Y");
   PXR_NS::HdRenderPassAovBindingVector _aovBindings;
   PXR_NS::HdRenderPassAovBinding _displayAovBinding;
+  CCL_NS::set<CCL_NS::Object *> _deletedObjects;
+  CCL_NS::set<CCL_NS::Geometry *> _deletedGeometry;
+  CCL_NS::set<CCL_NS::Shader *> _deletedShaders;
+
+  void FlushDeletedNodes();
 };
 
 HDCYCLES_NAMESPACE_CLOSE_SCOPE

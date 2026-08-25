@@ -653,7 +653,7 @@ void HdCyclesMaterial::Finalize(HdRenderParam *renderParam)
   _nodes.clear();
 
   if (!keep_nodes) {
-    lock.scene->delete_node(_shader);
+    static_cast<HdCyclesSession *>(renderParam)->DeleteNode(_shader);
   }
   _shader = nullptr;
 }
