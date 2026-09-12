@@ -389,8 +389,7 @@ void HdCyclesMesh::PopulatePrimvars(HdSceneDelegate *sceneDelegate)
                interpolation.first == HdInterpolationConstant)
       {
         if (value.IsHolding<VtVec3fArray>() && value.GetArraySize() == 1) {
-          const GfVec3f color = value.UncheckedGet<VtVec3fArray>()[0];
-          _instances[0]->set_color(make_float3(color[0], color[1], color[2]));
+          SetDisplayColor(value.UncheckedGet<VtVec3fArray>()[0]);
         }
       }
 
@@ -755,7 +754,9 @@ void HdCyclesMesh::PopulateTopology(HdSceneDelegate *sceneDelegate)
 
     _geom->set_subd_dicing_rate(1.0f);
     _geom->set_subd_max_level(_topology.GetRefineLevel());
-    _geom->set_subd_objecttoworld(_instances[0]->get_tfm());
+    if (!_instances.empty()) {
+      _geom->set_subd_objecttoworld(_instances[0]->get_tfm());
+    }
   }
 }
 

@@ -153,8 +153,7 @@ void HdCyclesCurves::PopulatePrimvars(HdSceneDelegate *sceneDelegate)
                interpolation.first == HdInterpolationConstant)
       {
         if (value.IsHolding<VtVec3fArray>() && value.GetArraySize() == 1) {
-          const GfVec3f color = value.UncheckedGet<VtVec3fArray>()[0];
-          _instances[0]->set_color(make_float3(color[0], color[1], color[2]));
+          SetDisplayColor(value.UncheckedGet<VtVec3fArray>()[0]);
         }
       }
 

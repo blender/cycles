@@ -106,7 +106,9 @@ void HdCyclesGeometry<Base, CyclesBase>::Sync(HdSceneDelegate *sceneDelegate,
 
   if (HdChangeTracker::IsPrimIdDirty(*dirtyBits, id)) {
     // This needs to be corrected in the AOV
-    _instances[0]->set_pass_id(Base::GetPrimId() + 1);
+    for (Object *instance : _instances) {
+      instance->set_pass_id(Base::GetPrimId() + 1);
+    }
   }
 
   if (HdChangeTracker::IsTransformDirty(*dirtyBits, id)) {
@@ -122,19 +124,13 @@ void HdCyclesGeometry<Base, CyclesBase>::Sync(HdSceneDelegate *sceneDelegate,
     auto *const instancer = static_cast<HdCyclesInstancer *>(
         sceneDelegate->GetRenderIndex().GetInstancer(Base::GetInstancerId()));
 
-    // Make sure the first object attribute is the instanceId
-    assert(_instances[0]->attributes.size() >= 1 &&
-           _instances[0]->attributes.front().name() == HdAovTokens->instanceId.GetString());
-
     VtMatrix4dArray transforms;
     if (instancer) {
       transforms = instancer->ComputeInstanceTransforms(id);
-      _instances[0]->attributes.front() = ParamValue(HdAovTokens->instanceId.GetString(), +0.0f);
     }
     else {
       // Default to a single instance with an identity transform
       transforms.push_back(GfMatrix4d(1.0));
-      _instances[0]->attributes.front() = ParamValue(HdAovTokens->instanceId.GetString(), -1.0f);
     }
 
     const size_t oldSize = _instances.size();
@@ -150,9 +146,14 @@ void HdCyclesGeometry<Base, CyclesBase>::Sync(HdSceneDelegate *sceneDelegate,
       InitializeInstance(static_cast<int>(i));
     }
 
-    // Update transforms of all instances
+    // Update transforms and instance IDs of all instances
     for (size_t i = 0; i < transforms.size(); ++i) {
-      _instances[i]->set_tfm(convert_transform(_geomTransform * transforms[i]));
+      Object *const instance = _instances[i];
+      instance->set_tfm(convert_transform(_geomTransform * transforms[i]));
+
+      // The first object attribute is the instanceId, see InitializeInstance()
+      instance->attributes.front() = ParamValue(HdAovTokens->instanceId.GetString(),
+                                                instancer ? static_cast<float>(i) : -1.0f);
     }
   }
 
@@ -225,11 +226,22 @@ void HdCyclesGeometry<Base, CyclesBase>::InitializeInstance(int index)
   Object *instance = _instances[index];
   instance->set_geometry(_geom);
 
-  instance->attributes.emplace_back(HdAovTokens->instanceId.GetString(),
-                                    _instances.size() == 1 ? -1.0f : static_cast<float>(index));
+  // Value is set in Sync()
+  instance->attributes.emplace_back(HdAovTokens->instanceId.GetString(), -1.0f);
 
-  instance->set_color(make_float3(0.8f, 0.8f, 0.8f));
+  instance->set_color(make_float3(_displayColor[0], _displayColor[1], _displayColor[2]));
   instance->set_random_id(hash_uint2(hash_string(_geom->name.c_str()), index));
+  instance->set_visibility(Base::IsVisible() ? PATH_RAY_VISIBILITY_OBJECT_ALL : 0);
+  instance->set_pass_id(Base::GetPrimId() + 1);
+}
+
+template<typename Base, typename CyclesBase>
+void HdCyclesGeometry<Base, CyclesBase>::SetDisplayColor(const GfVec3f &color)
+{
+  _displayColor = color;
+  for (Object *instance : _instances) {
+    instance->set_color(make_float3(color[0], color[1], color[2]));
+  }
 }
 
 HDCYCLES_NAMESPACE_CLOSE_SCOPE

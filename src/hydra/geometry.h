@@ -7,6 +7,7 @@
 
 #include "hydra/config.h"
 
+#include <pxr/base/gf/vec3f.h>
 #include <pxr/imaging/hd/rprim.h>
 
 HDCYCLES_NAMESPACE_OPEN_SCOPE
@@ -33,6 +34,8 @@ template<typename Base, typename CyclesBase> class HdCyclesGeometry : public Bas
                         PXR_NS::HdDirtyBits dirtyBits,
                         bool &rebuild) = 0;
 
+  void SetDisplayColor(const PXR_NS::GfVec3f &color);
+
   CyclesBase *_geom = nullptr;
   std::vector<CCL_NS::Object *> _instances;
 
@@ -42,6 +45,7 @@ template<typename Base, typename CyclesBase> class HdCyclesGeometry : public Bas
   void InitializeInstance(const int index);
 
   PXR_NS::GfMatrix4d _geomTransform;
+  PXR_NS::GfVec3f _displayColor = PXR_NS::GfVec3f(0.8f);
 };
 
 HDCYCLES_NAMESPACE_CLOSE_SCOPE
