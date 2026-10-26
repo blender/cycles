@@ -45,7 +45,7 @@ jobs:
         include:
           - platform: Linux
             os: ubuntu-latest
-            make: make
+            make: CC=gcc-14 CXX=g++-14 make
             build: ""
             test: test
           - platform: macOS
