@@ -555,6 +555,11 @@ if(WITH_CYCLES_OPENVDB)
 
     if(WIN32)
       add_bundled_libraries(openvdb/bin)
+      if(USD_OVERRIDE_TBB)
+        # Bundled OpenVDB can depend on the bundled oneTBB runtime even when
+        # Cycles links against the USD-provided TBB import library.
+        add_bundled_libraries(tbb/bin)
+      endif()
     else()
       add_bundled_libraries(openvdb/lib)
     endif()
