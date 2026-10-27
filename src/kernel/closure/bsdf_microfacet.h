@@ -613,7 +613,7 @@ ccl_device_inline float bsdf_lambda_from_sqr_alpha_tan_n(const float sqr_alpha_t
   }
 
   const float a = inversesqrtf(sqr_alpha_tan_n);
-  return ((0.396f * a - 1.259f) * a + 1.0f) / ((2.181f * a + 3.535f) * a);
+  return fmaf(fmaf(0.396f, a, -1.259f), a, 1.0f) / (fmaf(2.181f, a, 3.535f) * a);
 }
 
 template<MicrofacetType m_type>
@@ -654,7 +654,8 @@ ccl_device_inline float bsdf_D(const float alpha2, const float cos_NH)
     return 1.0f / (expf(one_minus_cos_NH2 / (cos_NH2 * alpha2)) * M_PI_F * alpha2 * sqr(cos_NH2));
   }
   kernel_assert(m_type == MicrofacetType::GGX);
-  return alpha2 / (M_PI_F * sqr(one_minus_cos_NH2 + alpha2 * cos_NH2));
+  const float ggx_denom = fmaf(alpha2, cos_NH2, one_minus_cos_NH2);
+  return alpha2 / (M_PI_F * sqr(ggx_denom));
 }
 
 template<MicrofacetType m_type>
