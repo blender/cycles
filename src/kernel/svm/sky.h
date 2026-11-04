@@ -89,9 +89,9 @@ ccl_device float sky_radiance_internal(const ccl_private float *configuration,
 
   const float expM = expf(configuration[4] * gamma);
   const float rayM = cgamma * cgamma;
-  const float mieM = (1.0f + rayM) / powf((1.0f + configuration[8] * configuration[8] -
-                                           2.0f * configuration[8] * cgamma),
-                                          1.5f);
+  const float mieBase = 1.0f + configuration[8] * configuration[8] -
+                        2.0f * configuration[8] * cgamma;
+  const float mieM = (1.0f + rayM) / (mieBase * sqrtf(mieBase));
   const float zenith = sqrtf(ctheta);
 
   return (1.0f + configuration[0] * expf(configuration[1] / (ctheta + 0.01f))) *
