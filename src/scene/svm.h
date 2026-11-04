@@ -5,6 +5,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstring>
 
 #include "scene/shader.h"
 #include "scene/shader_graph.h"
@@ -101,11 +102,8 @@ class SVMCompiler {
   {
     const ShaderNodeType resolved_type = node_type(shader_node, type, use_derivatives);
     current_svm_nodes.push_back_slow(resolved_type);
-    const int *data = reinterpret_cast<const int *>(&node);
     svm_node_types_used[resolved_type] = true;
-    for (size_t i = 0; i < sizeof(T) / sizeof(int); i++) {
-      current_svm_nodes.push_back_slow(data[i]);
-    }
+    add_node_data(node);
     if (shader_node) {
       shader_node->added_to_svm = true;
     }
@@ -128,9 +126,11 @@ class SVMCompiler {
   void add_node_data(const T &data)
     requires(std::is_class_v<T> && sizeof(T) % sizeof(int) == 0 && alignof(T) <= sizeof(uint))
   {
-    const int *ptr = reinterpret_cast<const int *>(&data);
+    const char *bytes = reinterpret_cast<const char *>(&data);
     for (size_t i = 0; i < sizeof(T) / sizeof(int); i++) {
-      current_svm_nodes.push_back_slow(ptr[i]);
+      int word;
+      memcpy(&word, bytes + i * sizeof(int), sizeof(int));
+      current_svm_nodes.push_back_slow(word);
     }
   }
   void add_node_data_float4(const float4 &f);
