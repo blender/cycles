@@ -465,6 +465,8 @@ endif()
 ###########################################################################
 
 if(WITH_CYCLES_EMBREE)
+  set(WITH_EMBREE ON)
+
   if(MSVC AND EXISTS ${_cycles_lib_dir})
     set(EMBREE_ROOT_DIR ${_cycles_lib_dir}/embree)
     set(EMBREE_INCLUDE_DIRS ${EMBREE_ROOT_DIR}/include)
