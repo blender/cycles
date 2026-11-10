@@ -172,6 +172,10 @@ if(WITH_CYCLES_HYDRA_RENDER_DELEGATE)
     delayed_install("" $<TARGET_FILE:${HdCyclesPluginName}> ${CYCLES_HYDRA_INSTALL_PATH})
   endif()
 
+  if(CYCLES_STANDALONE_REPOSITORY)
+    cycles_install_libraries(${HdCyclesPluginName})
+  endif()
+
   set_target_properties(${HdCyclesPluginName}
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
