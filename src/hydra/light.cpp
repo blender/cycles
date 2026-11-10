@@ -65,17 +65,13 @@ void HdCyclesLight::Sync(HdSceneDelegate *sceneDelegate,
   const HdContainerDataSourceHandle &primDs = prim.dataSource;
   const HdContainerDataSourceHandle lightDs = HdLightSchema::GetFromParent(primDs).GetContainer();
 
-  const float metersPerUnit = static_cast<HdCyclesSession *>(renderParam)->GetStageMetersPerUnit();
-
   if (*dirtyBits & DirtyBits::DirtyTransform) {
-
     GfMatrix4d xform(1.0);
     if (auto matrixDs = HdXformSchema::GetFromParent(primDs).GetMatrix()) {
       xform = matrixDs->GetTypedValue(0.0f);
     }
 
-    const Transform tfm = transform_scale(make_float3(metersPerUnit)) * convert_transform(xform);
-    _object->set_tfm(tfm);
+    _object->set_tfm(convert_transform(xform));
   }
 
   if (*dirtyBits & (DirtyBits::DirtyParams | DirtyBits::DirtyTransform)) {
@@ -156,15 +152,12 @@ void HdCyclesLight::Sync(HdSceneDelegate *sceneDelegate,
       }
 
       area = area_light->area(_object->get_tfm());
-      const float stage_meters = (metersPerUnit > 0.0f) ? metersPerUnit : 1.0f;
-      area /= (stage_meters * stage_meters);
     }
     else if (_lightType == HdPrimTypeTokens->sphereLight) {
       SpotLight *spot_light = static_cast<SpotLight *>(_light);
       const bool treatAsPoint = GetTypedValue<bool>(lightDs, UsdLuxTokens->treatAsPoint, false);
       const float radius = GetTypedValue<float>(lightDs, HdLightTokens->radius, 0.5f);
 
-      const float stage_meters = (metersPerUnit > 0.0f) ? metersPerUnit : 1.0f;
       const Transform &tfm = _object->get_tfm();
       const float scale_x = len(transform_get_column(&tfm, 0));
       const float scale_y = len(transform_get_column(&tfm, 1));
@@ -178,8 +171,7 @@ void HdCyclesLight::Sync(HdSceneDelegate *sceneDelegate,
       else {
         const float world_radius = radius * avg_scale;
         spot_light->set_radius(world_radius);
-        const float stage_radius = world_radius / stage_meters;
-        area = 4.0f * M_PI_F * powf(stage_radius, 2.0f);
+        area = 4.0f * M_PI_F * powf(world_radius, 2.0f);
       }
 
       spot_light->set_smooth(0.0f);
@@ -456,7 +448,7 @@ static void BuildFocusShapingNodes(ShaderGraph *graph,
   xformNode->set_convert_to(NODE_VECTOR_TRANSFORM_CONVERT_SPACE_OBJECT);
   graph->connect(geometryNode->output("Incoming"), xformNode->input("Vector"));
 
-  /* Normalize to ensure unit length regardless of object / stage scale (metersPerUnit) */
+  /* Normalize to ensure unit length regardless of object scale. */
   VectorMathNode *normNode = graph->create_node<VectorMathNode>();
   normNode->set_math_type(NODE_VECTOR_MATH_NORMALIZE);
   graph->connect(xformNode->output("Vector"), normNode->input("Vector1"));
