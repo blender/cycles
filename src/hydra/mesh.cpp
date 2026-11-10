@@ -372,8 +372,16 @@ void HdCyclesMesh::PopulateTopology(HdSceneDelegate *sceneDelegate)
     holeIndices = ds->GetTypedValue(0.0f);
   }
 
-  _topology = HdMeshTopology(
-      scheme, orientation, faceVertexCounts, faceVertexIndices, holeIndices, refineLevel);
+  /* Use refinement only for supported subdivision meshes, so triangle indices
+   * and face-varying primvars agree about which holes to omit. */
+  const bool useSubdivision = refineLevel > 0 && (scheme == PxOsdOpenSubdivTokens->bilinear ||
+                                                  scheme == PxOsdOpenSubdivTokens->catmullClark);
+  _topology = HdMeshTopology(scheme,
+                             orientation,
+                             faceVertexCounts,
+                             faceVertexIndices,
+                             holeIndices,
+                             useSubdivision ? refineLevel : 0);
 
   /* Geom subsets are published as child prims of the mesh in the scene index. */
   HdGeomSubsets geomSubsetsList;
