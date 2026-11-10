@@ -40,6 +40,15 @@ class HdCyclesSession final : public PXR_NS::HdRenderParam {
     _stageMetersPerUnit = stageMetersPerUnit;
   }
 
+  PXR_NS::TfToken GetStageUpAxis() const {
+    return _stageUpAxis;
+  }
+
+  void SetStageUpAxis(const PXR_NS::TfToken stageUpAxis)
+  {
+    _stageUpAxis = stageUpAxis;
+  }
+
   PXR_NS::HdRenderPassAovBinding GetDisplayAovBinding() const
   {
     return _displayAovBinding;
@@ -65,6 +74,7 @@ class HdCyclesSession final : public PXR_NS::HdRenderParam {
  private:
   const bool _ownCyclesSession;
   double _stageMetersPerUnit = 0.01;
+  PXR_NS::TfToken _stageUpAxis = PXR_NS::TfToken("Y");
   PXR_NS::HdRenderPassAovBindingVector _aovBindings;
   PXR_NS::HdRenderPassAovBinding _displayAovBinding;
 };

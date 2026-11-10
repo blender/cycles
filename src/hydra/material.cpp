@@ -588,7 +588,7 @@ unique_ptr<ShaderGraph> HdCyclesMaterial::BuildShaderGraph(HdMaterialNetworkSche
 
     ShaderInput *const input = inputName ? graph->output()->input(inputName) : nullptr;
     if (!input) {
-      TF_RUNTIME_ERROR("Could not find terminal input '%s.%s'",
+      TF_WARN("Could not find terminal input '%s.%s'",
                        upstreamNodePath.GetText(),
                        inputName ? inputName : "<null>");
       continue;
@@ -596,7 +596,7 @@ unique_ptr<ShaderGraph> HdCyclesMaterial::BuildShaderGraph(HdMaterialNetworkSche
 
     ShaderOutput *const output = outputName ? node->output(outputName) : nullptr;
     if (!output) {
-      TF_RUNTIME_ERROR("Could not find terminal output '%s.%s'",
+      TF_WARN("Could not find terminal output '%s.%s'",
                        upstreamNodePath.GetText(),
                        outputName ? outputName : "<null>");
       continue;

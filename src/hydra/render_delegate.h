@@ -13,8 +13,11 @@
 HDCYCLES_NAMESPACE_OPEN_SCOPE
 
 // clang-format off
+/* stageMetersPerUnit and stageUpAxis are not part of the USD standard and are set by 
+ * Cycles standalone app when loading USD files. */
 #define HD_CYCLES_RENDER_SETTINGS_TOKENS \
     (stageMetersPerUnit) \
+    (stageUpAxis) \
     ((device, "cycles:device")) \
     ((threads, "cycles:threads")) \
     ((timeLimit, "cycles:time_limit")) \

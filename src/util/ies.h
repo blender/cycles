@@ -20,6 +20,9 @@ class IESFile {
   bool load(const string &ies);
   void clear();
 
+  /* Integrate total radiant flux across the sphere */
+  float integrate();
+
  protected:
   bool parse(const string &ies);
   bool process();

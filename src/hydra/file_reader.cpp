@@ -84,6 +84,9 @@ void HdCyclesFileReader::read(Session *session, const char *filepath, const bool
   settings_map.insert(std::make_pair(HdCyclesRenderSettingsTokens->stageMetersPerUnit,
                                      VtValue(UsdGeomGetStageMetersPerUnit(stage))));
 
+  settings_map.insert(std::make_pair(HdCyclesRenderSettingsTokens->stageUpAxis,
+                                     VtValue(UsdGeomGetStageUpAxis(stage))));
+
   HdCyclesDelegate render_delegate(settings_map, session, true);
 
   /* Create render index. */

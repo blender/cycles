@@ -28,7 +28,7 @@ class HdCyclesLight final : public PXR_NS::HdLight {
  private:
   void Initialize(PXR_NS::HdRenderParam *renderParam);
 
-  void PopulateShaderGraph(const PXR_NS::HdContainerDataSourceHandle &lightContainer);
+  void PopulateShaderGraph(const PXR_NS::HdContainerDataSourceHandle &lightContainer, PXR_NS::HdRenderParam *renderParam);
 
   CCL_NS::Object *_object = nullptr;
   CCL_NS::Light *_light = nullptr;

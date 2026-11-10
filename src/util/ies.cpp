@@ -34,6 +34,39 @@ void IESFile::clear()
   h_angles.clear();
 }
 
+float IESFile::integrate()
+{
+  if (v_angles.size() < 2 || h_angles.size() < 2) {
+    return 0.0f;
+  }
+
+  float total_flux = 0.0f;
+  for (size_t h = 0; h + 1 < h_angles.size(); h++) {
+    const float d_phi = h_angles[h + 1] - h_angles[h];
+    for (size_t v = 0; v + 1 < v_angles.size(); v++) {
+      const float v0 = v_angles[v];
+      const float v1 = v_angles[v + 1];
+      const float dv = v1 - v0;
+      if (dv <= 0.0f) {
+        continue;
+      }
+      const float i00 = intensity[h][v];
+      const float i01 = intensity[h][v + 1];
+      const float i10 = intensity[h + 1][v];
+      const float i11 = intensity[h + 1][v + 1];
+      const float i_top = 0.5f * (i00 + i10);
+      const float i_bot = 0.5f * (i01 + i11);
+
+      /* Analytical integral of bilinear I(v) * sin(v) dv over [v0, v1] */
+      const float term1 = i_top * (cosf(v0) - cosf(v1));
+      const float term2 = ((i_bot - i_top) / dv) * (sinf(v1) - sinf(v0) - dv * cosf(v1));
+      total_flux += d_phi * (term1 + term2);
+    }
+  }
+
+  return total_flux;
+}
+
 int IESFile::packed_size()
 {
   if (!v_angles.empty() && !h_angles.empty()) {

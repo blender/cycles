@@ -413,6 +413,10 @@ void HdCyclesDelegate::SetRenderSetting(const PXR_NS::TfToken &key, const PXR_NS
     _renderParam->SetStageMetersPerUnit(
         VtValue::Cast<double>(value).GetWithDefault(_renderParam->GetStageMetersPerUnit()));
   }
+  else if (key == HdCyclesRenderSettingsTokens->stageUpAxis) {
+    _renderParam->SetStageUpAxis(
+      VtValue::Cast<TfToken>(value).GetWithDefault(_renderParam->GetStageUpAxis()));
+  }
   else if (key == HdCyclesRenderSettingsTokens->timeLimit) {
     session->set_time_limit(
         VtValue::Cast<double>(value).GetWithDefault(session->params.time_limit));
@@ -449,6 +453,9 @@ VtValue HdCyclesDelegate::GetRenderSetting(const TfToken &key) const
 
   if (key == HdCyclesRenderSettingsTokens->stageMetersPerUnit) {
     return VtValue(_renderParam->GetStageMetersPerUnit());
+  }
+  if (key == HdCyclesRenderSettingsTokens->stageUpAxis) {
+    return VtValue(_renderParam->GetStageUpAxis());
   }
   if (key == HdCyclesRenderSettingsTokens->device) {
     return VtValue(TfToken(Device::string_from_type(session->params.device.type)));
