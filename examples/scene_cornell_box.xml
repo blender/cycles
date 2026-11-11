@@ -1,0 +1,127 @@
+<!-- https://en.wikipedia.org/wiki/Cornell_box -->
+
+<cycles>
+<!-- Camera -->
+<camera width="800" height="800" />
+
+<transform translate="0 2.8 -10" focal_length="45" scale="1 1 1">
+	<camera type="perspective" />
+</transform>
+
+<!-- Materials -->
+
+<shader name="box_Material">
+    <diffuse_bsdf name="box_diffuse" roughness="0.15" color="0.41, 0.41, 0.41" />
+    <connect from="box_diffuse bsdf" to="output surface" />
+</shader>
+
+<shader name="cbox_green">
+    <diffuse_bsdf name="cbox_diffuse_g" roughness="0.25" color="0.0, 0.737, 0.0" />
+    <connect from="cbox_diffuse_g bsdf" to="output surface" />
+</shader>
+
+<shader name="cbox_red">
+    <diffuse_bsdf name="cbox_diffuse_r" roughness="0.25" color="0.737, 0.0, 0.0" />
+    <connect from="cbox_diffuse_r bsdf" to="output surface" />
+</shader>
+
+<shader name="cbox_white">
+    <diffuse_bsdf name="cbox_diffuse_w" roughness="0.25" color="0.57, 0.57, 0.57" />
+    <connect from="cbox_diffuse_w bsdf" to="output surface" />
+</shader>
+
+<shader name="Emitter">
+    <emission name="emit" strength="80.0" color="1, 1, 0.85" />
+    <connect from="emit emission" to="output surface" />
+</shader>
+
+<!-- Objects -->
+
+<!-- Ceiling -->
+<transform translate="0 5.6 0">
+    <transform rotate="180 0 0 1">
+        <transform scale="2.8 0.01 2.8">
+            <state interpolation="flat" shader="cbox_white">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Right Wall (Green) -->
+<transform translate="2.8 2.8 0">
+    <transform rotate="180 0 0 1">
+        <transform scale="0.01 2.8 2.8">
+            <state interpolation="flat" shader="cbox_green">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Floor -->
+<transform translate="0 0 0">
+    <transform rotate="180 0 0 1">
+        <transform scale="2.8 0.01 2.8">
+            <state interpolation="flat" shader="cbox_white">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Left Wall (Red) -->
+<transform translate="-2.8 2.8 0">
+    <transform rotate="180 0 0 1">
+        <transform scale="0.01 2.8 2.8">
+            <state interpolation="flat" shader="cbox_red">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Back wall -->
+<transform translate="0 2.8 2.8">
+    <transform rotate="180 0 0 1">
+        <transform scale="2.8 2.8 0.01">
+            <state interpolation="flat" shader="cbox_white">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Cube 1 -->
+<transform translate="-0.9 1.65 0.51">
+    <transform rotate="72.766 0 1 0">
+        <transform scale="0.825 1.65 0.825">
+            <state interpolation="flat" shader="box_Material">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Cube 2 -->
+<transform translate="0.93 0.825 -1.31">
+    <transform rotate="16.616 0 1 0">
+        <transform scale="0.825 0.825 0.825">
+            <state interpolation="flat" shader="box_Material">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+
+<!-- Cube 3: emitter -->
+<transform translate="0 5.478 -0.205">
+    <transform rotate="180 1 0 0">
+        <transform scale="0.65 0.05 0.53">
+            <state interpolation="flat" shader="Emitter">
+                <include src="./objects/cube.xml" />
+            </state>
+        </transform>
+    </transform>
+</transform>
+</cycles>
