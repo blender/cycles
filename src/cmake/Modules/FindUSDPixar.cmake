@@ -59,40 +59,52 @@ if(pxr_FOUND)
   unset(_tbb_library_release_pxr CACHE)
 
   # OpenColorIO
-  find_library(_opencolorio_library_pxr NAMES OpenColorIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
-  if(_opencolorio_library_pxr)
-    add_library(OpenColorIO::OpenColorIO UNKNOWN IMPORTED)
-    set_target_properties(OpenColorIO::OpenColorIO PROPERTIES
-      IMPORTED_LOCATION "${_opencolorio_library_pxr}"
-      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
-    )
+  if(TARGET OpenColorIO::OpenColorIO)
     set(USD_OVERRIDE_OPENCOLORIO ON)
+  else()
+    find_library(_opencolorio_library_pxr NAMES OpenColorIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+    if(_opencolorio_library_pxr)
+      add_library(OpenColorIO::OpenColorIO UNKNOWN IMPORTED)
+      set_target_properties(OpenColorIO::OpenColorIO PROPERTIES
+        IMPORTED_LOCATION "${_opencolorio_library_pxr}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+      )
+      set(USD_OVERRIDE_OPENCOLORIO ON)
+    endif()
   endif()
   unset(_opencolorio_library_pxr CACHE)
 
   # OpenEXR
-  find_library(_openexr_library_pxr NAMES OpenEXR OpenCore PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
-  if(_openexr_library_pxr)
-    add_library(OpenEXR::OpenEXR UNKNOWN IMPORTED)
-    set_target_properties(OpenEXR::OpenEXR PROPERTIES
-      IMPORTED_LOCATION "${_openexr_library_pxr}"
-      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
-    )
+  if(TARGET OpenEXR::OpenEXR)
     set(USD_OVERRIDE_OPENEXR ON)
+  else()
+    find_library(_openexr_library_pxr NAMES OpenEXR OpenCore PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+    if(_openexr_library_pxr)
+      add_library(OpenEXR::OpenEXR UNKNOWN IMPORTED)
+      set_target_properties(OpenEXR::OpenEXR PROPERTIES
+        IMPORTED_LOCATION "${_openexr_library_pxr}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+      )
+      set(USD_OVERRIDE_OPENEXR ON)
+    endif()
   endif()
   unset(_openexr_library_pxr CACHE)
 
   # OpenImageIO
-  find_library(_openimageio_library_pxr NAMES OpenImageIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
-  find_library(_openimageio_util_library_pxr NAMES OpenImageIO_Util PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
-  if(_openimageio_library_pxr AND _openimageio_util_library_pxr)
-    add_library(OpenImageIO::OpenImageIO UNKNOWN IMPORTED)
-    set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
-      IMPORTED_LOCATION "${_openimageio_library_pxr}"
-      INTERFACE_LINK_LIBRARIES "${_openimageio_util_library_pxr}"
-      INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
-    )
+  if(TARGET OpenImageIO::OpenImageIO)
     set(USD_OVERRIDE_OPENIMAGEIO ON)
+  else()
+    find_library(_openimageio_library_pxr NAMES OpenImageIO PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+    find_library(_openimageio_util_library_pxr NAMES OpenImageIO_Util PATHS ${_pxr_library_dir} NO_DEFAULT_PATH)
+    if(_openimageio_library_pxr AND _openimageio_util_library_pxr)
+      add_library(OpenImageIO::OpenImageIO UNKNOWN IMPORTED)
+      set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
+        IMPORTED_LOCATION "${_openimageio_library_pxr}"
+        INTERFACE_LINK_LIBRARIES "${_openimageio_util_library_pxr}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PXR_INCLUDE_DIRS}"
+      )
+      set(USD_OVERRIDE_OPENIMAGEIO ON)
+    endif()
   endif()
   unset(_openimageio_library_pxr CACHE)
 
