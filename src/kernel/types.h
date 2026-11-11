@@ -845,8 +845,10 @@ enum AttributeStandard : int {
 };
 
 enum AttributeFlag {
-  ATTR_SUBDIVIDE_SMOOTH_FVAR = (1 << 0), /* This attribute is face-varying and requires smooth
-                                          * subdivision (typically UV map). */
+  /* This attribute is face-varying and requires smooth subdivision (typically UV map). */
+  ATTR_SUBDIVIDE_SMOOTH_FVAR = (1 << 0),
+  /* Preserve linear interpolation when converting UVs from other domains to face-varying. */
+  ATTR_SUBDIVIDE_LINEAR_FVAR = (1 << 1),
 };
 
 struct AttributeDescriptor {

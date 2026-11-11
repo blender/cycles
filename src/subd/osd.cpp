@@ -291,7 +291,8 @@ Sdc::Options OsdMesh::sdc_options()
 
 bool OsdMesh::use_smooth_fvar(const Attribute &attr) const
 {
-  return mesh.get_subdivision_fvar_interpolation() != Mesh::SUBDIVISION_FVAR_LINEAR_ALL &&
+  return !(attr.flags & ATTR_SUBDIVIDE_LINEAR_FVAR) &&
+         mesh.get_subdivision_fvar_interpolation() != Mesh::SUBDIVISION_FVAR_LINEAR_ALL &&
          attr.element == ATTR_ELEMENT_CORNER &&
          (attr.std == ATTR_STD_UV || (attr.flags & ATTR_SUBDIVIDE_SMOOTH_FVAR));
 }

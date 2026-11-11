@@ -22,6 +22,72 @@ HDCYCLES_NAMESPACE_OPEN_SCOPE
 
 namespace {
 
+void RemoveUVTangents(AttributeSet &attributes, const ustring &name)
+{
+  for (const char *suffix :
+       {".tangent", ".tangent_sign", ".undisplaced_tangent", ".undisplaced_tangent_sign"})
+  {
+    attributes.remove(ustring(name.string() + suffix));
+  }
+}
+
+VtValue ComputeFaceVaryingUVPrimvar(VtValue value,
+                                    const HdInterpolation interpolation,
+                                    const HdMeshTopology &topology)
+{
+  if (!value.IsHolding<VtVec2fArray>()) {
+    return VtValue();
+  }
+
+  const VtVec2fArray &uvs = value.UncheckedGet<VtVec2fArray>();
+  const VtIntArray &counts = topology.GetFaceVertexCounts();
+  const VtIntArray &indices = topology.GetFaceVertexIndices();
+  size_t numCorners = 0;
+  for (const int count : counts) {
+    if (count < 0 || size_t(count) > indices.size() - numCorners) {
+      return VtValue();
+    }
+    numCorners += count;
+  }
+  if (numCorners != indices.size() || uvs.empty()) {
+    return VtValue();
+  }
+
+  if (interpolation == HdInterpolationFaceVarying) {
+    if (uvs.size() < numCorners) {
+      return VtValue();
+    }
+    /* Ignore values past the last corner, as triangulation does. */
+    return uvs.size() == numCorners ?
+               value :
+               VtValue(VtVec2fArray(uvs.cbegin(), uvs.cbegin() + numCorners));
+  }
+
+  if (interpolation == HdInterpolationUniform && uvs.size() < counts.size()) {
+    return VtValue();
+  }
+
+  VtVec2fArray cornerUVs;
+  cornerUVs.reserve(numCorners);
+  size_t corner = 0;
+  for (size_t face = 0; face < counts.size(); ++face) {
+    for (int i = 0; i < counts[face]; ++i, ++corner) {
+      size_t index = 0;
+      if (interpolation == HdInterpolationUniform) {
+        index = face;
+      }
+      else if (interpolation == HdInterpolationVertex || interpolation == HdInterpolationVarying) {
+        if (indices[corner] < 0 || size_t(indices[corner]) >= uvs.size()) {
+          return VtValue();
+        }
+        index = indices[corner];
+      }
+      cornerUVs.push_back(uvs[index]);
+    }
+  }
+  return VtValue(std::move(cornerUVs));
+}
+
 template<typename T>
 VtValue ComputeTriangulatedUniformPrimvar(VtValue value, const VtIntArray &primitiveParams)
 {
@@ -134,6 +200,15 @@ HdDirtyBits HdCyclesMesh::_PropagateDirtyBits(HdDirtyBits bits) const
 
 void HdCyclesMesh::Populate(HdSceneDelegate *sceneDelegate, HdDirtyBits dirtyBits, bool &rebuild)
 {
+  /* Rebuild subdivision and displacement from the authored geometry when primvars change.
+   * Decided here, under the scene lock, because displacement depends on shader state. */
+  if ((dirtyBits & HdChangeTracker::DirtyPrimvar) &&
+      (_geom->get_subdivision_type() != Mesh::SUBDIVISION_NONE || _geom->has_true_displacement()))
+  {
+    dirtyBits |= HdChangeTracker::DirtyTopology | HdChangeTracker::DirtyPoints |
+                 HdChangeTracker::DirtyNormals;
+  }
+
   if (HdChangeTracker::IsTopologyDirty(dirtyBits, GetId())) {
     PopulateTopology(sceneDelegate);
   }
@@ -255,6 +330,12 @@ void HdCyclesMesh::PopulatePrimvars(HdSceneDelegate *sceneDelegate)
   const bool subdivision = _geom->get_subdivision_type() != Mesh::SUBDIVISION_NONE;
   AttributeSet &attributes = subdivision ? _geom->subd_attributes : _geom->attributes;
 
+  /* Remove UVs before reading them again. */
+  while (const Attribute *previous = attributes.find(ATTR_STD_UV)) {
+    RemoveUVTangents(_geom->attributes, previous->name);
+    attributes.remove(previous->name);
+  }
+
   const HdSceneIndexPrim prim = GetPrim(sceneDelegate, GetId());
   const HdPrimvarsSchema primvars = HdPrimvarsSchema::GetFromParent(prim.dataSource);
 
@@ -280,9 +361,20 @@ void HdCyclesMesh::PopulatePrimvars(HdSceneDelegate *sceneDelegate)
 
       const TfToken role = ReadPrimvarRole(primvars, primvarName);
       const ustring name(primvarName.GetString());
+      const HdType valueType = HdGetValueTupleType(value).type;
+
+      /* Remove previous attribute to recreate, in case type, role or interpolation changed. */
+      if (Attribute *previous = attributes.find(name)) {
+        if (previous->std == ATTR_STD_NONE || previous->std == ATTR_STD_UV ||
+            previous->std == ATTR_STD_VERTEX_COLOR)
+        {
+          RemoveUVTangents(_geom->attributes, name);
+          attributes.remove(name);
+        }
+      }
 
       AttributeStandard std = ATTR_STD_NONE;
-      if (role == HdPrimvarRoleTokens->textureCoordinate) {
+      if (role == HdPrimvarRoleTokens->textureCoordinate && valueType == HdTypeFloatVec2) {
         std = ATTR_STD_UV;
       }
       else if (interpolation.first == HdInterpolationVertex) {
@@ -306,27 +398,80 @@ void HdCyclesMesh::PopulatePrimvars(HdSceneDelegate *sceneDelegate)
       if ((std != ATTR_STD_NONE && _geom->need_attribute(scene, std)) ||
           _geom->need_attribute(scene, name))
       {
-        const HdType valueType = HdGetValueTupleType(value).type;
+        /* Constant texture coordinates may be scalars; attribute storage uses arrays. */
+        if (role == HdPrimvarRoleTokens->textureCoordinate &&
+            interpolation.first == HdInterpolationConstant)
+        {
+          if (value.IsHolding<GfVec2f>()) {
+            value = VtVec2fArray{value.UncheckedGet<GfVec2f>()};
+          }
+          else if (value.IsHolding<GfVec3f>()) {
+            value = VtVec3fArray{value.UncheckedGet<GfVec3f>()};
+          }
+          else if (value.IsHolding<GfVec4f>()) {
+            value = VtVec4fArray{value.UncheckedGet<GfVec4f>()};
+          }
+        }
+
+        HdInterpolation primvarInterpolation = interpolation.first;
+        AttributeElement element = interpolation.second;
+
+        /* Expand UVs to corners for Cycles tangent generation. Do this before
+         * triangulation so the face-varying conversion handles polygons. */
+        if (std == ATTR_STD_UV) {
+          value = ComputeFaceVaryingUVPrimvar(value, primvarInterpolation, _topology);
+          if (value.IsEmpty()) {
+            TF_WARN("Invalid UV data for %s: %s", GetId().GetText(), primvarName.GetText());
+            continue;
+          }
+          primvarInterpolation = HdInterpolationFaceVarying;
+          element = ATTR_ELEMENT_CORNER;
+        }
 
         if (!subdivision) {
           // Adjust attributes for polygons that were triangulated
-          if (interpolation.first == HdInterpolationUniform) {
+          if (primvarInterpolation == HdInterpolationUniform) {
             value = ComputeTriangulatedUniformPrimvar(value, valueType, _primitiveParams);
             if (value.IsEmpty()) {
               continue;
             }
           }
-          else if (interpolation.first == HdInterpolationFaceVarying) {
+          else if (primvarInterpolation == HdInterpolationFaceVarying) {
             value = ComputeTriangulatedFaceVaryingPrimvar(value, valueType, _util);
-            if (value.IsEmpty()) {
+            if (value.IsEmpty() || !TF_VERIFY(value.GetArraySize() == _geom->num_triangles() * 3))
+            {
               continue;
             }
           }
         }
 
-        ApplyPrimvars(attributes, name, value, interpolation.second, std);
+        ApplyPrimvars(attributes, name, value, element, std);
+        if (subdivision && std == ATTR_STD_UV && interpolation.first != HdInterpolationFaceVarying)
+        {
+          /* Other domains used linear subdivision before corner conversion. */
+          attributes.find(name)->flags |= ATTR_SUBDIVIDE_LINEAR_FVAR;
+        }
       }
     }
+  }
+
+  /* Tangents are derived from UVs and may include named or fallback maps. */
+  for (const AttributeStandard std : {ATTR_STD_UV_TANGENT,
+                                      ATTR_STD_UV_TANGENT_SIGN,
+                                      ATTR_STD_UV_TANGENT_UNDISPLACED,
+                                      ATTR_STD_UV_TANGENT_SIGN_UNDISPLACED})
+  {
+    while (_geom->attributes.find(std)) {
+      _geom->attributes.remove(std);
+    }
+  }
+
+  if (!subdivision && !_geom->is_modified()) {
+    /* An attribute-only edit does not need a BVH update. */
+    _geom->add_vertex_normals();
+    _geom->update_tangents(scene, true);
+    _geom->update_tangents(scene, false);
+    _geom->tag_update(scene, false);
   }
 }
 
