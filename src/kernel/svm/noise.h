@@ -690,6 +690,9 @@ ccl_device_inline float noise_scale4(const float result)
 
 ccl_device_inline float snoise_1d(float p)
 {
+  if (fabsf(p) < 100000.0f) {
+    return noise_scale1(perlin_1d(p));
+  }
   const float precision_correction = 0.5f * float(fabsf(p) >= 1000000.0f);
   /* Repeat Perlin noise texture every 100000.0 on each axis to prevent floating point
    * representation issues. */
@@ -706,6 +709,9 @@ ccl_device_inline float noise_1d(const float p)
 
 ccl_device_inline float snoise_2d(float2 p)
 {
+  if (fabsf(p.x) < 100000.0f && fabsf(p.y) < 100000.0f) {
+    return noise_scale2(perlin_2d(p.x, p.y));
+  }
   const float2 precision_correction = 0.5f *
                                       mask(fabs(p) >= make_float2(1000000.0f), one_float2());
 
@@ -724,6 +730,9 @@ ccl_device_inline float noise_2d(const float2 p)
 
 ccl_device_inline float snoise_3d(float3 p)
 {
+  if (fabsf(p.x) < 100000.0f && fabsf(p.y) < 100000.0f && fabsf(p.z) < 100000.0f) {
+    return noise_scale3(perlin_3d(p.x, p.y, p.z));
+  }
   const float3 precision_correction = 0.5f *
                                       mask(fabs(p) >= make_float3(1000000.0f), one_float3());
 
@@ -742,6 +751,11 @@ ccl_device_inline float noise_3d(const float3 p)
 
 ccl_device_inline float snoise_4d(float4 p)
 {
+  if (fabsf(p.x) < 100000.0f && fabsf(p.y) < 100000.0f && fabsf(p.z) < 100000.0f &&
+      fabsf(p.w) < 100000.0f)
+  {
+    return noise_scale4(perlin_4d(p.x, p.y, p.z, p.w));
+  }
   const float4 precision_correction = 0.5f *
                                       mask(fabs(p) >= make_float4(1000000.0f), one_float4());
 
