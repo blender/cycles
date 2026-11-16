@@ -110,29 +110,30 @@ VtMatrix4dArray HdCyclesInstancer::ComputeInstanceTransforms(const SdfPath &prot
   transforms.reserve(instanceIndices.size());
 
   for (const int index : instanceIndices) {
+    /* Gf uses row vectors: apply per-instance transforms before the instancer. */
     GfMatrix4d transform = instanceTransform;
 
     if (index < _translate.size()) {
       GfMatrix4d translateMat(1);
       translateMat.SetTranslate(_translate[index]);
-      transform *= translateMat;
+      transform = translateMat * transform;
     }
 
     if (index < _rotate.size()) {
       GfMatrix4d rotateMat(1);
       const GfVec4f &quat = _rotate[index];
       rotateMat.SetRotate(GfQuatd(quat[0], quat[1], quat[2], quat[3]));
-      transform *= rotateMat;
+      transform = rotateMat * transform;
     }
 
     if (index < _scale.size()) {
       GfMatrix4d scaleMat(1);
       scaleMat.SetScale(_scale[index]);
-      transform *= scaleMat;
+      transform = scaleMat * transform;
     }
 
     if (index < _instanceTransform.size()) {
-      transform *= _instanceTransform[index];
+      transform = _instanceTransform[index] * transform;
     }
 
     transforms.push_back(transform);
@@ -159,7 +160,7 @@ VtMatrix4dArray HdCyclesInstancer::ComputeInstanceTransforms(const SdfPath &prot
     if (parentInstancer) {
       for (const GfMatrix4d &parentTransform : parentInstancer->ComputeInstanceTransforms(id)) {
         for (const GfMatrix4d &localTransform : transforms) {
-          resultTransforms.push_back(parentTransform * localTransform);
+          resultTransforms.push_back(localTransform * parentTransform);
         }
       }
       return resultTransforms;
